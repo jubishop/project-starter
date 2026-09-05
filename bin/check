@@ -1,0 +1,42 @@
+#!/usr/bin/env python3
+"""Validate the guide and test the copyable bundle on the current platform."""
+import ast
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+
+sys.dont_write_bytecode = True
+root = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(root / "starter/bin"))
+from _checks import validate
+
+
+def main():
+    errors = validate(root, areas=("docs",), options={"checks": {"exclude": ["starter/**", "extras/**"]}})
+    errors += validate(root / "starter")
+    if errors:
+        print("\n".join(errors), file=sys.stderr)
+        return 1
+    if not shutil.which("shellcheck"):
+        print("Install ShellCheck before running bin/check.", file=sys.stderr)
+        return 1
+    for folder in (root / "bin", root / "starter/bin", root / "starter/tests"):
+        for path in folder.iterdir():
+            if path.is_file() and (path.suffix == ".py" or path.read_bytes().startswith(b"#!/usr/bin/env python3")):
+                ast.parse(path.read_text(), filename=str(path))
+    subprocess.run(["shellcheck", "--shell=bash", str(root / "starter/.envrc")], check=True)
+    subprocess.run(["shellcheck", "--shell=sh", *map(str, sorted((root / "starter/bin/hooks").iterdir()))], check=True)
+    subprocess.run([sys.executable, "-B", "-m", "unittest", "discover", "-s", "starter/tests", "-v"], cwd=root, check=True)
+    subprocess.run(["git", "diff", "--check"], cwd=root, check=True)
+    subprocess.run(["git", "diff", "--cached", "--check"], cwd=root, check=True)
+    print("Guide and copied-bundle checks passed on " + sys.platform + ".")
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except (OSError, ValueError, SyntaxError, subprocess.SubprocessError) as error:
+        print(error, file=sys.stderr)
+        sys.exit(1)
