@@ -29,9 +29,10 @@ integration would be displaced, prepares caches, and waits for the initial
 index refresh. QMD may download local models on first use. Rerunning setup
 preserves existing choices and skips indexing when inputs are unchanged.
 
-Review `.envrc` before running `direnv allow`. QMD does not need direnv or
-shell-wide environment exports. Add project-specific environment settings
-to `.envrc` deliberately; preserve existing settings when adapting setup.
+The bundle omits `.envrc`. Create it only when the project needs environment
+settings, and review it before running `direnv allow`. QMD does not need direnv
+or shell-wide environment exports. Preserve useful existing environment
+settings when adapting setup; remove an obsolete QMD-only file.
 
 ## Search
 

@@ -24,8 +24,10 @@ class KnowledgeTests(unittest.TestCase):
             shutil.copytree(SOURCE / name, self.repo / name, ignore=shutil.ignore_patterns("__pycache__"))
         (self.repo / ".config").mkdir()
         shutil.copy2(SOURCE / ".config/knowledge.json", self.repo / ".config/knowledge.json")
-        for name in ("README.md", "AGENTS.md", ".envrc", ".gitignore", ".project-starter.json"):
+        for name in ("README.md", "AGENTS.md", ".gitignore", ".project-starter.json"):
             shutil.copy2(SOURCE / name, self.repo / name)
+        if (SOURCE / ".envrc").exists():
+            shutil.copy2(SOURCE / ".envrc", self.repo / ".envrc")
         self.tools = self.base / "fake tools"
         self.tools.mkdir()
         for name, target in (("python3", sys.executable), ("git", shutil.which("git"))):
@@ -124,7 +126,14 @@ else:
         result = self.run_command("git", "knowledge", "search", "reference", root=self.repo / "docs")
         self.assertEqual(json.loads(result.stdout)["index"], record["index"])
         self.assertEqual(self.env["XDG_CACHE_HOME"], "/wrong-cache")
-        self.assertNotIn("export XDG_CACHE_HOME", (self.repo / ".envrc").read_text())
+        if (self.repo / ".envrc").exists():
+            self.assertNotIn("export XDG_CACHE_HOME", (self.repo / ".envrc").read_text())
+
+    def test_default_setup_needs_no_environment_file(self):
+        self.assertFalse((self.repo / ".envrc").exists())
+        self.run_command("bin/setup")
+        self.assertFalse((self.repo / ".envrc").exists())
+        self.assertEqual(json.loads(self.run_command("bin/doctor", "--json").stdout)["freshness"], "current")
 
     def test_repeat_setup_and_code_only_changes_skip_qmd_work(self):
         self.run_command("bin/setup")
@@ -248,6 +257,7 @@ sys.exit(int(os.environ.get("OLD_HOOK_EXIT", "0")))
         self.assertEqual(self.run_command("git", "config", "--get", "core.hooksPath").stdout.strip(), "custom hooks")
 
     def test_worktree_with_separate_git_directory_shares_only_models(self):
+        (self.repo / ".envrc").write_text("export APPLICATION_MODE=development\n")
         metadata = self.base / "metadata" / "repository.git"
         metadata.parent.mkdir()
         self.run_command("git", "init", "--separate-git-dir", str(metadata))

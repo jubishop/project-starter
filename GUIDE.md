@@ -36,7 +36,8 @@ Do not copy this repository's `.git` or its maintainer-only files.
 | `docs/development-workflow.md` | Adapt it to the actual commands and integrations delivered. |
 | `bin/`, `tests/test_knowledge.py` | Add helpers and foundation tests; integrate existing setup/check commands and hooks. |
 | `.config/knowledge.json` | Configure collections, descriptions, and deliberate check exclusions. Keep personal paths in local Git settings. |
-| `.envrc`, `.gitignore` | Merge with existing files. Search requires no shell-wide cache settings. |
+| `.gitignore` | Merge exclusions with the project's existing file. |
+| Optional `.envrc` | Create only when the project needs environment settings. Preserve useful existing settings; search does not need this file or shell-wide cache exports. |
 | `.project-starter.json` | Record the copied release; set `source_ref` to its exact commit when copying an unreleased revision. |
 | `LICENSE.project-starter` | Retain the license notice with copied material. |
 

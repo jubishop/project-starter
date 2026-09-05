@@ -25,7 +25,8 @@ def main():
         for path in folder.iterdir():
             if path.is_file() and (path.suffix == ".py" or path.read_bytes().startswith(b"#!/usr/bin/env python3")):
                 ast.parse(path.read_text(), filename=str(path))
-    subprocess.run(["shellcheck", "--shell=bash", str(root / "starter/.envrc")], check=True)
+    if (root / "starter/.envrc").is_file():
+        subprocess.run(["shellcheck", "--shell=bash", str(root / "starter/.envrc")], check=True)
     subprocess.run(["shellcheck", "--shell=sh", *map(str, sorted((root / "starter/bin/hooks").iterdir()))], check=True)
     subprocess.run([sys.executable, "-B", "-m", "unittest", "discover", "-s", "starter/tests", "-v"], cwd=root, check=True)
     subprocess.run(["git", "diff", "--check"], cwd=root, check=True)
