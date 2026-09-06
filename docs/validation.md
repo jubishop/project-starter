@@ -4,8 +4,28 @@ status: current
 
 # Validation
 
-Version 1.0.0 passed local macOS validation on September 4, 2026 (PDT).
-The maintained commands are `bin/check` and `bin/smoke-qmd`.
+Version 1.0.0 passed its initial local macOS validation on September 4, 2026
+(PDT). That dated evidence is recorded below. The maintained commands are
+`bin/check` and `bin/smoke-qmd`.
+
+## Current automated checks
+
+The [maintainer workflow](../.github/workflows/check.yml) runs `bin/check` on
+Ubuntu 24.04 and macOS 15 for pull requests and pushes to `main`. It records
+tool versions in each run. See the
+[workflow runs](https://github.com/jubishop/project-starter/actions/workflows/check.yml)
+for results tied to exact commits.
+
+The command runs the 21 base foundation tests and a GitHub adoption regression.
+The regression copies the actual optional workflow into a disposable project,
+links it from the README and development docs, then runs the three document
+tests that create further copies. This detects missing workflow files in
+those test fixtures. The base tests also verify use without GitHub files.
+
+actionlint validates both maintained and copyable workflows. It is a
+maintainer dependency; copied projects still require only ShellCheck for
+their foundation checks. QMD and direnv are simulated in automated tests.
+These checks do not establish real-QMD compatibility on a CI runner.
 
 ## Environment
 
@@ -61,10 +81,10 @@ in the primary checkout's search results. Diagnostics left the inspected
 files unchanged. Temporary repositories were removed. The smoke command
 writes its local machine-readable report under `.cache/validation/`.
 
-## Limits
+## Initial validation limits
 
-Linux execution was deliberately omitted for this delivery. The optional
-Ubuntu GitHub Actions workflow is supplied as an integration example and was
-not run. Other QMD versions and project-specific hook managers need their own
+Linux execution was deliberately omitted from the September 4 delivery.
+The optional Ubuntu workflow was supplied as an integration example and was
+not run then. Other QMD versions and project-specific hook managers need their own
 integration checks. Runtime diagnostics verify recorded input freshness and
 the index's presence; they do not perform a SQLite integrity scan.

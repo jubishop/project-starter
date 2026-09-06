@@ -122,10 +122,24 @@ changes and running processes before cleanup, then verify `git worktree list`.
 Do not use production ports, data, or restart commands for disposable tests.
 
 For GitHub projects, copy or merge the optional
-[workflow](extras/github/.github/workflows/check.yml) and adapt its branch,
-runner, and dependency installation. The supplied Ubuntu workflow is an
-integration example; this release's executed validation is macOS only.
-Other CI systems can invoke the same local check command.
+[workflow](extras/github/.github/workflows/check.yml) into
+`.github/workflows/check.yml`. Adapt its branch, runner, dependencies, and
+check command to the target. Preserve existing application checks and avoid
+adding a second workflow that repeats them. Keep read-only permissions and
+disable persisted checkout credentials unless the job needs write access.
+
+Link to the delivered workflow from the project's development docs. The
+copied foundation tests include `.github/` when present so those links work
+inside disposable repositories. If adapted docs link to other project files,
+include those required files in the test fixtures as well. Run the full
+`bin/check` after adding the workflow; document-only checks do not exercise
+the test fixtures. Use actionlint to validate workflow syntax when available.
+
+After an authorized push, verify the workflow result for the exact pushed
+commit. Report a pending, skipped, or failed run explicitly. Passing local
+checks does not establish that runner setup or CI passed. The starter's own
+CI checks both the base bundle and GitHub integration on macOS and Linux;
+QMD is simulated there. Other CI systems can invoke the same check command.
 
 Deliver a short report of changes, adaptations, checks actually run, and
 skipped optional features. Commit or publish according to the user's request

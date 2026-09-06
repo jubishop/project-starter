@@ -206,8 +206,12 @@ For generated or externally owned docs, add deliberate patterns to
 hand-written project knowledge.
 
 If the project uses GitHub, add the optional workflow supplied with the
-starter and adapt its branch/runner settings. Other hosts can invoke the
-same local command from their own CI systems.
+starter and adapt its branch, runner, dependencies, and check command. Merge
+with existing checks where appropriate, and link to the delivered workflow
+from these docs. Disposable foundation tests copy `.github/` when present;
+include other required link destinations if project docs refer to them.
+Run the full `bin/check` after integration and verify the CI result for the
+pushed commit. Other hosts can invoke the same command in their CI systems.
 
 `.project-starter.json` records the copied release and tested QMD version.
 Compare future releases manually and merge relevant improvements. These files

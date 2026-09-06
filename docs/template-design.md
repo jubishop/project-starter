@@ -99,9 +99,21 @@ descriptions and starter revision tracking. Documents use `draft`, `current`,
 
 ## Validation scope — 2026-09-04
 
-Run the copied-bundle tests and a real-QMD smoke test locally on macOS for
-this delivery. Keep Linux as a supported design target, but do not claim an
-executed Linux test. No Linux run is required for this delivery.
+The initial delivery required the copied-bundle tests and a real-QMD smoke
+test locally on macOS. Linux remained a supported design target, but no
+executed Linux test was claimed or required for that delivery.
+
+### GitHub integration follow-up — 2026-09-05
+
+Improve the guide and template's GitHub workflow integration. The user
+approved this after adopting the starter exposed missing workflow files in
+disposable test copies. Include the optional `.github/` directory in those
+copies and test an adopted bundle whose docs link to its workflow.
+
+The starter now uses macOS and Linux CI for the base and GitHub integration
+checks. This extends the initial validation scope above. QMD remains simulated
+in CI; real-QMD validation is a separate local command. Maintainer checks
+require actionlint, while copied projects keep their existing dependencies.
 
 ## License — 2026-09-04
 

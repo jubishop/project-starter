@@ -93,8 +93,8 @@ Reference: [QMD context documentation](https://github.com/tobi/qmd#context-manag
 
 ## Validate the copied result and record its version
 
-Test the starter as copied into disposable repositories. The current delivery
-requires local macOS validation; Linux execution is deferred. Include existing
+Test the starter as copied into disposable repositories. Run the base bundle
+and the optional GitHub integration on macOS and Linux in CI. Include existing
 hooks, missing optional tools, subdirectory searches,
 repeated setup, concurrent refresh requests, and worktree isolation.
 

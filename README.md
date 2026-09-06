@@ -17,11 +17,16 @@ belong to the new project and can evolve independently.
   the same checks in GitHub Actions.
 - [Design and validation](docs/README.md): decisions, guarantees, and evidence.
 
-The scripts target macOS and Linux. Validation for this release runs locally
-on macOS; Linux execution is not claimed. Git and Python 3.9+ are required.
+The scripts target macOS and Linux. The
+[starter CI](.github/workflows/check.yml) runs checks on both platforms,
+including an adopted copy with the optional GitHub workflow. See
+[validation](docs/validation.md) for executed results. Git and Python 3.9+ are required.
 ShellCheck is required for checks. QMD and direnv are optional.
 
-Maintainers run `bin/check`. For a real-QMD smoke test using existing local
+Maintainers run `bin/check`, which also requires
+[actionlint](https://github.com/rhysd/actionlint/blob/main/docs/install.md) to
+check the maintained and copyable workflows. This extra dependency is only
+for maintaining the starter. For a real-QMD smoke test using existing local
 models, run `bin/smoke-qmd --models /absolute/path/to/models`.
 
 Released under the [MIT license](LICENSE). Keep `LICENSE.project-starter`
