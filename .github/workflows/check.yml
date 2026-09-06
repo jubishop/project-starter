@@ -27,10 +27,11 @@ jobs:
       - name: Install ShellCheck on Linux
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install --yes shellcheck
-      - name: Install ShellCheck on macOS
+      - name: Install check tools on macOS
         if: runner.os == 'macOS'
-        run: brew install shellcheck
-      - name: Install actionlint
+        run: brew install shellcheck actionlint
+      - name: Install actionlint on Linux
+        if: runner.os == 'Linux'
         env:
           GOBIN: ${{ runner.temp }}/project-starter-bin
         run: |
