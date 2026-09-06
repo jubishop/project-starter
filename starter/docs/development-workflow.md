@@ -199,7 +199,8 @@ Choose validation by the changed files and the stage of the work:
 | --- | --- |
 | Discussion, planning, or read-only inspection | No checks. |
 | A batch of Markdown edits | `bin/check --documents-only`. |
-| Code edits during development | Focused application tests and `bin/check`. |
+| Application code edits during development | Run relevant application checks explicitly. |
+| Foundation tooling edits | `bin/check` during development; `--full` when complete. |
 | Initial setup; changes to foundation tools, hooks, configuration, tests, or CI | `bin/check --full` after the edits are complete. |
 | A code PR or release ready for delivery | `bin/check --full` once for the final changes. |
 
@@ -219,11 +220,19 @@ disposable repositories and simulated QMD/direnv, with no model downloads or
 network access. Remote URLs are not fetched by foundation checks.
 
 Keep the foundation checks when adding application tests, builds, and linters.
-Keep the default command fast. Run focused tests, typechecking, or lint there
-as appropriate; put production builds and expensive suites behind `--full`.
-`--documents-only` must skip application validation. Pass both options through
+The default command runs foundation static checks only. Application
+typechecking, lint, tests, builds, and package-manager startup belong behind
+`--full`. Both routine modes must skip application tools. Run relevant
+application commands explicitly during code work. Pass both options through
 the integrated entry point, and verify that `--full` runs application checks
-too; an existing wrapper may incorrectly skip them whenever arguments are set.
+only after foundation checks pass. An existing wrapper may incorrectly skip
+application checks whenever arguments are set.
+
+Use simulated application commands in adoption tests to prove that routine
+modes start none, `--full` starts the required checks, and failures propagate.
+Measure routine-mode duration on the target; aim for well under one second
+on a small repository. Keep CI assertions about which commands run, without
+a fixed timing threshold that depends on machine load.
 For generated or externally owned docs, add deliberate patterns to
 `checks.exclude` in `.config/knowledge.json`. Avoid broad exclusions that hide
 hand-written project knowledge.

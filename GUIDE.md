@@ -49,11 +49,14 @@ those names. Keep disposable tests independent of production services and
 private data.
 
 Keep the copied check modes when integrating application commands:
-`bin/check` runs fast static checks, `bin/check --documents-only` checks
-Markdown, and `bin/check --full` adds foundation behavior tests and expensive
-application checks such as production builds. Forward the options through
-existing wrappers; verify that `--full` does not accidentally skip application
-checks. Update existing CI commands to use `--full` in the same change.
+`bin/check` runs only foundation static checks, `bin/check --documents-only`
+checks Markdown, and `bin/check --full` adds foundation behavior tests and
+application validation. Do not add application typechecking, lint, tests,
+builds, or package-manager startup to either routine mode, even if a command
+seems fast in isolation. Run relevant application checks explicitly during
+code work. Forward the options through existing wrappers; application commands
+must run only when `--full` is present and the foundation checks pass. Update
+existing CI commands to use `--full` in the same change.
 
 Adapt agent instructions to choose checks by the changed files. Discussion
 and read-only work need no checks. Batch Markdown edits before a document
@@ -123,6 +126,15 @@ The copied tests use disposable repositories and simulated tools. They cover
 metadata, indexes, links, existing hooks, missing dependencies, search routing,
 concurrency, failures, and worktree isolation. Preserve these checks when
 adding application validation.
+
+Test the adopted entry point with simulated application commands that record
+invocations: plain `bin/check` and `--documents-only` must call none, `--full`
+must run the required application checks, and a failure must stop the command
+with a nonzero exit status. Keep this regression in the target project.
+Time the routine modes on the actual target and report the measurements.
+Aim for well under one second on a small repository; investigate extra work
+instead of describing a multi-second command as fast. Use invocation tests,
+not a fixed timing threshold, for CI so machine load does not cause failures.
 
 When QMD is available, refresh and verify a distinctive term from a real
 project document, a focused read, and collection exclusions. The source

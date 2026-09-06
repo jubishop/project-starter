@@ -135,7 +135,7 @@ instructions or runtime dependency to projects that copy the starter.
 The user reported repeated checks during conversation, with one run taking
 about 30 seconds. Use a fast default `bin/check` for static validation and
 retain `--documents-only` for Markdown edits. Require explicit `--full` for
-the disposable-repository behavior tests and expensive application checks.
+the disposable-repository behavior tests and all application checks.
 Setup and copied CI instructions use `--full`; the maintainer command in
 this source repository continues to run the complete suite.
 
@@ -144,6 +144,13 @@ Discussion and read-only work need no checks. Batch edits, run the full suite
 after setup or foundation changes and before a code PR or release, and reuse
 passing results until relevant inputs change. Existing projects must update
 their application wrappers and CI commands with the mode change.
+
+The first correction still allowed application typechecking and lint in the
+default path. Those commands and package-manager startup kept a small adopted
+project above two seconds. The default now permits foundation static checks
+only. Application checks run explicitly for code edits or through `--full`.
+Adoption must verify which commands each mode starts and measure routine
+latency; use behavioral assertions in CI instead of a timing threshold.
 
 ## License — 2026-09-04
 
