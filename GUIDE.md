@@ -58,6 +58,23 @@ code work. Forward the options through existing wrappers; application commands
 must run only when `--full` is present and the foundation checks pass. Update
 existing CI commands to use `--full` in the same change.
 
+Always state in the target's agent instructions that regression fixes and
+functional changes require automated tests for the changed behavior. Use
+red-green test-driven development (TDD) whenever practical: write or update
+a focused test, confirm it fails for the expected reason before implementation,
+then make the change and confirm it passes. If testing first is not practical,
+explain why and how the behavior was verified. Preserve stronger existing
+testing requirements and adapt the
+[testing workflow](starter/docs/development-workflow.md#test-driven-development)
+to the project's test commands.
+
+Also state that tests must exercise externally observable behavior: user-visible
+outcomes, public interfaces, and interactions with external systems. Put fakes
+at those system boundaries so the project's real logic runs. Do not test
+private helpers or internal structure, expose private functionality, or add
+production APIs only for tests. Internal refactoring that preserves behavior
+should not require test changes.
+
 Adapt agent instructions to choose checks by the changed files. Discussion
 and read-only work need no checks. Batch Markdown edits before a document
 check, and use focused checks during code work. Run the full suite after

@@ -11,6 +11,18 @@ Read focused results with `bin/knowledge get <path> -l 80`.
 Use direct reads for known files or when search is unavailable or stale.
 Markdown source files are authoritative. Update existing pages when possible.
 
+Regression fixes and functional changes require automated tests for the
+changed behavior. Use red-green test-driven development (TDD) whenever
+practical: prove a focused test fails before implementation and passes after.
+If testing first is not practical, explain why and how the behavior was
+verified. Follow the [testing workflow](docs/development-workflow.md#test-driven-development).
+
+Test user-visible outcomes, public interfaces, and interactions with external
+systems. Put fakes at external-system boundaries so real project logic runs.
+Do not test private helpers or internal structure, expose private functionality,
+or add production APIs only for tests. Tests should allow internal refactoring
+that preserves behavior.
+
 Run `bin/setup` after cloning. Choose checks for the changed files: use
 `bin/check --documents-only` for Markdown edits and `bin/check` for foundation
 checks only. Keep application tools out of both modes; run relevant application

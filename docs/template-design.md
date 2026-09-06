@@ -152,6 +152,28 @@ only. Application checks run explicitly for code edits or through `--full`.
 Adoption must verify which commands each mode starts and measure routine
 latency; use behavioral assertions in CI instead of a timing threshold.
 
+## Tests for behavior changes — 2026-09-06
+
+Every regression fix and functional change requires automated tests for the
+changed behavior. Make this explicit in the guide, maintainer instructions,
+and copied project instructions. Use red-green test-driven development (TDD)
+whenever practical: prove a focused test fails for the expected reason before
+implementation, then passes after the change. Refactor with tests passing.
+
+If testing first is not practical, explain why and report the verification
+performed and its limits; retain automated coverage for the changed behavior.
+Documentation-only changes need the applicable document checks, not new
+behavior tests. Focused red and green runs complement the check schedule above.
+The user requested this as a basic setup rule so behavior changes have direct
+test evidence, beyond running an existing suite.
+
+Tests must exercise externally observable behavior through user-visible
+outcomes, public interfaces, and interactions with external systems. Place
+fakes at external-system boundaries so the project's real logic runs. Do not
+test private helpers or internal structure, expose private functionality, or
+add production APIs only for tests. The user requested this boundary so tests
+protect actual behavior while allowing internal refactoring.
+
 ## License — 2026-09-04
 
 Use the MIT license for the guide and starter files. Preserve its notice in
