@@ -7,7 +7,9 @@ Replace this introduction with the project's purpose and main entry points.
 Run `bin/setup` after cloning. It requires Git and Python 3.9 or later.
 QMD and direnv are optional; setup reports skipped features.
 
-Run `bin/check` before delivering changes. It also requires ShellCheck.
+Use `bin/check --documents-only` for Markdown edits and `bin/check` for fast
+checks. Run `bin/check --full` after setup or foundation changes, and before
+a code PR or release. The fast and full checks require ShellCheck.
 Use `bin/doctor` for diagnostics. See the
 [development workflow](docs/development-workflow.md) for search, worktrees,
 hook integration, and recovery.

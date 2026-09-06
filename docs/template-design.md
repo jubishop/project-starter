@@ -130,6 +130,21 @@ permission, and PR permission does not imply merge permission.
 Keep the step in the guide read on request. It adds no automatically loaded
 instructions or runtime dependency to projects that copy the starter.
 
+## Check frequency and cost — 2026-09-05
+
+The user reported repeated checks during conversation, with one run taking
+about 30 seconds. Use a fast default `bin/check` for static validation and
+retain `--documents-only` for Markdown edits. Require explicit `--full` for
+the disposable-repository behavior tests and expensive application checks.
+Setup and copied CI instructions use `--full`; the maintainer command in
+this source repository continues to run the complete suite.
+
+Agent instructions choose validation by changed files and delivery stage.
+Discussion and read-only work need no checks. Batch edits, run the full suite
+after setup or foundation changes and before a code PR or release, and reuse
+passing results until relevant inputs change. Existing projects must update
+their application wrappers and CI commands with the mode change.
+
 ## License — 2026-09-04
 
 Use the MIT license for the guide and starter files. Preserve its notice in

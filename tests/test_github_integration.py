@@ -18,6 +18,9 @@ class GitHubIntegrationTests(unittest.TestCase):
             shutil.copytree(ROOT / "starter", repo,
                             ignore=shutil.ignore_patterns("__pycache__", ".cache"))
             shutil.copytree(ROOT / "extras/github/.github", repo / ".github")
+            # CI must retain behavior tests when the local default is fast.
+            workflow = (repo / ".github/workflows/check.yml").read_text()
+            self.assertIn("run: bin/check --full\n", workflow)
             for relative, link in (
                 ("README.md", ".github/workflows/check.yml"),
                 ("docs/development-workflow.md", "../.github/workflows/check.yml"),

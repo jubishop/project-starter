@@ -16,7 +16,7 @@ tool versions in each run. See the
 [workflow runs](https://github.com/jubishop/project-starter/actions/workflows/check.yml)
 for results tied to exact commits.
 
-The command runs the 21 base foundation tests and a GitHub adoption regression.
+The command runs the base foundation tests and a GitHub adoption regression.
 The regression copies the actual optional workflow into a disposable project,
 links it from the README and development docs, then runs the three document
 tests that create further copies. This detects missing workflow files in
@@ -26,6 +26,12 @@ actionlint validates both maintained and copyable workflows. It is a
 maintainer dependency; copied projects still require only ShellCheck for
 their foundation checks. QMD and direnv are simulated in automated tests.
 These checks do not establish real-QMD compatibility on a CI runner.
+
+Copied projects now use a fast default `bin/check` for document, syntax,
+ShellCheck, and whitespace validation. `--documents-only` checks Markdown;
+`--full` adds the behavior suite. Regression tests verify mode selection,
+failure propagation, required test files, and retained syntax/lint/whitespace
+checks. The adoption regression also verifies that copied CI uses `--full`.
 
 ## Environment
 

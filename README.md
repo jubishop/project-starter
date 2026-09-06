@@ -16,7 +16,7 @@ and ask the user before updating the starter or opening a pull request.
 - [Guide](GUIDE.md): how to apply and verify the foundation.
 - [Starter files](starter/): the copyable bundle, including its own checks.
 - [Optional GitHub workflow](extras/github/.github/workflows/check.yml): run
-  the same checks in GitHub Actions.
+  the full checks in GitHub Actions.
 - [Design and validation](docs/README.md): decisions, guarantees, and evidence.
 
 The scripts target macOS and Linux. The
@@ -25,7 +25,12 @@ including an adopted copy with the optional GitHub workflow. See
 [validation](docs/validation.md) for executed results. Git and Python 3.9+ are required.
 ShellCheck is required for checks. QMD and direnv are optional.
 
-Maintainers run `bin/check`, which also requires
+Copied projects use `bin/check` for fast checks, `--documents-only` for
+Markdown edits, and `--full` for foundation tests and CI. Discussion needs
+no checks. Batch edits and reuse passing results until relevant inputs change.
+
+In this source repository, maintainers run `bin/check`, which always runs
+the full suite and also requires
 [actionlint](https://github.com/rhysd/actionlint/blob/main/docs/install.md) to
 check the maintained and copyable workflows. This extra dependency is only
 for maintaining the starter. For a real-QMD smoke test using existing local

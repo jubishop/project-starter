@@ -48,6 +48,20 @@ from the existing command. Adapt the workflow document and test fixtures to
 those names. Keep disposable tests independent of production services and
 private data.
 
+Keep the copied check modes when integrating application commands:
+`bin/check` runs fast static checks, `bin/check --documents-only` checks
+Markdown, and `bin/check --full` adds foundation behavior tests and expensive
+application checks such as production builds. Forward the options through
+existing wrappers; verify that `--full` does not accidentally skip application
+checks. Update existing CI commands to use `--full` in the same change.
+
+Adapt agent instructions to choose checks by the changed files. Discussion
+and read-only work need no checks. Batch Markdown edits before a document
+check, and use focused checks during code work. Run the full suite after
+setup or foundation changes, and once before a code PR or release. Reuse a
+passing result until relevant inputs change; a conversational handoff alone
+does not require another run.
+
 If a runtime requires a different instructions filename, use its supported
 mechanism to reference the maintained `AGENTS.md`. Preserve existing runtime
 instructions. Do not duplicate this guide into automatically loaded context.
@@ -97,7 +111,7 @@ Run the integrated setup, checks, and diagnostics. In an unmodified bundle:
 
 ```sh
 bin/setup
-bin/check
+bin/check --full
 bin/doctor
 ```
 
@@ -132,14 +146,14 @@ Link to the delivered workflow from the project's development docs. The
 copied foundation tests include `.github/` when present so those links work
 inside disposable repositories. If adapted docs link to other project files,
 include those required files in the test fixtures as well. Run the full
-`bin/check` after adding the workflow; document-only checks do not exercise
+`bin/check --full` after adding the workflow; document-only checks do not exercise
 the test fixtures. Use actionlint to validate workflow syntax when available.
 
 After an authorized push, verify the workflow result for the exact pushed
 commit. Report a pending, skipped, or failed run explicitly. Passing local
 checks does not establish that runner setup or CI passed. The starter's own
 CI checks both the base bundle and GitHub integration on macOS and Linux;
-QMD is simulated there. Other CI systems can invoke the same check command.
+QMD is simulated there. Other CI systems should invoke `bin/check --full`.
 
 Deliver a short report of changes, adaptations, checks actually run, and
 skipped optional features. Commit or publish according to the user's request
@@ -188,7 +202,8 @@ updater.
 Copied files belong to the project. There is no updater, service, or runtime
 dependency on this repository. Compare the recorded starter revision with a
 chosen release, merge relevant improvements, update `.project-starter.json`,
-and rerun checks.
+and run `bin/check --full`. When adopting the fast default into an existing
+project, update its instructions, application wrapper, and CI command together.
 
 The guide and starter are [MIT licensed](LICENSE). Retain the included notice;
 do not replace the target project's own license.
