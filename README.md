@@ -10,6 +10,8 @@ QMD search, Git hooks, and worktrees. Point a coding agent at
 
 No skill installation or automatic context loading is required. Copied files
 belong to the new project and can evolve independently.
+Agents applying the guide [propose reusable improvements](GUIDE.md#6-propose-improvements-to-project-starter)
+and ask the user before updating the starter or opening a pull request.
 
 - [Guide](GUIDE.md): how to apply and verify the foundation.
 - [Starter files](starter/): the copyable bundle, including its own checks.

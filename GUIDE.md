@@ -145,6 +145,44 @@ Deliver a short report of changes, adaptations, checks actually run, and
 skipped optional features. Commit or publish according to the user's request
 and the target repository's rules.
 
+## 6. Propose improvements to Project Starter
+
+While applying this guide, look for improvements that would help other
+projects use the starter. Examples include unclear instructions, missing
+integration steps, and failures the starter's checks did not catch. Base
+proposals on what you observed. Distinguish a reusable starter improvement
+from an application-specific choice, and do not invent suggestions when
+the setup reveals none.
+
+Complete the authorized target setup and its checks. Then present any
+proposed starter updates to the user who requested the setup. For each
+proposal, explain the observed problem, the concrete change, why it belongs
+in Project Starter, and how you would verify it. Include enough detail for
+the user to review the change before approving it.
+
+Ask whether the user wants you to open a pull request against
+[Project Starter](https://github.com/jubishop/project-starter), or apply the
+proposed changes to an existing local checkout. If no local checkout is
+known, ask whether one exists and request its path as part of that question.
+State that this approval is for changing the shared starter, in addition
+to the target project's setup.
+
+Wait for the user's approval before changing the starter or opening a PR.
+An existing local checkout is not itself permission to edit it. Reuse an
+explicit approval already given for the same proposal and delivery route;
+do not ask for it again. If the user declines or does not answer, leave the
+proposals with the completed setup report.
+
+After approval, read the starter checkout's instructions, inspect its Git
+state, and check whether the proposed fix already exists. Preserve unrelated
+work. Implement and validate the agreed changes, then deliver the local
+update or PR the user requested. Approval for local edits alone does not
+authorize publication; approval to open a PR does not authorize merging it.
+
+Keep this feedback step in the guide read on request. Do not add it to the
+copied project's automatically loaded instructions or install a background
+updater.
+
 ## Maintenance
 
 Copied files belong to the project. There is no updater, service, or runtime

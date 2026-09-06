@@ -115,6 +115,21 @@ checks. This extends the initial validation scope above. QMD remains simulated
 in CI; real-QMD validation is a separate local command. Maintainer checks
 require actionlint, while copied projects keep their existing dependencies.
 
+## Adoption feedback — 2026-09-05
+
+Agents applying the guide should propose improvements to Project Starter
+when the setup reveals reusable gaps. The user requested this feedback step
+so lessons from adoption can improve the guide and template.
+
+Present concrete proposals to the person who requested the setup and ask
+for approval to open a PR or update an existing local starter checkout.
+Complete the target setup independently. Reuse approval already given for
+the same proposal and route. Local edit permission does not imply publishing
+permission, and PR permission does not imply merge permission.
+
+Keep the step in the guide read on request. It adds no automatically loaded
+instructions or runtime dependency to projects that copy the starter.
+
 ## License — 2026-09-04
 
 Use the MIT license for the guide and starter files. Preserve its notice in
