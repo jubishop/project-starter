@@ -191,6 +191,26 @@ it is not an integrity scan of the SQLite database. If QMD reports database
 errors despite a current fingerprint, use the foreground refresh and inspect
 its log. Manually replacing the database requires a forced refresh.
 
+## Third-party dependencies
+
+Prefer fewer third-party dependencies. Start with the standard library,
+platform APIs, and the smallest complete implementation the project can own
+and maintain. Choose that approach when it meets the project's needs with a
+reasonable maintenance burden. A dependency is appropriate when its concrete
+benefits justify the cost.
+
+Compare both options against the actual requirements. Include validation,
+edge cases, security, ongoing maintenance, upgrades, and any additional
+packages the dependency brings. Do not compare a complete library with an
+incomplete local implementation. Explain the benefit to the project; avoiding
+initial implementation work alone is not enough reason to add a package or
+framework.
+
+Apply this preference through ordinary technical judgment. It does not add
+a separate approval requirement for packages. Preserve existing stack choices
+when adopting the foundation; assess dependency changes as part of relevant
+project work.
+
 ## Test-driven development
 
 Regression fixes and functional changes require automated tests that cover

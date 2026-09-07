@@ -54,4 +54,4 @@ searched. Do not exempt hand-written pages merely to bypass failed checks.
 ## Active pages
 
 - [Development workflow](development-workflow.md): setup, search, hooks,
-  worktrees, diagnostics, and recovery.
+  worktrees, diagnostics, dependency choices, testing, and checks.

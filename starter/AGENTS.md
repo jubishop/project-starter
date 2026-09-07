@@ -11,6 +11,13 @@ Read focused results with `bin/knowledge get <path> -l 80`.
 Use direct reads for known files or when search is unavailable or stale.
 Markdown source files are authoritative. Update existing pages when possible.
 
+Prefer fewer third-party dependencies. Use standard libraries, platform APIs,
+or a focused implementation owned by the project when they meet its needs at
+a reasonable maintenance cost. Add a dependency when its concrete benefits
+justify it; initial implementation convenience alone is not enough. Apply
+the [dependency policy](docs/development-workflow.md#third-party-dependencies)
+through ordinary technical judgment, without a separate approval step.
+
 Regression fixes and functional changes require automated tests for the
 changed behavior. Use red-green test-driven development (TDD) whenever
 practical: prove a focused test fails before implementation and passes after.

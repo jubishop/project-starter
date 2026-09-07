@@ -58,6 +58,16 @@ code work. Forward the options through existing wrappers; application commands
 must run only when `--full` is present and the foundation checks pass. Update
 existing CI commands to use `--full` in the same change.
 
+Include the preference for fewer third-party dependencies in the target's
+agent instructions. Prefer standard libraries, platform APIs, or a focused
+implementation owned by the project when they meet its needs at a reasonable
+maintenance cost. A dependency can be justified by concrete benefits; avoiding
+initial implementation work alone is not enough. Apply the
+[dependency policy](starter/docs/development-workflow.md#third-party-dependencies)
+through ordinary technical judgment, without a separate package approval
+step. Preserve stronger existing dependency rules and the current application
+stack; adopting the foundation does not call for replacing existing packages.
+
 Always state in the target's agent instructions that regression fixes and
 functional changes require automated tests for the changed behavior. Use
 red-green test-driven development (TDD) whenever practical: write or update

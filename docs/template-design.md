@@ -174,6 +174,26 @@ test private helpers or internal structure, expose private functionality, or
 add production APIs only for tests. The user requested this boundary so tests
 protect actual behavior while allowing internal refactoring.
 
+## Third-party dependencies — 2026-09-06
+
+Make a preference for fewer third-party dependencies part of the guide,
+maintainer instructions, and copied project instructions. Prefer standard
+libraries, platform APIs, and focused implementations the project can own
+when they meet its needs with a reasonable maintenance burden. Dependencies
+remain appropriate when their concrete benefits justify their costs.
+
+The user expects increasingly capable coding models to make it more practical
+to build and maintain focused implementations. Avoiding initial development
+work alone is not enough reason to add a package or framework. Compare the
+smallest complete owned implementation with the dependency, including
+validation, edge cases, security, maintenance, upgrades, and additional
+packages. A library can still reduce the total work or risk.
+
+Use ordinary technical judgment without a separate package approval step.
+Preserve existing stack choices during adoption. Keep the detailed
+[dependency policy](../starter/docs/development-workflow.md#third-party-dependencies)
+in the copied workflow so each project can apply it to its own requirements.
+
 ## License — 2026-09-04
 
 Use the MIT license for the guide and starter files. Preserve its notice in
