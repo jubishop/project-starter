@@ -135,6 +135,12 @@ Home memory is excluded by default. Configure `knowledge.homeMemoryPath`
 locally only if the user wants it included. Each checkout has its own index;
 model files are shared while preserving existing cache choices.
 
+Keep refresh checks stable across shell commands and Git hooks. QMD
+subprocesses must not inherit Git repository selectors. Use the QMD release
+version for freshness; its optional Git commit suffix can identify an
+unrelated repository. Keep the regression tests for this behavior when
+adapting the helpers. See [refresh and recovery](starter/docs/development-workflow.md#refresh-and-recovery).
+
 ## 5. Set up and verify the result
 
 Run the integrated setup, checks, and diagnostics. In an unmodified bundle:
