@@ -30,12 +30,37 @@ Do not test private helpers or internal structure, expose private functionality,
 or add production APIs only for tests. Tests should allow internal refactoring
 that preserves behavior.
 
+Prepare unrelated test prerequisites through isolated fixtures or existing
+public interfaces. Use the least costly test level that proves the required
+behavior, retaining complete journeys and interaction-specific coverage.
+Measure before adding parallel execution and preserve test independence.
+See [test cost and coverage](docs/development-workflow.md#test-cost-and-coverage).
+
+Keep files focused on one coherent responsibility. Use approximately 1,000
+lines as a review threshold for hand-written source, tests, and styles, not
+a hard cap. Prefer cohesive extraction; do not compress formatting or create
+arbitrary fragments to meet a count. Larger files are acceptable when splitting
+would reduce clarity. See [file organization](docs/development-workflow.md#file-organization).
+
+Scope project source discovery and mutable validation output to the active
+checkout. Exclude nested worktrees and temporary copies; include required
+generated inputs deliberately. `.gitignore` does not control every tool's
+discovery. Follow [checkout isolation](docs/development-workflow.md#validation-checkout-isolation).
+
+Declare supported runtime and toolchain versions and keep development, CI,
+and deployment compatible with that policy. Application commands should reject
+unsupported versions before work starts. Prefer maintained releases and
+coordinate upgrades. See [runtime and toolchain versions](docs/development-workflow.md#runtime-and-toolchain-versions).
+
 Run `bin/setup` after cloning. Choose checks for the changed files: use
 `bin/check --documents-only` for Markdown edits and `bin/check` for foundation
 checks only. Keep application tools out of both modes; run relevant application
 checks explicitly for code edits.
-Run `bin/check --full` after setup or foundation changes, and before a code PR
-or release. Do not run checks for discussion or read-only work. Batch edits
+Run `bin/check --full` locally after setup, test/build infrastructure changes,
+or when focused checks leave material uncertainty. Require successful full
+validation before merge or release. An enforced full CI gate can supply that
+result for ordinary code changes; otherwise run the full check locally before
+delivery. Do not run checks for discussion or read-only work. Batch edits
 before checking; reuse passing results while relevant inputs are unchanged.
 See [the workflow](docs/development-workflow.md#checks-and-project-extensions).
 Use `bin/doctor` to inspect local setup and `bin/qmd-index` to refresh search

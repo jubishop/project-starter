@@ -140,10 +140,12 @@ Setup and copied CI instructions use `--full`; the maintainer command in
 this source repository continues to run the complete suite.
 
 Agent instructions choose validation by changed files and delivery stage.
-Discussion and read-only work need no checks. Batch edits, run the full suite
-after setup or foundation changes and before a code PR or release, and reuse
-passing results until relevant inputs change. Existing projects must update
-their application wrappers and CI commands with the mode change.
+Discussion and read-only work need no checks. Batch edits and reuse passing
+results until relevant inputs change. Follow the current
+[validation schedule](../starter/docs/development-workflow.md#checks-and-project-extensions),
+which distinguishes focused local checks from the full validation gate.
+Existing projects must update their application wrappers and CI commands with
+the mode change.
 
 The first correction still allowed application typechecking and lint in the
 default path. Those commands and package-manager startup kept a small adopted
@@ -193,6 +195,35 @@ Use ordinary technical judgment without a separate package approval step.
 Preserve existing stack choices during adoption. Keep the detailed
 [dependency policy](../starter/docs/development-workflow.md#third-party-dependencies)
 in the copied workflow so each project can apply it to its own requirements.
+
+## Portable engineering guidance — 2026-09-08
+
+Include concise, stack-neutral guidance for file organization, test cost and
+coverage, checkout isolation, runtime compatibility, and local versus CI
+validation. Keep the guide, maintainer instructions, and copied project
+instructions consistent, with details in the
+[copied workflow](../starter/docs/development-workflow.md).
+
+Files should have cohesive responsibilities. Approximately 1,000 lines is a
+review threshold, not a hard cap. Test optimizations must preserve behavioral
+evidence and independence. Project-source discovery and mutable validation
+state must respect checkout boundaries. Supported runtime and toolchain
+versions must be explicit and compatible across environments; the foundation
+does not prescribe an application language, version, or platform.
+
+Use focused local checks for ordinary code changes and require successful full
+validation before merge or release. An enforced full CI gate can supply that
+result. Without it, require full local validation before delivery. Setup,
+test/build infrastructure changes, and material uncertainty still require full
+local validation. This refines the earlier requirement to run the full suite
+locally before every code PR or release. The source repository's maintainer
+command continues to run its complete checks once per completed batch.
+
+The purpose is to reduce unnecessary work while preserving reliable delivery.
+The tradeoff is that failures outside focused local coverage may first appear
+in CI; the full gate must pass before delivery is complete. Preserve stronger
+existing project requirements during adoption. Keep these policies standalone,
+without references to another project or assumptions about its stack.
 
 ## License — 2026-09-04
 

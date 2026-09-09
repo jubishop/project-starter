@@ -12,7 +12,9 @@ user only about material choices that cannot be inferred from the project.
 
 Confirm the target path, Git state, branch, and uncommitted changes. Identify
 existing agent instructions, README, memory, docs, setup/check commands,
-environment configuration, hooks, and task tracker. Determine the effective
+environment configuration, supported toolchains, hooks, and task tracker.
+Identify the local validation commands and whether full CI is an enforced
+merge or release gate. Determine the effective
 hook directory, including local/global `core.hooksPath` and executable hooks
 in Git's default directory.
 
@@ -58,6 +60,30 @@ code work. Forward the options through existing wrappers; application commands
 must run only when `--full` is present and the foundation checks pass. Update
 existing CI commands to use `--full` in the same change.
 
+Include concise file-organization guidance in the target's instructions.
+Keep files cohesive and use approximately 1,000 lines as a review threshold
+for hand-written source, tests, and styles, not an automatic failure or hard
+cap. Preserve readable formatting and meaningful boundaries. Larger files
+are acceptable when extraction would reduce clarity. Keep the details in the
+[file organization policy](starter/docs/development-workflow.md#file-organization).
+
+Scope application validation inputs and mutable output to the intended
+checkout. Review compiler, formatter, build, and test discovery rather than
+assuming Git ignore rules exclude nested worktrees and temporary copies.
+Include required generated inputs deliberately and preserve safe sharing of
+immutable dependencies. Adapt the
+[checkout isolation policy](starter/docs/development-workflow.md#validation-checkout-isolation)
+to the project's tools.
+
+Declare supported runtime and toolchain versions using the target stack's
+existing mechanisms. Keep development, CI, and deployment compatible, and
+make application commands reject unsupported versions before work starts.
+Prefer maintained releases and coordinate upgrades after compatibility checks.
+Apply the [version policy](starter/docs/development-workflow.md#runtime-and-toolchain-versions)
+without selecting an application language or stack for the project. Foundation
+and document checks must not acquire dependencies on application runtimes they
+do not use.
+
 Include the preference for fewer third-party dependencies in the target's
 agent instructions. Prefer standard libraries, platform APIs, or a focused
 implementation owned by the project when they meet its needs at a reasonable
@@ -85,12 +111,24 @@ private helpers or internal structure, expose private functionality, or add
 production APIs only for tests. Internal refactoring that preserves behavior
 should not require test changes.
 
+Keep test setup proportional to the behavior under test. Prepare unrelated
+prerequisites through isolated fixtures or existing public interfaces, while
+retaining dedicated complete journeys. Put repeated rules in less costly
+tests when end-to-end execution adds no distinct evidence, and preserve
+coverage for every moved case. Measure simpler improvements before deciding
+whether parallel execution justifies its isolation work; never hide races
+with retries or weaker assertions. Adapt the
+[test cost and coverage policy](starter/docs/development-workflow.md#test-cost-and-coverage).
+
 Adapt agent instructions to choose checks by the changed files. Discussion
 and read-only work need no checks. Batch Markdown edits before a document
-check, and use focused checks during code work. Run the full suite after
-setup or foundation changes, and once before a code PR or release. Reuse a
-passing result until relevant inputs change; a conversational handoff alone
-does not require another run.
+check, and use focused local checks for ordinary code changes. Run the full
+suite locally after setup or test/build infrastructure changes, or when
+focused checks leave material uncertainty. Require successful full validation
+before merge or release. An enforced full CI gate can supply that result for
+ordinary changes; without it, require a full local check before delivery.
+Preserve stronger project requirements. Reuse a passing result until relevant
+inputs change; a conversational handoff alone does not require another run.
 
 If a runtime requires a different instructions filename, use its supported
 mechanism to reference the maintained `AGENTS.md`. Preserve existing runtime
@@ -168,6 +206,13 @@ Time the routine modes on the actual target and report the measurements.
 Aim for well under one second on a small repository; investigate extra work
 instead of describing a multi-second command as fast. Use invocation tests,
 not a fixed timing threshold, for CI so machine load does not cause failures.
+
+When adapting application discovery, verify that unrelated checkout files are
+excluded while errors in intended project files remain detectable. Check both
+fresh and warm validation caches after adding or removing a nested checkout.
+Verify runtime compatibility checks at the application's command boundary,
+including a clear failure before work starts for unsupported versions. Choose
+fixtures and commands appropriate to the target stack.
 
 When QMD is available, refresh and verify a distinctive term from a real
 project document, a focused read, and collection exclusions. The source

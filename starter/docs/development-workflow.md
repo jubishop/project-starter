@@ -34,6 +34,27 @@ settings, and review it before running `direnv allow`. QMD does not need direnv
 or shell-wide environment exports. Preserve useful existing environment
 settings when adapting setup; remove an obsolete QMD-only file.
 
+## Runtime and toolchain versions
+
+Declare the supported versions of the runtimes, compilers, and build tools
+the project uses. Keep local development, CI, and deployment compatible with
+that declaration. Use the stack's existing manifests, version files, and
+setup tools where practical; avoid conflicting declarations.
+
+Application commands should stop before installation, tests, builds, or
+service startup when the active versions are unsupported. Report the detected
+version, the supported range, and how to select a compatible toolchain.
+Keep document and foundation checks independent of application runtimes they
+do not use.
+
+Prefer recent maintained releases. Where an ecosystem offers a long-term
+support channel, prefer it unless the project has a reason to choose another
+supported channel. Upgrade deliberately after dependency and behavior checks,
+coordinating development, CI, and deployment. Do not let an unbounded version
+selector silently change the supported major release. This foundation does
+not select an application language, version, package manager, or deployment
+platform.
+
 ## Search
 
 From the root, use `bin/knowledge`. Setup also creates a repository-local
@@ -150,6 +171,25 @@ link and rerun `bin/prep-worktree`; do not delete a directory of model files.
 Remove worktrees only after checking for uncommitted and unpushed work.
 Use `git worktree remove` and verify the resulting `git worktree list`.
 
+### Validation checkout isolation
+
+Scope project-source discovery for builds, static analysis, formatting, and
+tests to the active checkout. Exclude nested worktrees, temporary copies, and
+unrelated generated output. Include required generated sources or metadata
+explicitly. Review each tool's discovery rules; Git ignore rules alone do not
+establish this boundary.
+
+Keep mutable test data, services, and build output separate between concurrent
+checkouts. Immutable dependencies or caches may be shared where the tool
+supports it safely. Preserve intentional cross-project checks with explicit
+inputs instead of broad recursive scans.
+
+When changing discovery or cache configuration, verify that errors in intended
+project files are still detected and invalid files in an unrelated checkout
+are not included. Check fresh and warm caches, including after an unrelated
+checkout is added, changed, or removed. Investigate stale results and document
+recovery; do not hide project errors through broad exclusions.
+
 ## Existing hooks
 
 Setup does not overwrite a different active `core.hooksPath` or bypass
@@ -197,6 +237,19 @@ Freshness means the recorded input fingerprint matches and the index exists;
 it is not an integrity scan of the SQLite database. If QMD reports database
 errors despite a current fingerprint, use the foreground refresh and inspect
 its log. Manually replacing the database requires a forced refresh.
+
+## File organization
+
+Keep each file focused on one coherent responsibility or feature area. Use
+approximately 1,000 lines as a review threshold for hand-written source,
+tests, and styles, not a hard cap or automatic CI failure. Generated and
+externally maintained files do not need arbitrary splitting.
+
+When extending a large file, consider extracting a cohesive area. Preserve
+clear state ownership, readable call paths, and meaningful test boundaries.
+Larger files are acceptable when splitting would reduce clarity. Do not
+compress formatting, create arbitrary numbered fragments, or move unrelated
+responsibilities into a replacement catch-all file to satisfy a line count.
 
 ## Third-party dependencies
 
@@ -252,6 +305,33 @@ expose private functionality or add production accessors or APIs only for tests.
 Use focused test commands during this cycle. The check schedule below governs
 broader validation and does not replace the red and green test runs.
 
+### Test cost and coverage
+
+When setup is not the behavior under test, prepare prerequisites through
+isolated fixtures or existing public interfaces. Keep real project logic
+running through the feature being checked. Retain dedicated end-to-end tests
+for the complete setup and user or system journeys; do not add production
+interfaces solely to make tests easier.
+
+Use the least costly test level that establishes the required behavior.
+Prefer direct application or integration tests for repeated rule checks when
+full end-to-end execution adds no distinct evidence. Retain end-to-end coverage
+for complete journeys and behavior that depends on the actual interaction
+surface. Account for equivalent coverage when moving a case; removing a slow
+assertion without replacing its evidence is not an optimization.
+
+Measure representative runs before and after simpler setup or coverage
+improvements. Record comparable environments, test inventories, setup costs,
+and total validation time so moving work does not hide its cost. Report failed
+or retried runs separately from successful-run timings.
+
+Use those results to decide whether parallel execution justifies the added
+isolation work. Identify shared mutable data, processes, files, and other
+resources; give them clear ownership and independent setup and cleanup.
+Validate independence and concurrent execution. Repeated passes alone do not
+prove that races are impossible. Keep sequential execution where interference
+remains unresolved, and do not hide failures with retries or weaker assertions.
+
 ## Checks and project extensions
 
 Choose validation by the changed files and the stage of the work:
@@ -260,15 +340,25 @@ Choose validation by the changed files and the stage of the work:
 | --- | --- |
 | Discussion, planning, or read-only inspection | No checks. |
 | A batch of Markdown edits | `bin/check --documents-only`. |
-| Application code edits during development | Run relevant application checks explicitly. |
+| Ordinary application code changes | Run relevant application checks locally; require full validation before merge or release as described below. |
 | Foundation tooling edits | `bin/check` during development; `--full` when complete. |
-| Initial setup; changes to foundation tools, hooks, configuration, tests, or CI | `bin/check --full` after the edits are complete. |
-| A code PR or release ready for delivery | `bin/check --full` once for the final changes. |
+| Initial setup; changes to test/build infrastructure, foundation tools, hooks, or CI | `bin/check --full` locally after the edits are complete. |
+| Focused checks leave material uncertainty | `bin/check --full` locally. |
+| A code PR or release ready for delivery without an enforced full CI gate | `bin/check --full` locally for the final changes. |
+
+Require successful full validation for the code being merged or released.
+For ordinary code changes, an enforced CI gate that runs `bin/check --full`
+can provide this result without duplicating the full suite locally. A pending,
+skipped, or failed CI run does not satisfy the gate. Without such a gate,
+including local-only projects, complete full local validation before delivery.
+Preserve stronger existing project requirements when adopting this policy.
 
 Batch related edits before checking. A conversational reply is not a release
 gate. Reuse a passing result while its relevant source, configuration, and
 dependencies are unchanged. Repeat a check when those inputs change or a
-failure needs verification. CI always runs the full check.
+failure needs verification. CI always runs the full check. Keep the distinction
+between focused local results and a successful full validation result clear in
+delivery reports.
 
 `bin/check --documents-only` validates the documented frontmatter subset,
 index coverage, local file links, and ordinary heading anchors.

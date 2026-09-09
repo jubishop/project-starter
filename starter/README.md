@@ -8,8 +8,13 @@ Run `bin/setup` after cloning. It requires Git and Python 3.9 or later.
 QMD and direnv are optional; setup reports skipped features.
 
 Use `bin/check --documents-only` for Markdown edits and `bin/check` for
-foundation checks only. Run `bin/check --full` after setup or foundation
-changes, and before a code PR or release. The fast and full checks require ShellCheck.
+foundation checks only. Use focused local checks for ordinary code changes.
+Run `bin/check --full` locally after setup, test/build infrastructure changes,
+or when focused checks leave material uncertainty. Require successful full
+validation before merge or release; an enforced full CI gate can provide it
+for ordinary changes. Without that gate, run the full check locally before
+delivery. See the [validation policy](docs/development-workflow.md#checks-and-project-extensions).
+The fast and full checks require ShellCheck.
 Use `bin/doctor` for diagnostics. See the
 [development workflow](docs/development-workflow.md) for search, worktrees,
 hook integration, and recovery.
