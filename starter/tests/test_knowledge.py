@@ -383,7 +383,7 @@ sys.exit(int(os.environ.get("OLD_HOOK_EXIT", "0")))
         self.run_command("bin/setup")
         initial = len(self.records())
         archive = self.repo / "memory/archive"
-        archive.mkdir()
+        archive.mkdir(exist_ok=True)
         (archive / "old.md").write_text("# Excluded\n")
         self.drain()
         self.assertEqual(len(self.records()), initial)
@@ -464,7 +464,7 @@ sys.exit(int(os.environ.get("OLD_HOOK_EXIT", "0")))
 
     def test_archived_pages_cannot_remain_in_active_indexes(self):
         archive = self.repo / "memory/archive"
-        archive.mkdir()
+        archive.mkdir(exist_ok=True)
         (archive / "incident.md").write_text("---\nname: incident\ndescription: Resolved incident.\ntype: project\nstatus: resolved\n---\n\n# Incident\n")
         with (self.repo / "memory/README.md").open("a") as stream:
             stream.write("\n- [Old incident](archive/incident.md)\n")

@@ -22,6 +22,10 @@ links it from the README and development docs, then runs the three document
 tests that create further copies. This detects missing workflow files in
 those test fixtures. The base tests also verify use without GitHub files.
 
+A separate adoption regression adds an existing resolved memory page before
+running the copied archive checks. It verifies that those checks accept an
+existing `memory/archive/` directory and preserve the archived source page.
+
 actionlint validates both maintained and copyable workflows. It is a
 maintainer dependency; copied projects still require only ShellCheck for
 their foundation checks. QMD and direnv are simulated in automated tests.
