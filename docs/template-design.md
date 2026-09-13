@@ -91,6 +91,20 @@ Use the following defaults to implement the requested foundation:
 - Treat copied starter files as project-owned files that can evolve with the
   project. Keep the guide and bundle usable without an installed skill.
 
+## Search reliability decision — 2026-09-13
+
+Require current indexed inputs before returning knowledge lookup results.
+Automatically refresh stale state with a bounded wait; discard results on
+failure or when inputs change during retrieval. Report configured QMD failures
+to the user immediately, attempt repair, and pause knowledge-dependent work
+after unsuccessful repair until the user approves a fallback.
+
+The user reported that warning-only behavior lets agents silently substitute
+direct reads and leave search broken indefinitely. The tradeoff is a freshness
+check on each lookup and a possible wait for pending indexing. Keep ordinary
+known-file reads and deliberate operation without optional QMD available.
+The detailed contract is in the [search failure policy](../starter/docs/development-workflow.md#search-failures).
+
 ## Improvements accepted — 2026-09-04
 
 All [design principles](design-principles.md) are accepted, including collection

@@ -179,6 +179,18 @@ version for freshness; its optional Git commit suffix can identify an
 unrelated repository. Keep the regression tests for this behavior when
 adapting the helpers. See [refresh and recovery](starter/docs/development-workflow.md#refresh-and-recovery).
 
+Preserve lookup freshness enforcement: refresh stale inputs before searching,
+bound the automatic wait, and return no results if refresh or lookup fails or
+the inputs change during the lookup. Keep progress on stderr. Test these
+failure and recovery paths when adapting the command.
+
+Include the [search failure policy](starter/docs/development-workflow.md#search-failures)
+in the target's agent instructions: report configured QMD failures immediately,
+attempt repair, and pause knowledge-dependent work if repair fails until the
+user approves a fallback. Never silently bypass the failure with direct reads
+or `rg`. Preserve deliberately chosen operation without optional QMD; a broken
+configured tool is not evidence that the project made that choice.
+
 ## 5. Set up and verify the result
 
 Run the integrated setup, checks, and diagnostics. In an unmodified bundle:

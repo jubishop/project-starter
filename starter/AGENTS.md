@@ -8,8 +8,12 @@ Before non-trivial work or writing memory, search the relevant knowledge.
 Use `bin/knowledge search "term"` for known terms and
 `bin/knowledge query "question" --no-rerank` for broader questions.
 Read focused results with `bin/knowledge get <path> -l 80`.
-Use direct reads for known files or when search is unavailable or stale.
-Markdown source files are authoritative. Update existing pages when possible.
+Use direct reads or `rg` for known paths or after a successful lookup with no
+matches. Markdown source files are authoritative. Update existing pages when possible.
+If configured QMD fails, report it to the user immediately and attempt repair.
+If repair fails, pause knowledge-dependent work until the user approves a
+fallback; never silently bypass broken QMD with `rg` or direct reads. Follow
+the [search failure policy](docs/development-workflow.md#search-failures).
 
 Prefer fewer third-party dependencies. Use standard libraries, platform APIs,
 or a focused implementation owned by the project when they meet its needs at

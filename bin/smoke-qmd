@@ -115,7 +115,6 @@ def main():
         linked_proof.write_text(linked_proof.read_text() + "\nworktreeonlymarkerzeta belongs only to this checkout.\n")
         stale = json.loads(run("bin/doctor", "--json", cwd=worktree, check=False).stdout)
         assert stale["freshness"] == "stale", stale
-        run("bin/qmd-index", cwd=worktree)
         assert json.loads(run("git", "knowledge", "search", "worktreeonlymarkerzeta", "--json", cwd=worktree / "docs").stdout)
         assert not json.loads(run("bin/knowledge", "search", "worktreeonlymarkerzeta", "--json").stdout)
         assert not os.path.samefile(repo / ".cache/qmd/index.sqlite", worktree / ".cache/qmd/index.sqlite")

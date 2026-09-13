@@ -46,6 +46,19 @@ Keep a foreground refresh command for uncommitted edits and recovery.
 Search documentation must explain that Git hooks do not observe each file
 save. Use QMD's incremental indexing rather than implementing a second indexer.
 
+## Make search failures visible and enforce freshness
+
+Before returning a knowledge lookup, verify its index against current source
+and configuration. Refresh stale inputs automatically with a bounded wait.
+Discard results if refresh fails, QMD fails, or inputs change during retrieval.
+Keep progress on stderr so structured output contains only successful results.
+
+Agents report configured search failures immediately and attempt repair. If
+repair fails, pause knowledge-dependent work until the user approves a fallback.
+Silent replacement with direct reads can conceal a persistently broken index.
+Known-file reads and successful searches with no matches remain normal work.
+Deliberate operation without optional QMD remains an explicit project choice.
+
 ## Add a read-only diagnostic command
 
 A command such as `bin/doctor` should report the active hook integration,
