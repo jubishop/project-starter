@@ -67,6 +67,15 @@ cap. Preserve readable formatting and meaningful boundaries. Larger files
 are acceptable when extraction would reduce clarity. Keep the details in the
 [file organization policy](starter/docs/development-workflow.md#file-organization).
 
+Also include guidance for memory, docs, and other Markdown pages. Keep each
+page focused on one topic or reader task. Review long pages before extending
+them, and split independent topics when that improves reading and maintenance.
+Use these signals without numeric size thresholds. Keep summaries and links
+at the original location, preserve decision reasons and evidence, and repair
+indexes and incoming links. Keep detailed policy in the
+[Markdown guidance](starter/docs/development-workflow.md#markdown-pages) and
+link to it from the memory and docs indexes. Preserve project-specific formats.
+
 Scope application validation inputs and mutable output to the intended
 checkout. Review compiler, formatter, build, and test discovery rather than
 assuming Git ignore rules exclude nested worktrees and temporary copies.

@@ -41,6 +41,11 @@ the old decision. Do not store interview transcripts or task checklists here.
 
 ## Organization and links
 
+Keep each page focused on one topic or reader task. Review long pages before
+extending them, and move independent topics into linked pages when useful.
+Preserve decision reasons and evidence. Follow the
+[Markdown guidance](development-workflow.md#markdown-pages).
+
 Keep small projects flat. Add `initiatives/` or `research/` when needed.
 Link every active page from this index, directly or through another README
 index. Remove archived pages from active indexes. Use relative Markdown file

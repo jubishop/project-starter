@@ -46,6 +46,11 @@ a hard cap. Prefer cohesive extraction; do not compress formatting or create
 arbitrary fragments to meet a count. Larger files are acceptable when splitting
 would reduce clarity. See [file organization](docs/development-workflow.md#file-organization).
 
+Keep memory, docs, and other Markdown pages focused on one topic or reader
+task. When extending a long page, review its scope and split independent
+topics into linked pages when that improves reading and maintenance. Use
+the [Markdown guidance](docs/development-workflow.md#markdown-pages), without numeric size thresholds.
+
 Scope project source discovery and mutable validation output to the active
 checkout. Exclude nested worktrees and temporary copies; include required
 generated inputs deliberately. `.gitignore` does not control every tool's

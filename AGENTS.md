@@ -28,9 +28,15 @@ Use isolated fixtures for unrelated test prerequisites and preserve complete
 journeys where they add distinct evidence. Follow the
 [test cost and coverage policy](starter/docs/development-workflow.md#test-cost-and-coverage).
 
-Keep files cohesive, using approximately 1,000 lines as a review threshold,
-not a hard cap. Do not compress formatting or create arbitrary fragments.
+Keep files cohesive, using approximately 1,000 lines as a review threshold
+for hand-written source, tests, and styles, not a hard cap. Do not compress
+formatting or create arbitrary fragments.
 Follow the [file organization policy](starter/docs/development-workflow.md#file-organization).
+
+Keep memory, docs, and other Markdown pages focused on one topic or reader
+task. When extending a long page, review its scope and split independent
+topics into linked pages when that improves reading and maintenance. Use
+the [Markdown guidance](starter/docs/development-workflow.md#markdown-pages), without numeric size thresholds.
 
 Scope validation inputs and mutable output to the intended checkout. Preserve
 the [checkout isolation](starter/docs/development-workflow.md#validation-checkout-isolation)

@@ -104,6 +104,15 @@ its initial context. They do not replace reading the authoritative document.
 
 Reference: [QMD context documentation](https://github.com/tobi/qmd#context-management).
 
+## Keep Markdown pages focused
+
+Memory, docs, and other hand-written Markdown pages should serve one topic
+or reader task. Review long pages before extending them. Split independent
+topics when that improves reading and maintenance, using those signals without
+numeric size thresholds. Keep decision reasons and evidence together, repair
+links and indexes, and allow longer pages when readers need the material together.
+Keep detailed rules in the [Markdown guidance](../starter/docs/development-workflow.md#markdown-pages).
+
 ## Validate the copied result and record its version
 
 Test the starter as copied into disposable repositories. Run the base bundle

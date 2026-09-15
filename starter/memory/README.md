@@ -36,6 +36,13 @@ explain the rule, why it matters, and how to apply it. Include evidence and
 absolute dates for changing external facts when useful. Recheck those facts
 when related work depends on them. Do not invent a verification date.
 
+## Page organization
+
+Keep each page focused on one topic. Review a long page before adding more;
+split independent topics into linked pages when that improves reading and
+maintenance. Preserve the rule, reason, and evidence together. Follow the
+[Markdown guidance](../docs/development-workflow.md#markdown-pages).
+
 ## Index and archive
 
 Link every active page from the index below. A large section can have its
