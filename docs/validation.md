@@ -37,6 +37,20 @@ ShellCheck, and whitespace validation. `--documents-only` checks Markdown;
 failure propagation, required test files, and retained syntax/lint/whitespace
 checks. The adoption regression also verifies that copied CI uses `--full`.
 
+## Current real-QMD commands
+
+Run `bin/smoke-qmd` for the bundle or
+`bin/smoke-qmd --project /absolute/path/to/adopter` for a current adopter
+snapshot. Both use `~/.cache/qmd/models`. Reports identify the source and
+models under `.cache/validation/`. The adopter mode tests uncommitted source
+without changing its checkout. Local Git settings and external hook managers
+still need verification in the real checkout. Automated regression checks
+verify adopter-specific setup failures propagate and leave source files intact.
+
+Model-cache regressions exercise unrelated repositories, linked worktrees,
+separate Git metadata, verified duplicate removal, conflict preservation,
+external symlink migration, and broken-link repair in isolated home directories.
+
 ## Environment
 
 | Component | Executed version |

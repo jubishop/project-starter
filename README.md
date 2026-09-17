@@ -34,7 +34,7 @@ the full suite and also requires
 [actionlint](https://github.com/rhysd/actionlint/blob/main/docs/install.md) to
 check the maintained and copyable workflows. This extra dependency is only
 for maintaining the starter. For a real-QMD smoke test using existing local
-models, run `bin/smoke-qmd --models /absolute/path/to/models`.
+models, run `bin/smoke-qmd`.
 
 Released under the [MIT license](LICENSE). Keep `LICENSE.project-starter`
 with copied material; choose the new project's own license independently.

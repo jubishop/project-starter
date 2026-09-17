@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Exercise the copied bundle with real QMD and existing local model files."""
+"""Exercise the bundle or an adopter snapshot with real QMD and shared models."""
 
 import argparse
 import json
@@ -17,12 +17,12 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--models", required=True, type=Path, help="Existing QMD model directory; reused without copying")
+    parser.add_argument("--project", type=Path, help="Adopter checkout to snapshot, including current uncommitted files")
     parser.add_argument("--qmd", default="qmd", help="QMD executable or its absolute path")
     args = parser.parse_args()
-    models = args.models.expanduser().resolve()
+    models = (Path.home() / ".cache/qmd/models").resolve()
     if not (models / "hf_ggml-org_embeddinggemma-300M-Q8_0.gguf").is_file():
-        raise RuntimeError("The existing model directory must contain QMD's default embedding model")
+        raise RuntimeError("Run bin/setup in an adopter first: ~/.cache/qmd/models must contain QMD's default embedding model")
     qmd = shutil.which(args.qmd)
     if not qmd:
         raise RuntimeError("QMD executable not found")
@@ -31,10 +31,34 @@ def main():
     env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
     env.update(GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=os.devnull, PYTHONDONTWRITEBYTECODE="1")
     checks = []
+    source = args.project.expanduser().resolve() if args.project else ROOT / "starter"
     with tempfile.TemporaryDirectory(prefix="project starter real qmd ") as temporary:
         base = Path(temporary).resolve()
         repo = base / "primary checkout"
-        shutil.copytree(ROOT / "starter", repo, ignore=shutil.ignore_patterns("__pycache__", ".cache"))
+        if args.project:
+            top = subprocess.check_output(["git", "-C", str(source), "rev-parse", "--show-toplevel"], env=env, text=True).strip()
+            if Path(top).resolve() != source:
+                raise ValueError("--project must name a checkout root")
+            paths = subprocess.check_output(["git", "-C", str(source), "ls-files", "-z", "--cached", "--others", "--exclude-standard"], env=env)
+            for raw in set(paths.split(b"\0")) - {b""}:
+                relative = Path(os.fsdecode(raw))
+                original, destination = source / relative, repo / relative
+                if original.is_symlink():
+                    target = os.readlink(original)
+                    if Path(target).is_absolute() or not original.resolve().is_relative_to(source):
+                        raise ValueError("Snapshot cannot isolate external symlink: " + str(original))
+                    destination.parent.mkdir(parents=True, exist_ok=True)
+                    destination.symlink_to(target)
+                elif original.is_file():
+                    destination.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(original, destination)
+        else:
+            shutil.copytree(source, repo, ignore=shutil.ignore_patterns("__pycache__", ".cache"))
+        # Isolate user-level setup effects while reusing only model weights.
+        smoke_home = base / "home"
+        (smoke_home / ".cache/qmd").mkdir(parents=True)
+        (smoke_home / ".cache/qmd/models").symlink_to(models, target_is_directory=True)
+        env["HOME"] = str(smoke_home)
 
         def run(*command, cwd=repo, check=True):
             result = subprocess.run(command, cwd=cwd, env=env, capture_output=True, text=True, timeout=240)
@@ -53,9 +77,6 @@ def main():
         run("git", "config", "user.name", "Starter smoke test")
         run("git", "config", "user.email", "smoke@example.invalid")
         run("git", "config", "knowledge.qmdPath", qmd)
-        model_link = repo / ".cache/qmd/models"
-        model_link.parent.mkdir(parents=True)
-        model_link.symlink_to(models, target_is_directory=True)
         proof = repo / "docs/retrieval-proof.md"
         proof.write_text("---\nstatus: current\n---\n\n# Search isolation proof\n\nThe orionmosaic marker identifies this document. Each branch checkout keeps its own SQLite search database so another branch's notes cannot replace its results. Model weights can be shared.\n")
         with (repo / "docs/README.md").open("a") as stream:
@@ -66,7 +87,7 @@ def main():
             ("docs/archive", "retired.md", "---\nstatus: archived\n---\n\n# Retired reference\n\ndocsarchivemarkerzeta\n"),
         ):
             path = repo / directory
-            path.mkdir(parents=True)
+            path.mkdir(parents=True, exist_ok=True)
             (path / filename).write_text(content)
         home = base / "optional home notes"
         home.mkdir()
@@ -74,11 +95,13 @@ def main():
         run("git", "config", "knowledge.homeMemoryPath", str(home))
         print("Building isolated indexes with the existing embedding model...", flush=True)
         run("bin/setup")
-        run("bin/check", "--documents-only")
+        if (repo / "bin/check").is_file():
+            run("bin/check", "--documents-only")
         passed("initial setup and document checks")
         result = json.loads(run("git", "knowledge", "search", "orionmosaic", "--json", cwd=repo / "docs").stdout)
         assert result and "retrieval-proof.md" in json.dumps(result), result
-        assert "Project designs" in json.dumps(result), result
+        context = json.loads((repo / ".config/knowledge.json").read_text())["collections"]["docs"]["context"]
+        assert context["/"] in json.dumps(result), result
         assert "orionmosaic" in run("bin/knowledge", "get", "qmd://docs/retrieval-proof.md").stdout
         passed("keyword retrieval, collection descriptions, focused reads, and subdirectory routing")
         for term in ("archivemarkerzeta", "reviewmarkerzeta", "docsarchivemarkerzeta"):
@@ -119,17 +142,20 @@ def main():
         assert not json.loads(run("bin/knowledge", "search", "worktreeonlymarkerzeta", "--json").stdout)
         assert not os.path.samefile(repo / ".cache/qmd/index.sqlite", worktree / ".cache/qmd/index.sqlite")
         assert (repo / ".cache/qmd/models").resolve() == (worktree / ".cache/qmd/models").resolve()
-        run("bin/doctor", cwd=worktree)
+        linked_report = json.loads(run("bin/doctor", "--json", cwd=worktree).stdout)
+        assert Path(linked_report["hooks_path"]).relative_to(worktree) == Path(report["hooks_path"]).relative_to(repo), linked_report
+        assert (worktree / ".cache/qmd/models").resolve() == models
         run("bin/doctor")
         passed("real worktree database isolation, shared models, and uncommitted-edit refresh")
         run("git", "worktree", "remove", "--force", str(worktree))
         assert str(worktree) not in run("git", "worktree", "list").stdout
         passed("disposable worktree cleanup")
 
-    output = ROOT / ".cache/validation/smoke-qmd.json"
+    output = ROOT / ".cache/validation" / ("smoke-qmd-" + source.name + ".json")
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps({"at": datetime.now(timezone.utc).isoformat(), "platform": platform.platform(),
-                                  "python": platform.python_version(), "qmd": version, "checks": checks}, indent=2) + "\n")
+                                  "python": platform.python_version(), "qmd": version, "source": str(source),
+                                  "models": str(models), "checks": checks}, indent=2) + "\n")
     print("Real-QMD smoke checks passed; report: " + str(output), flush=True)
     return 0
 

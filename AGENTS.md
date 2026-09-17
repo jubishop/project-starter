@@ -46,5 +46,5 @@ policies when adapting the bundle, without imposing an application stack.
 Run `bin/check` once for a completed batch of changes. Its tests exercise
 copies of the bundle. Reuse a passing result while relevant inputs are
 unchanged; discussion and read-only work do not require checks.
-Use `bin/smoke-qmd --models /absolute/path/to/existing/models` for explicit
+Use `bin/smoke-qmd` for explicit
 real-QMD validation. Keep copied project behavior and the guide consistent.

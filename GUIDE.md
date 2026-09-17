@@ -180,7 +180,9 @@ work depends on them.
 
 Home memory is excluded by default. Configure `knowledge.homeMemoryPath`
 locally only if the user wants it included. Each checkout has its own index;
-model files are shared while preserving existing cache choices.
+model files always use `~/.cache/qmd/models`. Setup creates it and QMD downloads
+missing weights on first use. See the [migration rules](starter/docs/development-workflow.md#worktrees)
+before removing obsolete cache directories. Do not put indexes in the shared cache.
 
 Keep refresh checks stable across shell commands and Git hooks. QMD
 subprocesses must not inherit Git repository selectors. Use the QMD release
@@ -237,8 +239,15 @@ fixtures and commands appropriate to the target stack.
 
 When QMD is available, refresh and verify a distinctive term from a real
 project document, a focused read, and collection exclusions. The source
-repository's `bin/smoke-qmd` provides an isolated real-QMD test using available
-models. Do not claim real-QMD validation from simulated-tool tests. Record
+repository's `bin/smoke-qmd --project /absolute/path/to/adopter` snapshots
+that adopter's current tracked and unignored files, then exercises its actual
+setup, hooks, search, exclusions, diagnostics, and worktree isolation in a
+disposable repository. It does not modify the source checkout. Relative links
+inside the source are preserved; external symlinks are rejected. Ignored local Git settings
+and external hook managers are not copied; verify those in the actual checkout.
+Omit `--project` to test the generic bundle. Both modes reuse existing models
+at `~/.cache/qmd/models`; first run setup in an adopter to install missing
+embedding weights. The smoke test isolates HOME and does not download models. Do not claim real-QMD validation from simulated-tool tests. Record
 the platforms and versions actually tested.
 
 Use a disposable worktree to verify target-specific integration. Confirm a

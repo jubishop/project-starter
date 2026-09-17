@@ -86,8 +86,10 @@ Use the following defaults to implement the requested foundation:
 - Refresh QMD in the background after checkout, commit, merge, and rewrite.
   Serialize refreshes within each checkout and expose a foreground recovery
   command that reports failures.
-- Give each worktree its own search database and share model files. Preserve
-  existing local caches and integrate with existing environment setup.
+- Give each worktree its own search database inside its checkout. Share model
+  files across repositories at `~/.cache/qmd/models`; migrate verified local
+  duplicates and preserve conflicting files for inspection. Integrate with
+  existing environment setup.
 - Treat copied starter files as project-owned files that can evolve with the
   project. Keep the guide and bundle usable without an installed skill.
 
