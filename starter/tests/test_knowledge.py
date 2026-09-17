@@ -500,6 +500,44 @@ sys.exit(int(os.environ.get("OLD_HOOK_EXIT", "0")))
         self.drain()
         self.assertEqual([r["command"] for r in self.records()], ["update", "embed"])
 
+    def test_lookup_waits_for_worker_lock_release_after_completed_refresh(self):
+        self.run_command("bin/setup")
+        document = self.repo / "docs/README.md"
+        document.write_text(document.read_text() + "\nChanged reference.\n")
+        gate = self.base / "release gate"
+        gate.touch()
+        ready = self.base / "worker releasing"
+        shim = self.base / "os boundary"
+        shim.mkdir()
+        # Hold the OS unlock boundary after the worker records completion.
+        (shim / "sitecustomize.py").write_text('''
+import fcntl, os, sys, time
+from pathlib import Path
+original = fcntl.flock
+def flock(file, operation):
+    if "--worker" in sys.argv and operation == fcntl.LOCK_UN:
+        Path(os.environ["RELEASE_READY"]).touch()
+        while Path(os.environ["RELEASE_GATE"]).exists():
+            time.sleep(0.01)
+    return original(file, operation)
+fcntl.flock = flock
+''')
+        env = self.env | {"PYTHONPATH": str(shim), "RELEASE_READY": str(ready), "RELEASE_GATE": str(gate)}
+        process = subprocess.Popen(["bin/knowledge", "search", "reference"], cwd=self.repo, env=env,
+                                   text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        try:
+            deadline = time.monotonic() + 10
+            while not ready.exists():
+                self.assertLess(time.monotonic(), deadline, "Worker never reached the unlock boundary")
+                time.sleep(0.01)
+            with self.assertRaises(subprocess.TimeoutExpired):
+                process.communicate(timeout=0.5)
+        finally:
+            gate.unlink(missing_ok=True)
+            stdout, stderr = process.communicate(timeout=10)
+        self.assertEqual(process.returncode, 0, (stdout, stderr))
+        self.assertEqual(json.loads(stdout)["command"], "search")
+
     def test_edits_during_refresh_are_not_lost_without_another_hook(self):
         self.run_command("bin/setup")
         self.events.unlink()
