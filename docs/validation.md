@@ -22,6 +22,11 @@ links it from the README and development docs, then runs the three document
 tests that create further copies. This detects missing workflow files in
 those test fixtures. The base tests also verify use without GitHub files.
 
+A license adoption regression links the starter notice from an adopted
+README, with and without a separate project `LICENSE`. It runs document
+checks in the adopter and its disposable test copies, so valid license links
+remain valid without requiring the adopter to choose a project license.
+
 A separate adoption regression adds an existing resolved memory page before
 running the copied archive checks. It verifies that those checks accept an
 existing `memory/archive/` directory and preserve the archived source page.

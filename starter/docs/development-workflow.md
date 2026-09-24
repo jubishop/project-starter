@@ -455,8 +455,9 @@ hand-written project knowledge.
 If the project uses GitHub, add the optional workflow supplied with the
 starter and adapt its branch, runner, dependencies, and check command. Merge
 with existing checks where appropriate, and link to the delivered workflow
-from these docs. Disposable foundation tests copy `.github/` when present;
-include other required link destinations if project docs refer to them.
+from these docs. Disposable foundation tests copy `.github/` when present,
+`LICENSE.project-starter`, and a project `LICENSE` when present. Include other
+required link destinations if project docs refer to them.
 Configure CI to run `bin/check --full`. Run it after integration and verify
 the CI result for the pushed commit. Other hosts can invoke the same command.
 

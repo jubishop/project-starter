@@ -263,7 +263,8 @@ adding a second workflow that repeats them. Keep read-only permissions and
 disable persisted checkout credentials unless the job needs write access.
 
 Link to the delivered workflow from the project's development docs. The
-copied foundation tests include `.github/` when present so those links work
+copied foundation tests include `.github/` when present, `LICENSE.project-starter`,
+and a project `LICENSE` when present, so workflow and license links work
 inside disposable repositories. If adapted docs link to other project files,
 include those required files in the test fixtures as well. Run the full
 `bin/check --full` after adding the workflow; document-only checks do not exercise

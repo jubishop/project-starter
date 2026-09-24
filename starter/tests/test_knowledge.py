@@ -27,8 +27,11 @@ class KnowledgeTests(unittest.TestCase):
             shutil.copytree(SOURCE / ".github", self.repo / ".github")
         (self.repo / ".config").mkdir()
         shutil.copy2(SOURCE / ".config/knowledge.json", self.repo / ".config/knowledge.json")
-        for name in ("README.md", "AGENTS.md", ".gitignore", ".project-starter.json"):
+        for name in ("README.md", "AGENTS.md", ".gitignore", ".project-starter.json",
+                     "LICENSE.project-starter"):
             shutil.copy2(SOURCE / name, self.repo / name)
+        if (SOURCE / "LICENSE").is_file():
+            shutil.copy2(SOURCE / "LICENSE", self.repo / "LICENSE")
         if (SOURCE / ".envrc").exists():
             shutil.copy2(SOURCE / ".envrc", self.repo / ".envrc")
         self.tools = self.base / "fake tools"
