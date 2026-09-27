@@ -20,7 +20,7 @@ class SmokeTests(unittest.TestCase):
             (repo / "bin/setup").write_text('#!/bin/sh\necho "cpu-setting=$QMD_FORCE_CPU" >&2\nexit 42\n')
             qmd = base / "qmd"
             notice = "QMD Warning: no GPU acceleration, running on CPU (slow). Run 'qmd doctor' for device diagnostics."
-            qmd.write_text("#!/bin/sh\nprintf '\\033[?25l' >&2\necho \"" + notice + "\" >&2\necho 'qmd 2.8.3'\n")
+            qmd.write_text("#!/bin/sh\nprintf 'Expanding query...\\033[?25l' >&2\necho \"" + notice + "\" >&2\necho 'qmd 2.8.3'\n")
             qmd.chmod(0o755)
             command = [str(ROOT / "bin/smoke-qmd"), "--project", str(repo), "--qmd", str(qmd),
                        "--download-models", "--strict-diagnostics"]
