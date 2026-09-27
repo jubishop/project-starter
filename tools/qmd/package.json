@@ -1,0 +1,23 @@
+{
+  "name": "project-starter-qmd-validation",
+  "private": true,
+  "engines": {
+    "node": "24.x"
+  },
+  "dependencies": {
+    "@tobilu/qmd": "2.8.3",
+    "node-llama-cpp": "3.21.1"
+  },
+  "overrides": {
+    "node-llama-cpp": "$node-llama-cpp"
+  },
+  "allowScripts": {
+    "better-sqlite3": true,
+    "node-llama-cpp": true,
+    "tree-sitter-go": true,
+    "tree-sitter-javascript": true,
+    "tree-sitter-python": true,
+    "tree-sitter-rust": true,
+    "tree-sitter-typescript": true
+  }
+}

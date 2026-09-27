@@ -1,0 +1,64 @@
+name: QMD compatibility
+
+on:
+  pull_request:
+    paths:
+      - 'starter/**'
+      - 'bin/smoke-qmd'
+      - 'tools/qmd/**'
+      - '.github/workflows/qmd-compatibility.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'starter/**'
+      - 'bin/smoke-qmd'
+      - 'tools/qmd/**'
+      - '.github/workflows/qmd-compatibility.yml'
+  schedule:
+    - cron: '23 16 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qmd-compatibility-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  real-qmd:
+    runs-on: macos-15
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        runtime: [tested, latest]
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+      - name: Install the selected QMD runtime in isolation
+        env:
+          RUNTIME: ${{ matrix.runtime }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/qmd-runtime"
+          cp tools/qmd/package*.json "$RUNNER_TEMP/qmd-runtime/"
+          if [ "$RUNTIME" = latest ]; then
+            npm --prefix "$RUNNER_TEMP/qmd-runtime" pkg set 'dependencies.@tobilu/qmd=latest' 'dependencies.node-llama-cpp=latest'
+            npm --prefix "$RUNNER_TEMP/qmd-runtime" install --no-audit --no-fund
+          else
+            npm --prefix "$RUNNER_TEMP/qmd-runtime" ci --no-audit --no-fund
+          fi
+          npm --prefix "$RUNNER_TEMP/qmd-runtime" ls @tobilu/qmd node-llama-cpp
+      - name: Verify actual indexing, search, models, and worktrees
+        run: bin/smoke-qmd --qmd "$RUNNER_TEMP/qmd-runtime/node_modules/.bin/qmd" --download-models --strict-diagnostics
+      - name: Retain compatibility evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: qmd-${{ matrix.runtime }}
+          path: .cache/validation/
+          retention-days: 14

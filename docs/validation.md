@@ -44,6 +44,10 @@ checks. The adoption regression also verifies that copied CI uses `--full`.
 
 ## Current real-QMD commands
 
+The [QMD maintenance guide](qmd-maintenance.md) records the current runtime,
+weekly compatibility workflow, dependency updates, and strict diagnostic checks.
+
+
 Run `bin/smoke-qmd` for the bundle or
 `bin/smoke-qmd --project /absolute/path/to/adopter` for a current adopter
 snapshot. Both use `~/.cache/qmd/models`. Reports identify the source and

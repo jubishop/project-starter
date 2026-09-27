@@ -10,6 +10,27 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class SmokeTests(unittest.TestCase):
+    def test_strict_mode_rejects_warnings_from_a_successful_command(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            base = Path(temporary)
+            repo = base / "adopter"
+            shutil.copytree(ROOT / "starter", repo)
+            subprocess.run(["git", "init", "-b", "main", str(repo)], check=True, capture_output=True)
+            (repo / "bin/setup").write_text("#!/bin/sh\necho 'QMD Warning: GPU fallback' >&2\nexit 0\n")
+            models = base / "home/.cache/qmd/models"
+            models.mkdir(parents=True)
+            (models / "hf_ggml-org_embeddinggemma-300M-Q8_0.gguf").touch()
+            qmd = base / "qmd"
+            qmd.write_text("#!/bin/sh\necho 'qmd 2.8.3'\n")
+            qmd.chmod(0o755)
+            result = subprocess.run([str(ROOT / "bin/smoke-qmd"), "--project", str(repo),
+                                     "--qmd", str(qmd), "--strict-diagnostics"],
+                                    env=os.environ | {"HOME": str(base / "home")},
+                                    text=True, capture_output=True, timeout=30)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("Unexpected diagnostics", result.stderr)
+            self.assertIn("GPU fallback", result.stderr)
+
     def test_adopter_uses_current_files_and_leaves_source_untouched_on_failure(self):
         with tempfile.TemporaryDirectory() as temporary:
             base = Path(temporary)

@@ -328,3 +328,12 @@ project, update its instructions, application wrapper, and CI command together.
 
 The guide and starter are [MIT licensed](LICENSE). Retain the included notice;
 do not replace the target project's own license.
+
+## Keep the search runtime current
+
+Treat the tested QMD version as a baseline, not a permanent pin. Follow the
+[QMD maintenance guide](docs/qmd-maintenance.md) when adopting newer releases.
+Merge the command-configuration isolation change into existing helpers before
+upgrading older integrations. Preserve explicit subprocess paths in any local
+QMD launcher. Validate each adopter with real indexing and search, and use a
+central release check for a runtime shared across projects.

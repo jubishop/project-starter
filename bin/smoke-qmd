@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import platform
+import re
 import shutil
 import subprocess
 import sys
@@ -19,14 +20,28 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--project", type=Path, help="Adopter checkout to snapshot, including current uncommitted files")
     parser.add_argument("--qmd", default="qmd", help="QMD executable or its absolute path")
+    parser.add_argument("--download-models", action="store_true", help="Allow missing default models to download")
+    parser.add_argument("--strict-diagnostics", action="store_true", help="Fail on warning/error diagnostics, even after exit zero")
     args = parser.parse_args()
     models = (Path.home() / ".cache/qmd/models").resolve()
-    if not (models / "hf_ggml-org_embeddinggemma-300M-Q8_0.gguf").is_file():
+    if not args.download_models and not (models / "hf_ggml-org_embeddinggemma-300M-Q8_0.gguf").is_file():
         raise RuntimeError("Run bin/setup in an adopter first: ~/.cache/qmd/models must contain QMD's default embedding model")
     qmd = shutil.which(args.qmd)
     if not qmd:
         raise RuntimeError("QMD executable not found")
-    version = subprocess.check_output([qmd, "--version"], text=True).strip()
+    models.mkdir(parents=True, exist_ok=True)
+    diagnostics = []
+
+    def observe(command, result):
+        if result.stderr:
+            diagnostics.append({"command": list(command), "stderr": result.stderr})
+            sys.stderr.write(result.stderr)
+            if args.strict_diagnostics and re.search(r"\b(?:warning|error|failed)\b", result.stderr, re.I):
+                raise RuntimeError("Unexpected diagnostics from " + repr(command))
+
+    reported = subprocess.run([qmd, "--version"], text=True, capture_output=True, check=True)
+    observe([qmd, "--version"], reported)
+    version = reported.stdout.strip()
     print("Real-QMD smoke check: " + version + " on " + platform.platform(), flush=True)
     env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
     env.update(GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=os.devnull, PYTHONDONTWRITEBYTECODE="1")
@@ -67,6 +82,11 @@ def main():
                 for path in base.rglob("index.log"):
                     logs.append(str(path) + "\n" + path.read_text()[-12000:])
                 raise RuntimeError("Command failed: " + repr(command) + "\n" + result.stdout + result.stderr + "\n" + "\n".join(logs))
+            observe(command, result)
+            if command[0] in {"bin/setup", "bin/qmd-index"}:
+                log = cwd / ".cache/qmd/index.log"
+                if log.exists():
+                    observe([*command, "index.log"], subprocess.CompletedProcess(command, 0, stderr=log.read_text()))
             return result
 
         def passed(name):
@@ -110,6 +130,10 @@ def main():
         result = json.loads(run("bin/knowledge", "vsearch", "Each branch needs an independent search database", "--json", "-n", "5").stdout)
         assert result and any(name in json.dumps(result) for name in ("retrieval-proof.md", "development-workflow.md")), result
         passed("real embedding generation and semantic retrieval")
+        result = json.loads(run("bin/knowledge", "query", "How do independent branches keep their notes separate?",
+                                "--json", "-n", "5", "-C", "5").stdout)
+        assert result and any(name in json.dumps(result) for name in ("retrieval-proof.md", "development-workflow.md")), result
+        passed("query expansion and reranking with real models")
         assert json.loads(run("bin/knowledge", "search", "homemarkerzeta", "--json").stdout)
         run("git", "config", "--unset", "knowledge.homeMemoryPath")
         run("bin/qmd-index")
@@ -155,7 +179,7 @@ def main():
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps({"at": datetime.now(timezone.utc).isoformat(), "platform": platform.platform(),
                                   "python": platform.python_version(), "qmd": version, "source": str(source),
-                                  "models": str(models), "checks": checks}, indent=2) + "\n")
+                                  "models": str(models), "checks": checks, "diagnostics": diagnostics}, indent=2) + "\n")
     print("Real-QMD smoke checks passed; report: " + str(output), flush=True)
     return 0
 
