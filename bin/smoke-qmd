@@ -3,6 +3,8 @@
 
 import argparse
 import json
+import math
+from contextlib import contextmanager
 import os
 from pathlib import Path
 import platform
@@ -22,7 +24,11 @@ def main():
     parser.add_argument("--qmd", default="qmd", help="QMD executable or its absolute path")
     parser.add_argument("--download-models", action="store_true", help="Allow missing default models to download")
     parser.add_argument("--strict-diagnostics", action="store_true", help="Fail on warning/error diagnostics, even after exit zero")
+    parser.add_argument("--cpu-only", action="store_true", help="Force CPU mode and permit only its expected no-GPU notice")
+    parser.add_argument("--command-timeout", type=float, default=240, help="Seconds allowed for each command")
     args = parser.parse_args()
+    if not math.isfinite(args.command_timeout) or args.command_timeout <= 0:
+        parser.error("--command-timeout must be positive and finite")
     models = (Path.home() / ".cache/qmd/models").resolve()
     if not args.download_models and not (models / "hf_ggml-org_embeddinggemma-300M-Q8_0.gguf").is_file():
         raise RuntimeError("Run bin/setup in an adopter first: ~/.cache/qmd/models must contain QMD's default embedding model")
@@ -36,7 +42,11 @@ def main():
         if result.stderr:
             diagnostics.append({"command": list(command), "stderr": result.stderr})
             sys.stderr.write(result.stderr)
-            if args.strict_diagnostics and re.search(r"\b(?:warning|error|failed)\b", result.stderr, re.I):
+            unexpected = result.stderr
+            if args.cpu_only:
+                expected = "QMD Warning: no GPU acceleration, running on CPU (slow). Run 'qmd doctor' for device diagnostics."
+                unexpected = "\n".join(line for line in unexpected.splitlines() if line.strip() != expected)
+            if args.strict_diagnostics and re.search(r"\b(?:warning|error|failed)\b", unexpected, re.I):
                 raise RuntimeError("Unexpected diagnostics from " + repr(command))
 
     reported = subprocess.run([qmd, "--version"], text=True, capture_output=True, check=True)
@@ -45,9 +55,30 @@ def main():
     print("Real-QMD smoke check: " + version + " on " + platform.platform(), flush=True)
     env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
     env.update(GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=os.devnull, PYTHONDONTWRITEBYTECODE="1")
+    if args.cpu_only:
+        env["QMD_FORCE_CPU"] = "1"
     checks = []
     source = args.project.expanduser().resolve() if args.project else ROOT / "starter"
-    with tempfile.TemporaryDirectory(prefix="project starter real qmd ") as temporary:
+    output = ROOT / ".cache/validation" / ("smoke-qmd-" + source.name + ".json")
+
+    def write_report(status, error=None):
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps({"at": datetime.now(timezone.utc).isoformat(), "platform": platform.platform(),
+                                      "python": platform.python_version(), "qmd": version, "source": str(source),
+                                      "models": str(models), "checks": checks, "diagnostics": diagnostics,
+                                      "status": status, "error": error, "cpu_only": args.cpu_only}, indent=2) + "\n")
+
+    @contextmanager
+    def recording():
+        try:
+            yield
+        except Exception as error:
+            write_report("failed", str(error))
+            raise
+        else:
+            write_report("passed")
+
+    with recording(), tempfile.TemporaryDirectory(prefix="project starter real qmd ") as temporary:
         base = Path(temporary).resolve()
         repo = base / "primary checkout"
         if args.project:
@@ -76,12 +107,15 @@ def main():
         env["HOME"] = str(smoke_home)
 
         def run(*command, cwd=repo, check=True):
-            result = subprocess.run(command, cwd=cwd, env=env, capture_output=True, text=True, timeout=240)
+            def worker_logs():
+                return "\n".join(str(path) + "\n" + path.read_text()[-12000:] for path in base.rglob("index.log"))
+            try:
+                result = subprocess.run(command, cwd=cwd, env=env, capture_output=True, text=True,
+                                        timeout=args.command_timeout)
+            except subprocess.TimeoutExpired as error:
+                raise RuntimeError(str(error) + "\n" + worker_logs()) from error
             if check and result.returncode:
-                logs = []
-                for path in base.rglob("index.log"):
-                    logs.append(str(path) + "\n" + path.read_text()[-12000:])
-                raise RuntimeError("Command failed: " + repr(command) + "\n" + result.stdout + result.stderr + "\n" + "\n".join(logs))
+                raise RuntimeError("Command failed: " + repr(command) + "\n" + result.stdout + result.stderr + "\n" + worker_logs())
             observe(command, result)
             if command[0] in {"bin/setup", "bin/qmd-index"}:
                 log = cwd / ".cache/qmd/index.log"
@@ -113,7 +147,7 @@ def main():
         home.mkdir()
         (home / "note.md").write_text("# Home note\n\nhomemarkerzeta is optional cross-project context.\n")
         run("git", "config", "knowledge.homeMemoryPath", str(home))
-        print("Building isolated indexes with the existing embedding model...", flush=True)
+        print("Building isolated indexes; missing models download only when allowed...", flush=True)
         run("bin/setup")
         if (repo / "bin/check").is_file():
             run("bin/check", "--documents-only")
@@ -175,11 +209,6 @@ def main():
         assert str(worktree) not in run("git", "worktree", "list").stdout
         passed("disposable worktree cleanup")
 
-    output = ROOT / ".cache/validation" / ("smoke-qmd-" + source.name + ".json")
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps({"at": datetime.now(timezone.utc).isoformat(), "platform": platform.platform(),
-                                  "python": platform.python_version(), "qmd": version, "source": str(source),
-                                  "models": str(models), "checks": checks, "diagnostics": diagnostics}, indent=2) + "\n")
     print("Real-QMD smoke checks passed; report: " + str(output), flush=True)
     return 0
 

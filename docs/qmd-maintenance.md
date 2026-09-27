@@ -34,7 +34,9 @@ identify the M5 fix. This pairing was verified on September 26, 2026.
 Dependabot checks both direct dependencies weekly and groups their updates.
 The [compatibility workflow](../.github/workflows/qmd-compatibility.yml) runs
 on relevant changes and every Monday. It tests the selected runtime and the
-latest published versions with actual models on macOS. Failures remain visible
+latest published versions with actual models on Linux CPU runners. This checks
+CLI, configuration, database, and model compatibility. Run the same smoke check
+on the developer Mac before upgrading to verify its Metal backend. Failures remain visible
 as failed Actions runs; dependency updates require passing validation.
 No workflow automatically changes a developer's global installation.
 
@@ -62,7 +64,11 @@ It checks releases without installing them or accessing knowledge content.
 3. The smoke check covers fresh indexes, exclusions, keyword and vector
    retrieval, query expansion, reranking, repeat setup, and linked worktrees.
    It records diagnostics and rejects warnings in strict mode, including
-   warnings in indexing logs after a successful command.
+   warnings in indexing logs after a successful command. `--cpu-only` forces
+   CPU operation for hosted runners and allows only QMD's exact no-GPU notice;
+   all other warning and error diagnostics still fail strict validation.
+   Failure reports retain worker logs, including setup timeouts. CI downloads
+   models in a separate bounded step and allows 600 seconds per smoke command.
 4. Back up the current runtime, update affected helpers, then replace the
    shared runtime. Run each integration's coordinated refresh and real lookup.
    Keep the old runtime until these checks pass. Do not use direct `qmd update`
