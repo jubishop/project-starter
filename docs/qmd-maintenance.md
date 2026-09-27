@@ -69,6 +69,8 @@ It checks releases without installing them or accessing knowledge content.
    all other warning and error diagnostics still fail strict validation.
    Failure reports retain worker logs, including setup timeouts. CI downloads
    models in a separate bounded step and allows 600 seconds per smoke command.
+   The real-model step unsets `CI` because QMD disables inference whenever that
+   variable is nonempty. Ordinary foundation tests retain the CI environment.
 4. Back up the current runtime, update affected helpers, then replace the
    shared runtime. Run each integration's coordinated refresh and real lookup.
    Keep the old runtime until these checks pass. Do not use direct `qmd update`

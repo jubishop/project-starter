@@ -61,7 +61,7 @@ jobs:
           mkdir -p "$QMD_CONFIG_DIR" .cache/validation
           "$RUNNER_TEMP/qmd-runtime/node_modules/.bin/qmd" pull --progress 2>&1 | tee .cache/validation/model-download.log
       - name: Verify actual indexing, search, models, and worktrees
-        run: bin/smoke-qmd --qmd "$RUNNER_TEMP/qmd-runtime/node_modules/.bin/qmd" --download-models --strict-diagnostics --command-timeout 600 --cpu-only
+        run: env -u CI bin/smoke-qmd --qmd "$RUNNER_TEMP/qmd-runtime/node_modules/.bin/qmd" --download-models --strict-diagnostics --command-timeout 600 --cpu-only
       - name: Retain compatibility evidence
         if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
