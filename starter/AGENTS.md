@@ -49,6 +49,8 @@ result for ordinary code changes; otherwise run the full check locally before
 delivery. Do not run checks for discussion or read-only work. Batch edits
 before checking; reuse passing results while relevant inputs are unchanged.
 See [the workflow](docs/development-workflow.md#checks-and-project-extensions).
+Nonfunctional changes may be pushed without deployment or a package release;
+follow the [deployment policy](docs/development-workflow.md#deployment-decisions).
 Use `bin/doctor` to inspect local setup and `bin/qmd-index` to refresh search
 after uncommitted knowledge edits when current search results are needed.
 Hooks refresh search after Git events.

@@ -327,3 +327,11 @@ Merge the command-configuration isolation change into existing helpers before
 upgrading older integrations. Preserve explicit subprocess paths in any local
 QMD launcher. Validate each adopter with real indexing and search, and use a
 central release check for a runtime shared across projects.
+
+## Deployment policy
+
+When the project deploys or publishes releases, adopt the starter's
+[deployment policy](starter/docs/development-workflow.md#deployment-decisions).
+Allow nonfunctional changes to be committed and pushed without a release.
+Preserve required checks and configure the host's supported deployment skip
+mechanism when pushes otherwise deploy automatically.

@@ -412,6 +412,24 @@ Validate independence and concurrent execution. Repeated passes alone do not
 prove that races are impossible. Keep sequential execution where interference
 remains unresolved, and do not hide failures with retries or weaker assertions.
 
+## Deployment decisions
+
+Documentation, agent instructions, local task setup, comments, and other
+nonfunctional changes may be committed and pushed without deployment or a
+package release. Run the checks appropriate to the change. Skipping deployment
+does not skip required CI or imply that a new release passed verification.
+
+Assess the complete difference from the last successful release, including
+any earlier undeployed commits. Deploy when behavior, dependencies, assets,
+migrations, configuration, or operations materially change. When uncertain,
+deploy. Follow an explicit user request to deploy even a nonfunctional change.
+
+When a project automatically deploys on push, document and configure its
+supported skip mechanism. Keep validation enabled. Record the reason and the
+last deployed revision in the delivery record or commit. A filename filter can
+handle known documentation paths, but cannot determine whether source edits
+change behavior. Document a manual override for those cases.
+
 ## Checks and project extensions
 
 Choose validation by the changed files and the stage of the work:

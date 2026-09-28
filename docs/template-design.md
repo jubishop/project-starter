@@ -277,6 +277,14 @@ in CI; the full gate must pass before delivery is complete. Preserve stronger
 existing project requirements during adoption. Keep these policies standalone,
 without references to another project or assumptions about its stack.
 
+### Nonfunctional delivery — 2026-09-28
+
+Documentation, task tracking, comments, and other nonfunctional changes do not
+require deployment or a package release. Keep required checks and assess all
+changes since the last successful release. Projects with automatic deployment
+must document a supported way to skip it. Follow explicit deployment requests.
+
+
 ## License — 2026-09-04
 
 Use the MIT license for the guide and starter files. Preserve its notice in
