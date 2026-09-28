@@ -54,6 +54,27 @@ knowledge belongs, when to search it, and how to run checks. Detailed
 policies live in `memory/README.md` and `docs/README.md` and are read when
 relevant. This keeps routinely loaded agent context small.
 
+### Tailor instructions to home guidance — 2026-09-28
+
+The starter primarily serves the user's projects, where `~/AGENTS.md` supplies
+shared instructions. During adoption, read that file and other applicable
+instructions, then remove or shorten redundant rules in the target's
+`AGENTS.md`. Compare meaning and scope; home-repository-only rules do not
+cover nested projects. Keep project-specific details, stronger requirements,
+and intentional exceptions.
+
+This refines the requirements below to include policies in adopted projects:
+applicable inherited instructions can supply that coverage. The copied file
+is a baseline, not a requirement to repeat every policy locally. The tradeoff
+is that a shortened project file can rely on home guidance remaining available.
+Keep the adaptation in the setup guide; do not add a recurring cleanup task
+to automatically loaded instructions or change the home file during adoption.
+
+Keep engineering requirements concise in the guide and agent instructions.
+Maintain their details in the [development workflow](../starter/docs/development-workflow.md)
+and link to the relevant policy. The user wants to reduce repeated context
+and prevent separate copies of the same rule from drifting.
+
 ### Optional GitHub integration — 2026-09-04
 
 Generated projects do not have to use GitHub. Every project has local checks

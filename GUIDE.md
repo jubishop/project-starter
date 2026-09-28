@@ -13,6 +13,9 @@ user only about material choices that cannot be inferred from the project.
 Confirm the target path, Git state, branch, and uncommitted changes. Identify
 existing agent instructions, README, memory, docs, setup/check commands,
 environment configuration, supported toolchains, hooks, and task tracker.
+Read `~/AGENTS.md` when present, along with other instructions that apply to
+the target. Respect their scope: rules limited to the home repository do not
+cover nested projects.
 Identify the local validation commands and whether full CI is an enforced
 merge or release gate. Determine the effective
 hook directory, including local/global `core.hooksPath` and executable hooks
@@ -32,7 +35,7 @@ Do not copy this repository's `.git` or its maintainer-only files.
 
 | Files | How to apply them |
 | --- | --- |
-| `AGENTS.md` | Merge the short instructions into existing guidance. Keep detailed policies in the memory/docs indexes. |
+| `AGENTS.md` | Merge with existing guidance, then remove or shorten rules already covered by applicable home or parent instructions. Keep detailed policies in the memory/docs indexes. |
 | `README.md` | Replace the generic introduction; add the task tracker and application commands. Preserve useful existing content. |
 | `memory/README.md`, `docs/README.md` | Establish knowledge rules and active indexes. Do not invent initial memories. |
 | `docs/development-workflow.md` | Adapt it to the actual commands and integrations delivered. |
@@ -42,6 +45,20 @@ Do not copy this repository's `.git` or its maintainer-only files.
 | Optional `.envrc` | Create only when the project needs environment settings. Preserve useful existing settings; search does not need this file or shell-wide cache exports. |
 | `.project-starter.json` | Record the copied release; set `source_ref` to its exact commit when copying an unreleased revision. |
 | `LICENSE.project-starter` | Retain the license notice with copied material. |
+
+Treat `starter/AGENTS.md` as a baseline to adapt. Compare the meaning of its
+rules and the target's existing rules with the applicable instructions read
+above. Prune redundant guidance from the resulting local `AGENTS.md`, including
+pre-existing repetition. When a paragraph adds only one project-specific
+requirement, keep that requirement and remove the repeated general guidance.
+Retain project commands, paths, policy links, stronger requirements, and
+intentional exceptions where they add information.
+
+The policy requirements below may be met by applicable inherited instructions;
+they do not each require a local copy. Keep local coverage where inherited
+guidance is absent or insufficient. This adaptation changes the target's
+instructions, not `~/AGENTS.md`, and does not copy personal home settings into
+the project.
 
 For an empty target, copy the full bundle. For an existing target, merge
 shared files and preserve application behavior. If setup or checks already
@@ -60,84 +77,34 @@ code work. Forward the options through existing wrappers; application commands
 must run only when `--full` is present and the foundation checks pass. Update
 existing CI commands to use `--full` in the same change.
 
-Include concise file-organization guidance in the target's instructions.
-Keep files cohesive and use approximately 1,000 lines as a review threshold
-for hand-written source, tests, and styles, not an automatic failure or hard
-cap. Preserve readable formatting and meaningful boundaries. Larger files
-are acceptable when extraction would reduce clarity. Keep the details in the
-[file organization policy](starter/docs/development-workflow.md#file-organization).
+Adapt the engineering policies to the target's existing stack and commands.
+Keep concise requirements in the effective agent instructions, with links to
+the detailed policies in the copied `docs/development-workflow.md`:
 
-Also include guidance for memory, docs, and other Markdown pages. Keep each
-page focused on one topic or reader task. Review long pages before extending
-them, and split independent topics when that improves reading and maintenance.
-Use these signals without numeric size thresholds. Keep summaries and links
-at the original location, preserve decision reasons and evidence, and repair
-indexes and incoming links. Keep detailed policy in the
-[Markdown guidance](starter/docs/development-workflow.md#markdown-pages) and
-link to it from the memory and docs indexes. Preserve project-specific formats.
+- Prefer fewer dependencies and justify additions by their concrete benefits:
+  [dependency policy](starter/docs/development-workflow.md#third-party-dependencies).
+- Require automated tests for regression fixes and functional changes, using
+  red-green TDD when practical. Test observable behavior through public
+  interfaces, with fakes at external-system boundaries:
+  [testing policy](starter/docs/development-workflow.md#test-driven-development).
+- Keep test cost proportional while preserving coverage and independence:
+  [test cost and coverage](starter/docs/development-workflow.md#test-cost-and-coverage).
+- Keep source files cohesive and use approximately 1,000 lines as a review
+  threshold: [file organization](starter/docs/development-workflow.md#file-organization).
+- Keep Markdown pages focused on one topic or reader task, without numeric
+  size limits: [Markdown guidance](starter/docs/development-workflow.md#markdown-pages).
+  Retain links to this policy from the memory and docs indexes.
+- Scope validation inputs and mutable output to the intended checkout:
+  [checkout isolation](starter/docs/development-workflow.md#validation-checkout-isolation).
+- Declare compatible supported runtime and toolchain versions:
+  [version policy](starter/docs/development-workflow.md#runtime-and-toolchain-versions).
+  Keep foundation checks independent of unused application runtimes.
+- Choose checks by changed files, reuse passing results until inputs change,
+  and require successful full validation before merge or release:
+  [validation schedule](starter/docs/development-workflow.md#checks-and-project-extensions).
 
-Scope application validation inputs and mutable output to the intended
-checkout. Review compiler, formatter, build, and test discovery rather than
-assuming Git ignore rules exclude nested worktrees and temporary copies.
-Include required generated inputs deliberately and preserve safe sharing of
-immutable dependencies. Adapt the
-[checkout isolation policy](starter/docs/development-workflow.md#validation-checkout-isolation)
-to the project's tools.
-
-Declare supported runtime and toolchain versions using the target stack's
-existing mechanisms. Keep development, CI, and deployment compatible, and
-make application commands reject unsupported versions before work starts.
-Prefer maintained releases and coordinate upgrades after compatibility checks.
-Apply the [version policy](starter/docs/development-workflow.md#runtime-and-toolchain-versions)
-without selecting an application language or stack for the project. Foundation
-and document checks must not acquire dependencies on application runtimes they
-do not use.
-
-Include the preference for fewer third-party dependencies in the target's
-agent instructions. Prefer standard libraries, platform APIs, or a focused
-implementation owned by the project when they meet its needs at a reasonable
-maintenance cost. A dependency can be justified by concrete benefits; avoiding
-initial implementation work alone is not enough. Apply the
-[dependency policy](starter/docs/development-workflow.md#third-party-dependencies)
-through ordinary technical judgment, without a separate package approval
-step. Preserve stronger existing dependency rules and the current application
-stack; adopting the foundation does not call for replacing existing packages.
-
-Always state in the target's agent instructions that regression fixes and
-functional changes require automated tests for the changed behavior. Use
-red-green test-driven development (TDD) whenever practical: write or update
-a focused test, confirm it fails for the expected reason before implementation,
-then make the change and confirm it passes. If testing first is not practical,
-explain why and how the behavior was verified. Preserve stronger existing
-testing requirements and adapt the
-[testing workflow](starter/docs/development-workflow.md#test-driven-development)
-to the project's test commands.
-
-Also state that tests must exercise externally observable behavior: user-visible
-outcomes, public interfaces, and interactions with external systems. Put fakes
-at those system boundaries so the project's real logic runs. Do not test
-private helpers or internal structure, expose private functionality, or add
-production APIs only for tests. Internal refactoring that preserves behavior
-should not require test changes.
-
-Keep test setup proportional to the behavior under test. Prepare unrelated
-prerequisites through isolated fixtures or existing public interfaces, while
-retaining dedicated complete journeys. Put repeated rules in less costly
-tests when end-to-end execution adds no distinct evidence, and preserve
-coverage for every moved case. Measure simpler improvements before deciding
-whether parallel execution justifies its isolation work; never hide races
-with retries or weaker assertions. Adapt the
-[test cost and coverage policy](starter/docs/development-workflow.md#test-cost-and-coverage).
-
-Adapt agent instructions to choose checks by the changed files. Discussion
-and read-only work need no checks. Batch Markdown edits before a document
-check, and use focused local checks for ordinary code changes. Run the full
-suite locally after setup or test/build infrastructure changes, or when
-focused checks leave material uncertainty. Require successful full validation
-before merge or release. An enforced full CI gate can supply that result for
-ordinary changes; without it, require a full local check before delivery.
-Preserve stronger project requirements. Reuse a passing result until relevant
-inputs change; a conversational handoff alone does not require another run.
+Preserve stronger project requirements. Use the linked policies for details
+and exceptions; avoid reproducing them in the target's `AGENTS.md`.
 
 If a runtime requires a different instructions filename, use its supported
 mechanism to reference the maintained `AGENTS.md`. Preserve existing runtime
