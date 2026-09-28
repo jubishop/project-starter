@@ -1,8 +1,12 @@
 # Project instructions
 
 Keep durable guidance and non-derivable context in [memory](memory/README.md).
-Keep designs, decisions, and research in [docs](docs/README.md). Use the
-project's chosen task tracker for work items and implementation progress.
+Keep designs, decisions, and research in [docs](docs/README.md). Use `td` for
+local tasks, progress, blockers, and handoffs. In each new agent context, run
+`td usage --new-session -q` once; use `td usage` for full workflow guidance.
+Follow the [task workflow](docs/task-tracking.md), including first-time setup.
+Keep the existing issue tracker for shared scope and acceptance criteria;
+link related issues from td.
 
 Before non-trivial work or writing memory, search the relevant knowledge.
 Use `bin/knowledge search "term"` for known terms and

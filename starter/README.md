@@ -24,6 +24,9 @@ hook integration, and recovery.
 - [Memory](memory/README.md): durable guidance and non-code context.
 - [Docs](docs/README.md): designs, decisions, research, and reference guides.
 
-Choose a task tracker and add its entry point here. Add application setup as
-the project develops. Integrate application validation only with `--full`,
-and document explicit application checks for code edits.
+- [Local tasks](docs/task-tracking.md): install td, run `td init` in the primary
+  checkout, and use `td status` or `td monitor` to inspect progress.
+
+Keep the existing issue tracker for shared work and link related issues from
+td. Add application setup as the project develops. Integrate application
+validation only with `--full`, and document explicit checks for code edits.

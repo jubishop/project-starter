@@ -5,6 +5,12 @@ The copyable foundation lives in `starter/`; optional host integration lives
 in `extras/`. Keep the guide standalone and free of personal paths or origin
 project references. Do not install or register a skill.
 
+Use `td` for local tasks, progress, blockers, and handoffs. In each new agent
+context, run `td usage --new-session -q` once; use `td usage` for full workflow
+guidance. Follow the [task workflow](starter/docs/task-tracking.md), including
+first-time setup. Keep GitHub Issues for shared scope and acceptance criteria;
+link related issues from td.
+
 Follow the engineering policies linked below:
 
 - Prefer fewer dependencies; justify additions by their concrete benefits

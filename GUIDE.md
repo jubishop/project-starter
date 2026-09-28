@@ -1,7 +1,7 @@
 # Apply the project foundation
 
 Use this guide when a user points an agent at this repository to set up
-project memory, docs, local search, Git hooks, and worktrees. Read it on
+project memory, docs, local search, Git hooks, worktrees, and local task tracking. Read it on
 request. Do not install a skill or register it for automatic loading.
 
 Copyable files are in [starter](starter/). Read the target project's
@@ -21,9 +21,11 @@ merge or release gate. Determine the effective
 hook directory, including local/global `core.hooksPath` and executable hooks
 in Git's default directory.
 
-Use the existing application stack, Git host, and task tracker. They are
-independent of this foundation. A local-only repository can choose its own
-task tracking tool; keep temporary progress out of durable memory and docs.
+Use the existing application stack, Git host, and shared issue tracker. Add
+`td` for local tasks, implementation progress, and session handoffs. Link
+related shared issues from td; preserve their scope and acceptance criteria
+without importing the entire backlog. Keep temporary progress out of durable
+memory and docs.
 Create an external repository or change its visibility only when that action
 is part of the user's request.
 
@@ -39,6 +41,7 @@ Do not copy this repository's `.git` or its maintainer-only files.
 | `README.md` | Replace the generic introduction; add the task tracker and application commands. Preserve useful existing content. |
 | `memory/README.md`, `docs/README.md` | Establish knowledge rules and active indexes. Do not invent initial memories. |
 | `docs/development-workflow.md` | Adapt it to the actual commands and integrations delivered. |
+| `docs/task-tracking.md` | Add the td workflow and preserve the boundary with the existing shared issue tracker. |
 | `bin/`, `tests/test_knowledge.py` | Add helpers and foundation tests; integrate existing setup/check commands and hooks. |
 | `.config/knowledge.json` | Configure collections, descriptions, and deliberate check exclusions. Keep personal paths in local Git settings. |
 | `.gitignore` | Merge exclusions with the project's existing file. |
@@ -138,7 +141,9 @@ with isolation appropriate to the project.
   that cannot be recovered cheaply from current source.
 - `docs/`: designs, decisions, research, and reference guides. Use `draft`,
   `current`, `superseded`, or `archived` for document lifecycle.
-- The task tracker: actionable work and implementation progress.
+- `td`: local work items, implementation progress, blockers, and session handoffs.
+- The existing shared issue tracker: shared scope and acceptance criteria,
+  linked from local td tasks when applicable.
 
 Use clear titles, opening summaries, and short QMD collection descriptions.
 Separate accepted decisions from proposals. Record sources and useful
@@ -170,6 +175,19 @@ or `rg`. Preserve deliberately chosen operation without optional QMD; a broken
 configured tool is not evidence that the project made that choice.
 
 ## 5. Set up and verify the result
+
+Install td using its [official instructions](https://github.com/marcus/td#installation)
+if needed; macOS uses `brew install marcus/tap/td`. Follow the copied
+[task workflow](starter/docs/task-tracking.md). Run `td init` in the primary
+checkout, verify `td list`, and confirm `.todos/` is ignored. Initialize existing
+adopters as well as new projects. Do not commit local databases or exports.
+Linked worktrees share the primary checkout's task state; verify this before
+using them. Keep td installation and initialization separate from application
+startup, CI, and knowledge setup. Record the td version actually checked.
+
+Add the compact new-context command, `td usage --new-session -q`, to the
+effective agent instructions with a link to the task workflow. Use `td usage`
+for full guidance and keep detailed command examples in the workflow page.
 
 Run the integrated setup, checks, and diagnostics. In an unmodified bundle:
 
@@ -292,6 +310,11 @@ dependency on this repository. Compare the recorded starter revision with a
 chosen release, merge relevant improvements, update `.project-starter.json`,
 and run `bin/check --full`. When adopting the fast default into an existing
 project, update its instructions, application wrapper, and CI command together.
+
+For a task-tracking-only update, preserve the original `source_ref` and record
+the exact source commit in `task_tracking_source_ref`, plus the verified
+`tested_td` version. This records the partial adoption without claiming that
+all foundation files were updated.
 
 The guide and starter are [MIT licensed](LICENSE). Retain the included notice;
 do not replace the target project's own license.

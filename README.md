@@ -1,7 +1,7 @@
 # Project Starter
 
 A standalone guide and starter-file bundle for repository memory, docs,
-QMD search, Git hooks, and worktrees. Point a coding agent at
+QMD search, Git hooks, worktrees, and local task tracking with td. Point a coding agent at
 [GUIDE.md](GUIDE.md) when setting up a new repository.
 
 > Read https://github.com/jubishop/project-starter/blob/main/GUIDE.md and apply
@@ -18,6 +18,8 @@ and ask the user before updating the starter or opening a pull request.
 - [Optional GitHub workflow](extras/github/.github/workflows/check.yml): run
   the full checks in GitHub Actions.
 - [Design and validation](docs/README.md): decisions, guarantees, and evidence.
+- [Local task tracking](starter/docs/task-tracking.md): td installation,
+  initialization, progress, and session handoffs for this repository and adopters.
 
 The scripts target macOS and Linux. The
 [starter CI](.github/workflows/check.yml) runs checks on both platforms,

@@ -82,6 +82,21 @@ and uses its chosen issue tracker for tasks. Projects hosted on GitHub also
 receive a GitHub Actions workflow that runs the same checks. The foundation
 must also work with other Git hosts and local repositories.
 
+### Local task tracking — 2026-09-28
+
+The user selected td for local task progress and handoffs, and requested its
+adoption in the starter and existing projects that follow the starter patterns.
+Use td alongside the existing shared issue tracker. Shared scope and acceptance
+criteria stay in that tracker; local tasks link to relevant issues. Memory and
+docs retain durable guidance and decisions rather than temporary progress.
+
+Keep the new-context instruction short and place setup and workflow details in
+[the task guide](../starter/docs/task-tracking.md). Install td explicitly and
+initialize each primary checkout. Keep `.todos/` out of Git; linked worktrees
+share its state. CI and application startup do not require td. The tradeoff is
+that Git pushes do not preserve local task state, so exports or deliberately
+configured td sync are needed for transfer to another machine.
+
 ### Adaptation to existing files — 2026-09-04
 
 Support new repositories that already contain files, including framework
