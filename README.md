@@ -10,6 +10,9 @@ QMD search, Git hooks, worktrees, and local task tracking with td. Point a codin
 
 No skill installation or automatic context loading is required. Copied files
 belong to the new project and can evolve independently.
+New hosted projects default to a private SourceHut repository alongside their
+primary host, with ordinary Git pushes updating both. Explicit hosting choices
+take precedence; see [Git remote setup](starter/docs/git-remotes.md).
 Agents applying the guide [propose reusable improvements](GUIDE.md#6-propose-improvements-to-project-starter)
 and ask the user before updating the starter or opening a pull request.
 

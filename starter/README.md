@@ -7,6 +7,10 @@ Replace this introduction with the project's purpose and main entry points.
 Run `bin/setup` after cloning. It requires Git and Python 3.9 or later.
 QMD and direnv are optional; setup reports skipped features.
 
+For hosted projects, follow [Git remote setup](docs/git-remotes.md) to create
+the private SourceHut repository and push to both hosts. Restore that local
+configuration after a fresh clone; `bin/setup` does not publish repositories.
+
 Use `bin/check --documents-only` for Markdown edits and `bin/check` for
 foundation checks only. Use focused local checks for ordinary code changes.
 Run `bin/check --full` locally after setup, test/build infrastructure changes,

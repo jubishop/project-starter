@@ -82,6 +82,21 @@ and uses its chosen issue tracker for tasks. Projects hosted on GitHub also
 receive a GitHub Actions workflow that runs the same checks. The foundation
 must also work with other Git hosts and local repositories.
 
+### Private SourceHut and dual pushes — 2026-09-29
+
+New hosted projects default to a private SourceHut repository in addition
+to their primary Git host. Keep primary-host visibility independent. Configure
+`origin` with both push URLs so ordinary pushes reach both hosts, while fetches
+and pulls keep using the primary host. Keep the named `sourcehut` remote for
+verification and retries. Honor explicit hosting choices.
+
+Make this an explicit creation step in the guide. Applying the foundation to
+an existing repository does not itself authorize adding a host. Routine local
+setup, hooks, and CI must not create repositories or publish commits. Record
+the actual URLs in the copied [remote guide](../starter/docs/git-remotes.md)
+so fresh clones can restore the local settings. The tradeoffs are separate
+push failures and configuration that does not travel with a clone.
+
 ### Local task tracking — 2026-09-28
 
 The user selected td for local task progress and handoffs, and requested its

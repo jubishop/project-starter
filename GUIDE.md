@@ -26,8 +26,15 @@ Use the existing application stack, Git host, and shared issue tracker. Add
 related shared issues from td; preserve their scope and acceptance criteria
 without importing the entire backlog. Keep temporary progress out of durable
 memory and docs.
-Create an external repository or change its visibility only when that action
-is part of the user's request.
+When the user requests a new hosted project, include a private SourceHut
+repository and configure ordinary pushes to reach both the primary host and
+SourceHut. Use the same project name and infer the SourceHut account from the
+user's existing remotes or account information; ask only if it is unknown.
+The SourceHut account name can differ from the primary host's account name.
+Honor explicit host, visibility, or local-only choices. Adopting the foundation
+in an existing project does not by itself authorize adding another host or
+changing repository visibility. Follow the [remote setup](#new-project-remotes)
+after validation and before the first delivery is complete.
 
 ## 2. Adopt the bundle
 
@@ -42,6 +49,7 @@ Do not copy this repository's `.git` or its maintainer-only files.
 | `memory/README.md`, `docs/README.md` | Establish knowledge rules and active indexes. Do not invent initial memories. |
 | `docs/development-workflow.md` | Adapt it to the actual commands and integrations delivered. |
 | `docs/task-tracking.md` | Add the td workflow and preserve the boundary with the existing shared issue tracker. |
+| `docs/git-remotes.md` | Record the actual primary and SourceHut URLs, private SourceHut setup, and how fresh clones restore dual pushes. Adapt or omit this page when the user selects another hosting arrangement. |
 | `bin/`, `tests/test_knowledge.py` | Add helpers and foundation tests; integrate existing setup/check commands and hooks. |
 | `.config/knowledge.json` | Configure collections, descriptions, and deliberate check exclusions. Keep personal paths in local Git settings. |
 | `.gitignore` | Merge exclusions with the project's existing file. |
@@ -260,6 +268,25 @@ commit. Report a pending, skipped, or failed run explicitly. Passing local
 checks does not establish that runner setup or CI passed. The starter's own
 CI checks both the base bundle and GitHub integration on macOS and Linux;
 QMD is simulated there. Other CI systems should invoke `bin/check --full`.
+
+### New-project remotes
+
+For a new hosted project, complete the [Git remote setup](starter/docs/git-remotes.md).
+Keep the primary host, normally GitHub, as `origin` for fetching and pulling.
+Create the SourceHut repository as private on its first push, then give
+`origin` two push URLs so `git push` updates both hosts. Keep a separate
+`sourcehut` remote for verification and targeted retries.
+
+Run this setup explicitly after the initial commit and required checks.
+Do not put external repository creation into `bin/setup`, Git hooks,
+application startup, or CI. Routine setup after a clone must not create
+repositories or publish commits. Preserve existing remotes and custom push
+settings; adapt the commands instead of overwriting or duplicating them.
+
+Verify private visibility, the uploaded branch and tag revisions, and both
+destinations in a dry-run push. Record the actual URLs in the copied remote
+guide. Git does not copy push URLs or additional remotes into fresh clones,
+so verify and document how to restore this local configuration.
 
 Deliver a short report of changes, adaptations, checks actually run, and
 skipped optional features. Commit or publish according to the user's request

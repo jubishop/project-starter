@@ -59,6 +59,8 @@ searched. Do not exempt hand-written pages merely to bypass failed checks.
 
 ## Active pages
 
+- [Git remotes](git-remotes.md): private SourceHut creation, dual pushes,
+  verification, and fresh-clone setup.
 - [Local task tracking](task-tracking.md): td setup, progress, handoffs,
   review, worktrees, and local data.
 - [Development workflow](development-workflow.md): setup, search, hooks,
