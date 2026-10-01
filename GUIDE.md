@@ -22,10 +22,13 @@ hook directory, including local/global `core.hooksPath` and executable hooks
 in Git's default directory.
 
 Use the existing application stack, Git host, and shared issue tracker. Add
-`td` for local tasks, implementation progress, and session handoffs. Link
-related shared issues from td; preserve their scope and acceptance criteria
-without importing the entire backlog. Keep temporary progress out of durable
-memory and docs.
+`td` for work with multiple stages, interruptions, blockers, or agent handoffs.
+Make tasks optional for straightforward work completed in one session. Agents
+must inspect and reuse relevant tasks, record meaningful checkpoints, and keep
+the current handoff accurate. Task statuses record actual checks and review;
+they do not add a separate review gate. Link related shared issues from td;
+preserve their scope and acceptance criteria without importing the entire
+backlog. Keep temporary progress out of durable memory and docs.
 When the user requests a new hosted project, include a private SourceHut
 repository and configure ordinary pushes to reach both the primary host and
 SourceHut. Use the same project name and infer the SourceHut account from the
@@ -149,7 +152,7 @@ with isolation appropriate to the project.
   that cannot be recovered cheaply from current source.
 - `docs/`: designs, decisions, research, and reference guides. Use `draft`,
   `current`, `superseded`, or `archived` for document lifecycle.
-- `td`: local work items, implementation progress, blockers, and session handoffs.
+- `td`: resumable progress, blockers, and handoffs for work that needs continuity.
 - The existing shared issue tracker: shared scope and acceptance criteria,
   linked from local td tasks when applicable.
 
@@ -194,8 +197,10 @@ using them. Keep td installation and initialization separate from application
 startup, CI, and knowledge setup. Record the td version actually checked.
 
 Add the compact new-context command, `td usage --new-session -q`, to the
-effective agent instructions with a link to the task workflow. Use `td usage`
-for full guidance and keep detailed command examples in the workflow page.
+effective agent instructions with a link to the task workflow. Include the
+selective task criteria, task reuse, current handoffs, and reuse of actual
+review. Use `td usage` for command guidance and keep detailed examples in the
+workflow page. Do not turn small requests into mandatory task lifecycles.
 
 Run the integrated setup, checks, and diagnostics. In an unmodified bundle:
 

@@ -112,6 +112,24 @@ share its state. CI and application startup do not require td. The tradeoff is
 that Git pushes do not preserve local task state, so exports or deliberately
 configured td sync are needed for transfer to another machine.
 
+### Selective task tracking — 2026-09-30
+
+Keep td available, and require task records for work with multiple stages,
+interruptions, blockers, or agent handoffs. Tasks are optional for
+straightforward work completed in one session. Read-only questions, small
+edits, and filing a single issue need no artificial task lifecycle.
+
+Agents inspect and reuse relevant tasks, record meaningful checkpoints, and
+keep the current handoff accurate as work changes. Existing repository checks
+and actual review supply completion evidence; moving a task through review and
+approval does not add an independent quality gate. Preserve stricter project
+review requirements.
+
+The user requested this refinement after an adopter review found useful
+recovery and verification handoffs alongside unnecessary small-task records
+and handoff summaries that lagged behind their logs. The intended benefit is
+less repeated investigation and fewer lost obligations, with less bookkeeping.
+
 ### Adaptation to existing files — 2026-09-04
 
 Support new repositories that already contain files, including framework
