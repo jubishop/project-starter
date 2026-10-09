@@ -3,6 +3,18 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 2.0.1 — 2026-10-09
+
+### Synced
+
+- Hook setup messages and `bin/doctor` point to
+  `docs/foundation/knowledge-search.md#existing-hooks` instead of the section
+  that moved out of `docs/development-workflow.md` in 2.0.0.
+
+### Manual follow-up
+
+Projects that override `bin/_knowledge.py` apply the same message change.
+
 ## 2.0.0 — 2026-10-09
 
 ### Synced

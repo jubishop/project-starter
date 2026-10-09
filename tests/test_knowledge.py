@@ -2,6 +2,7 @@
 
 import json
 import os
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -96,6 +97,17 @@ else:
         if check:
             self.assertEqual(result.returncode, 0, (args, result.stdout, result.stderr))
         return result
+
+    def assert_document_references(self, text):
+        """Guidance printed by the helpers must name pages and headings that exist in the bundle."""
+        references = re.findall(r"(docs/[\w/.-]+\.md)(?:#([\w-]+))?", text)
+        self.assertTrue(references, text)
+        for page, anchor in references:
+            self.assertTrue((self.repo / page).is_file(), page)
+            if anchor:
+                headings = {re.sub(r"[^\w\- ]", "", line.lstrip("#").strip().lower()).replace(" ", "-")
+                            for line in (self.repo / page).read_text().splitlines() if line.startswith("#")}
+                self.assertIn(anchor, headings, page + "#" + anchor)
 
     def records(self):
         return [json.loads(line) for line in self.events.read_text().splitlines()] if self.events.exists() else []
@@ -394,6 +406,7 @@ else:
                 result = self.run_command("bin/setup", check=False)
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn("Existing hooks preserved", result.stderr)
+                self.assert_document_references(result.stderr)
                 setting = self.run_command("git", "config", "--get", "core.hooksPath", check=False).stdout.strip()
                 self.assertEqual(setting, "existing-hooks" if configured else "")
                 self.assertEqual(hook.read_text(), "#!/bin/sh\nexit 0\n")
@@ -416,7 +429,9 @@ sys.exit(int(os.environ.get("OLD_HOOK_EXIT", "0")))
             path.chmod(0o755)
         self.run_command("git", "config", "core.hooksPath", "custom hooks")
         self.run_command("git", "config", "knowledge.hooks", "external")
-        self.run_command("bin/setup")
+        self.assert_document_references(self.run_command("bin/setup").stdout)
+        report = json.loads(self.run_command("bin/doctor", "--json", check=False).stdout)
+        self.assert_document_references("\n".join(report["issues"]))
         stdin_file = self.base / "rewritten commits"
         stdin_file.write_text("old new\n")
         for event, args in (("post-checkout", ["1" * 40, "2" * 40, "1"]), ("post-commit", []),
