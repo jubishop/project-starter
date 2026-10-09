@@ -18,8 +18,9 @@ from _checks import digest, managed_block, MARKERS  # noqa: E402
 MANIFEST = ".project-starter.json"
 BLOCKS = ("AGENTS.md", ".gitignore")
 # Pages each project adapts: --init copies them once, and sync never changes them.
+# Version 1.0.0 also shipped .envrc, which is project configuration.
 PROJECT_OWNED = {"README.md", "docs/README.md", "memory/README.md", "docs/development-workflow.md",
-                 "docs/git-remotes.md", ".config/knowledge.json", ".github/workflows/check.yml"}
+                 "docs/git-remotes.md", ".config/knowledge.json", ".github/workflows/check.yml", ".envrc"}
 EXTRAS = {".github/workflows/check.yml": "extras/github/.github/workflows/check.yml"}
 LEGACY_REFS = ("source_ref", "knowledge_source_ref", "task_tracking_source_ref")
 WORKTREE = "WORKTREE"
@@ -243,6 +244,7 @@ def sync(target, ref, init, dry_run, force):
             print("  " + kind + ": " + ", ".join(paths))
     for note in result.notes:
         print("  note: " + note)
+    sys.stdout.flush()
     if result.conflicts and not force:
         print("Conflicts; nothing was written. Review them, record overrides, or rerun with --force:", file=sys.stderr)
         for conflict in result.conflicts:

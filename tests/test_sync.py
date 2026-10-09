@@ -178,7 +178,8 @@ class SyncTests(unittest.TestCase):
         source = self.base / "starter source"
         shutil.copytree(ROOT, source, ignore=shutil.ignore_patterns(".git", ".cache", ".todos", "__pycache__"))
         legacy_files = {"bin/doctor": "# legacy doctor\n", "tests/test_knowledge.py": "# legacy tests\n",
-                        "docs/obsolete-guide.md": "---\nstatus: current\n---\n\n# Obsolete guide\n"}
+                        "docs/obsolete-guide.md": "---\nstatus: current\n---\n\n# Obsolete guide\n",
+                        ".envrc": "export LEGACY_ENVIRONMENT=1\n"}
         current = {relative: (source / "starter" / relative).read_bytes()
                    for relative in legacy_files if (source / "starter" / relative).is_file()}
         for relative, text in legacy_files.items():
@@ -217,6 +218,8 @@ class SyncTests(unittest.TestCase):
         self.assertEqual(checks.read_bytes(), (source / "starter/bin/_checks.py").read_bytes())
         self.assertFalse((repo / "tests/test_knowledge.py").exists())
         self.assertFalse((repo / "docs/obsolete-guide.md").exists())
+        # 1.x shipped .envrc; it is project configuration, never removed by sync.
+        self.assertEqual((repo / ".envrc").read_text(), "export LEGACY_ENVIRONMENT=1\n")
         agents = (repo / "AGENTS.md").read_text()
         self.assertIn("Legacy project rule.", agents)
         self.assertLess(agents.index("project-starter:begin"), agents.index("Legacy project rule."))

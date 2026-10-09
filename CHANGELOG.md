@@ -38,7 +38,16 @@ Changed copies are conflicts to review.
   `docs/development-workflow.md`.
 - Reduce `docs/development-workflow.md` to project-specific commands, and
   remove `AGENTS.md` rules that the managed block now covers.
-- Record intentional managed-file changes as overrides with reasons.
+- Record intentional managed-file changes as overrides with reasons, and
+  merge 2.0 into those files by hand. A project that overrides a helper keeps
+  its own tests for that variant.
+- Preserve project-specific regression tests from the removed
+  `tests/test_knowledge.py`, such as application-check wiring, as tests of
+  `bin/check-application`.
+- Update project tests that build fixtures from `.config/knowledge.json` or
+  `.project-starter.json`: they now need `docs/foundation/` and the managed
+  files those manifests reference. Repoint in-page anchors to moved sections;
+  `bin/check` reports them.
 
 ### Verified
 
