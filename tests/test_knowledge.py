@@ -1,4 +1,4 @@
-"""Test the copied foundation in disposable repositories; no network or models."""
+"""Test the starter bundle in disposable repositories; no network or models."""
 
 import json
 import os
@@ -10,7 +10,7 @@ import tempfile
 import time
 import unittest
 
-SOURCE = Path(__file__).resolve().parents[1]
+SOURCE = Path(__file__).resolve().parents[1] / "starter"
 
 
 class KnowledgeTests(unittest.TestCase):
@@ -19,21 +19,8 @@ class KnowledgeTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.base = Path(self.temp.name).resolve()
         self.repo = self.base / "main checkout"
-        self.repo.mkdir()
-        for name in ("bin", "docs", "memory", "tests"):
-            shutil.copytree(SOURCE / name, self.repo / name, ignore=shutil.ignore_patterns("__pycache__"))
-        # Adopted docs can link to the optional GitHub workflow.
-        if (SOURCE / ".github").is_dir():
-            shutil.copytree(SOURCE / ".github", self.repo / ".github")
-        (self.repo / ".config").mkdir()
-        shutil.copy2(SOURCE / ".config/knowledge.json", self.repo / ".config/knowledge.json")
-        for name in ("README.md", "AGENTS.md", ".gitignore", ".project-starter.json",
-                     "LICENSE.project-starter"):
-            shutil.copy2(SOURCE / name, self.repo / name)
-        if (SOURCE / "LICENSE").is_file():
-            shutil.copy2(SOURCE / "LICENSE", self.repo / "LICENSE")
-        if (SOURCE / ".envrc").exists():
-            shutil.copy2(SOURCE / ".envrc", self.repo / ".envrc")
+        # The bundle is the fixture: tests never depend on an adopter's documents.
+        shutil.copytree(SOURCE, self.repo, ignore=shutil.ignore_patterns("__pycache__", ".cache"))
         self.tools = self.base / "fake tools"
         self.tools.mkdir()
         for name, target in (("python3", sys.executable), ("git", shutil.which("git"))):
@@ -600,32 +587,36 @@ fcntl.flock = flock
         self.drain()
         self.assertEqual(len(self.records()), initial + 2)
 
-    def test_check_modes_run_behavior_tests_only_with_full(self):
+    def test_only_full_check_runs_application_checks_after_foundation_checks(self):
         self.tool("shellcheck", "import sys\nsys.exit(0)\n")
-        suite = self.repo / Path(__file__).resolve().relative_to(SOURCE)
-        # Replace only the disposable suite to observe execution without recursion.
-        for path in suite.parent.glob("test_*.py"):
-            path.unlink()
-        suite.write_text("import unittest\nclass Probe(unittest.TestCase):\n"
-                         "    def test_probe(self):\n"
-                         "        self.fail('behavior suite executed')\n")
-        fast = self.run_command("bin/check")
-        self.assertIn("Fast foundation checks passed", fast.stdout)
+        self.assertIn("no bin/check-application", self.run_command("bin/check", "--full").stdout)
+        calls = self.base / "application calls"
+        application = self.repo / "bin/check-application"
+        application.write_text("#!" + sys.executable + "\nimport os, sys\n"
+                               "open(os.environ['APP_CALLS'], 'a').write('called\\n')\n"
+                               "sys.exit(int(os.environ.get('APP_EXIT', '0')))\n")
+        self.env["APP_CALLS"] = str(calls)
+        self.assertIn("Fast foundation checks passed", self.run_command("bin/check").stdout)
         self.run_command("bin/check", "--documents-only")
-        full = self.run_command("bin/check", "--full", check=False)
-        self.assertNotEqual(full.returncode, 0)
-        self.assertIn("behavior suite executed", full.stderr)
-        suite.write_text(suite.read_text().replace("self.fail('behavior suite executed')", "pass"))
-        self.assertIn("Full repository foundation checks passed", self.run_command("bin/check", "--full").stdout)
-        suite.unlink()
-        missing = self.run_command("bin/check", "--full", check=False)
-        self.assertNotEqual(missing.returncode, 0)
-        self.assertIn("preserve the foundation tests", missing.stderr)
+        self.assertFalse(calls.exists())
+        application.chmod(0o644)
+        result = self.run_command("bin/check", "--full", check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("bin/check-application must be executable", result.stderr)
+        self.assertFalse(calls.exists())
+        application.chmod(0o755)
+        self.assertIn("Full foundation and application checks passed", self.run_command("bin/check", "--full").stdout)
+        self.assertEqual(calls.read_text(), "called\n")
+        self.assertNotEqual(self.run_command("bin/check", "--full", extra={"APP_EXIT": "3"}, check=False).returncode, 0)
+        (self.repo / "docs/broken.md").write_text("# Missing status\n")
+        calls.unlink()
+        self.assertNotEqual(self.run_command("bin/check", "--full", check=False).returncode, 0)
+        self.assertFalse(calls.exists())
 
     def test_fast_check_still_rejects_syntax_and_lint_errors(self):
         self.tool("shellcheck", "import sys\nsys.exit(0)\n")
-        suite = self.repo / Path(__file__).resolve().relative_to(SOURCE)
-        for folder in (self.repo / "bin", suite.parent):
+        (self.repo / "tests").mkdir()
+        for folder in (self.repo / "bin", self.repo / "tests"):
             with self.subTest(folder=folder):
                 broken = folder / "invalid_syntax.py"
                 broken.write_text("def broken(\n")

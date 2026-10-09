@@ -1,3 +1,4 @@
+# project-starter:begin
 .DS_Store
 .cache/
 .config/qmd/
@@ -9,3 +10,4 @@ __pycache__/
 *.py[cod]
 worktrees/
 .todos/
+# project-starter:end

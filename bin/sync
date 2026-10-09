@@ -1,0 +1,308 @@
+#!/usr/bin/env python3
+"""Copy a Project Starter release into adopters, or report the fleet's versions and drift."""
+
+import argparse
+import io
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+import tarfile
+
+sys.dont_write_bytecode = True
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "starter/bin"))
+from _checks import digest, managed_block, MARKERS  # noqa: E402
+
+MANIFEST = ".project-starter.json"
+BLOCKS = ("AGENTS.md", ".gitignore")
+# Pages each project adapts: --init copies them once, and sync never changes them.
+PROJECT_OWNED = {"README.md", "docs/README.md", "memory/README.md", "docs/development-workflow.md",
+                 "docs/git-remotes.md", ".config/knowledge.json", ".github/workflows/check.yml"}
+EXTRAS = {".github/workflows/check.yml": "extras/github/.github/workflows/check.yml"}
+LEGACY_REFS = ("source_ref", "knowledge_source_ref", "task_tracking_source_ref")
+WORKTREE = "WORKTREE"
+
+
+def git(*args, cwd=ROOT, check=True):
+    result = subprocess.run(["git", *args], cwd=cwd, capture_output=True)
+    if check and result.returncode:
+        raise RuntimeError("git " + " ".join(args) + " failed: " + result.stderr.decode().strip())
+    return result
+
+
+def latest_tag():
+    tags = git("tag", "--list", "v[0-9]*", "--sort=-v:refname").stdout.decode().split()
+    if not tags:
+        raise RuntimeError("No release tag found. Tag a release or pass --ref.")
+    return tags[0]
+
+
+def release(ref):
+    """Return the label and {path: (bytes, executable)} for the bundle at a ref."""
+    files = {}
+    if ref == WORKTREE:
+        sources = [(p, p.relative_to(ROOT / "starter").as_posix()) for p in sorted((ROOT / "starter").rglob("*"))]
+        sources += [(ROOT / source, target) for target, source in EXTRAS.items()]
+        for path, relative in sources:
+            if path.is_file() and not {"__pycache__", ".cache"} & set(path.parts) and path.name != ".DS_Store":
+                files[relative] = (path.read_bytes(), os.access(path, os.X_OK))
+        return "worktree", files
+    archive = git("archive", "--format=tar", ref, "starter", *EXTRAS.values()).stdout
+    with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
+        for member in tar.getmembers():
+            if member.isfile():
+                relative = {source: target for target, source in EXTRAS.items()}.get(
+                    member.name, member.name.removeprefix("starter/"))
+                files[relative] = (tar.extractfile(member).read(), bool(member.mode & 0o111))
+    tagged = git("tag", "--points-at", ref).stdout.decode().split()
+    label = ref if ref in tagged else git("rev-parse", "--short", ref + "^{commit}").stdout.decode().strip()
+    return label, files
+
+
+def ref_content(ref, relative):
+    result = git("cat-file", "blob", ref + ":starter/" + relative, check=False)
+    return result.stdout if result.returncode == 0 else None
+
+
+def block_digest(text):
+    block = managed_block(text)
+    return None if block is None else digest(block.encode())
+
+
+def read_manifest(target):
+    path = target / MANIFEST
+    return json.loads(path.read_text()) if path.is_file() else None
+
+
+class Plan:
+    def __init__(self):
+        self.writes, self.removals, self.conflicts, self.notes = {}, [], [], []
+        self.summary = {"added": [], "updated": [], "removed": []}
+
+
+def plan(target, label, files, manifest, init):
+    """Decide every change before writing, so conflicts leave the target untouched."""
+    result = Plan()
+    overrides = dict(manifest.get("overrides", {}))
+    legacy = bool(manifest) and "managed" not in manifest
+    legacy_refs = [manifest[key] for key in LEGACY_REFS if manifest.get(key)] if legacy else []
+    for ref in legacy_refs:
+        if git("cat-file", "-e", ref + "^{commit}", check=False).returncode:
+            raise RuntimeError("Recorded starter revision " + ref + " is not in this checkout; fetch it first")
+
+    def bases(relative, block):
+        if not legacy:
+            recorded = manifest.get("blocks" if block else "managed", {}).get(relative)
+            return {recorded} if recorded else set()
+        contents = [ref_content(ref, relative) for ref in legacy_refs]
+        return {block_digest(c.decode()) if block else digest(c) for c in contents if c is not None}
+
+    def change(relative, data, executable, current_digest, base_digests, new_digest):
+        path = target / relative
+        if not path.exists():
+            result.summary["added"].append(relative)
+        elif current_digest == new_digest:
+            if executable == os.access(path, os.X_OK):
+                return
+            result.summary["updated"].append(relative)
+        elif current_digest in base_digests:
+            result.summary["updated"].append(relative)
+        else:
+            result.conflicts.append(relative + ": local changes differ from the recorded starter version")
+            result.summary["updated"].append(relative)
+        result.writes[relative] = (data, executable)
+
+    managed = sorted(p for p in files if p not in PROJECT_OWNED and p not in BLOCKS and p != MANIFEST)
+    for relative in managed:
+        data, executable = files[relative]
+        path = target / relative
+        if relative in overrides:
+            note = relative + " is overridden (" + overrides[relative] + ")"
+            old = manifest.get("ref")
+            if old and old != "worktree" and ref_content(old, relative) not in (None, data):
+                note += "; upstream changed since " + old + ": git -C " + str(ROOT) + " diff " + old + " " + label + " -- starter/" + relative
+            result.notes.append(note)
+            continue
+        current = digest(path.read_bytes()) if path.is_file() else None
+        change(relative, data, executable, current, bases(relative, False), digest(data))
+
+    if legacy:
+        previous = set()
+        for ref in legacy_refs:
+            listing = git("ls-tree", "-r", "-z", "--name-only", ref, "--", "starter/").stdout.decode()
+            previous |= {name.removeprefix("starter/") for name in listing.split("\0") if name}
+    else:
+        previous = set(manifest.get("managed", {}))
+    for relative in sorted(previous - set(files) - PROJECT_OWNED - set(BLOCKS) - {MANIFEST}):
+        path = target / relative
+        if relative in overrides or not path.is_file():
+            continue
+        if digest(path.read_bytes()) not in bases(relative, False):
+            result.conflicts.append(relative + ": no longer part of the starter but has local changes")
+        result.removals.append(relative)
+        result.summary["removed"].append(relative)
+
+    for relative in BLOCKS:
+        template = files[relative][0].decode()
+        path = target / relative
+        if relative in overrides:
+            result.notes.append(relative + " block is overridden (" + overrides[relative] + ")")
+            continue
+        if not path.is_file():
+            result.writes[relative] = (template.encode(), False)
+            result.summary["added"].append(relative)
+            continue
+        text = path.read_text()
+        try:
+            current = block_digest(text)
+        except ValueError as error:
+            result.conflicts.append(relative + ": " + str(error))
+            continue
+        new = block_digest(template)
+        if current == new:
+            continue
+        lines = text.splitlines(keepends=True)
+        template_lines = template.splitlines(keepends=True)
+        first = next(i for i, line in enumerate(template_lines) if MARKERS[0] in line)
+        last = next(i for i, line in enumerate(template_lines) if MARKERS[1] in line)
+        region = "".join(template_lines[first:last + 1])
+        if current is None:
+            title = next((i for i, line in enumerate(lines) if line.startswith("# ")), None) if relative == "AGENTS.md" else None
+            if title is None and relative == "AGENTS.md":
+                updated = region + "\n" + text
+            elif title is None:
+                updated = text + ("" if not text or text.endswith("\n") else "\n") + region
+            else:
+                head = "".join(lines[:title + 1])
+                tail = "".join(lines[title + 1:]).lstrip("\n")
+                updated = head + "\n" + region + ("\n" + tail if tail else "")
+            if relative == "AGENTS.md":
+                result.notes.append("AGENTS.md now contains the managed block; remove rules it duplicates outside the markers")
+        else:
+            if current not in bases(relative, True):
+                result.conflicts.append(relative + ": managed block has local changes")
+            begin = next(i for i, line in enumerate(lines) if MARKERS[0] in line)
+            end = next(i for i, line in enumerate(lines) if MARKERS[1] in line)
+            updated = "".join(lines[:begin + 1] + template_lines[first + 1:last] + lines[end:])
+        result.writes[relative] = (updated.encode(), False)
+        result.summary["updated"].append(relative)
+
+    if init:
+        for relative in sorted(PROJECT_OWNED & set(files)):
+            if (target / relative).exists():
+                result.notes.append("Kept existing " + relative + "; merge starter guidance into it by hand")
+            else:
+                result.writes[relative] = files[relative]
+                result.summary["added"].append(relative)
+
+    template = json.loads(files[MANIFEST][0])
+    updated_manifest = {
+        "version": template["version"], "source": template["source"], "ref": label,
+        "managed": {relative: digest(files[relative][0]) for relative in managed},
+        "blocks": {relative: block_digest(files[relative][0].decode()) for relative in BLOCKS},
+        "overrides": overrides,
+    }
+    result.writes[MANIFEST] = ((json.dumps(updated_manifest, indent=2) + "\n").encode(), False)
+    return template["version"], result
+
+
+def apply(target, result):
+    for relative, (data, executable) in result.writes.items():
+        path = target / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+        path.chmod(0o755 if executable else 0o644)
+    for relative in result.removals:
+        path = target / relative
+        path.unlink()
+        parent = path.parent
+        while parent != target and not any(parent.iterdir()):
+            parent.rmdir()
+            parent = parent.parent
+
+
+def sync(target, ref, init, dry_run, force):
+    target = target.expanduser().resolve()
+    top = git("rev-parse", "--show-toplevel", cwd=target, check=False)
+    if top.returncode or Path(top.stdout.decode().strip()).resolve() != target:
+        raise RuntimeError(str(target) + " is not a Git checkout root")
+    manifest = read_manifest(target)
+    if init and manifest is not None:
+        raise RuntimeError(str(target) + " has already adopted Project Starter; run bin/sync without --init")
+    if not init and manifest is None:
+        raise RuntimeError(str(target) + " has no " + MANIFEST + "; use --init to adopt the starter")
+    if not dry_run and git("status", "--porcelain", cwd=target).stdout.strip():
+        raise RuntimeError(str(target) + " has uncommitted changes; commit or stash them before syncing")
+    label, files = release(ref or latest_tag())
+    version, result = plan(target, label, files, manifest or {}, init)
+    print("Project Starter " + version + " (" + label + ") -> " + str(target))
+    for kind, paths in result.summary.items():
+        if paths:
+            print("  " + kind + ": " + ", ".join(paths))
+    for note in result.notes:
+        print("  note: " + note)
+    if result.conflicts and not force:
+        print("Conflicts; nothing was written. Review them, record overrides, or rerun with --force:", file=sys.stderr)
+        for conflict in result.conflicts:
+            print("  conflict: " + conflict, file=sys.stderr)
+        return 1
+    if dry_run:
+        print("Dry run; nothing was written.")
+        return 0
+    apply(target, result)
+    print("No commits were made. Review git diff, run bin/check --full, then commit.")
+    return 0
+
+
+def status(root, ref):
+    label, files = release(ref or latest_tag())
+    latest = json.loads(files[MANIFEST][0])["version"]
+    for path in sorted(root.expanduser().glob("*/" + MANIFEST)):
+        repo, manifest = path.parent, json.loads(path.read_text())
+        if "managed" not in manifest:
+            print(repo.name + "  legacy " + str(manifest.get("version")) + " manifest; migrate with bin/sync")
+            continue
+        overrides = manifest.get("overrides", {})
+        drift = 0
+        for kind, entries in (("managed", manifest["managed"]), ("blocks", manifest.get("blocks", {}))):
+            for relative, expected in entries.items():
+                file = repo / relative
+                if relative in overrides:
+                    continue
+                try:
+                    current = (digest(file.read_bytes()) if kind == "managed" else block_digest(file.read_text())) if file.is_file() else None
+                except ValueError:
+                    current = None
+                drift += current != expected
+        line = repo.name + "  " + manifest["version"] + " (" + manifest["ref"] + ")  drift " + str(drift) + "  overrides " + str(len(overrides))
+        print(line + ("" if manifest["version"] == latest else "  behind " + latest + " (" + label + ")"))
+    return 0
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("targets", nargs="*", type=Path, help="Adopter checkout roots")
+    parser.add_argument("--init", action="store_true", help="Adopt the starter, including project-owned pages")
+    parser.add_argument("--status", action="store_true", help="Report every adopter under --root")
+    parser.add_argument("--root", type=Path, default=Path("~/projects"), help="Directory containing adopters")
+    parser.add_argument("--ref", help="Release tag or commit (default: latest v* tag); WORKTREE uses this checkout")
+    parser.add_argument("--dry-run", action="store_true", help="Report planned changes without writing")
+    parser.add_argument("--force", action="store_true", help="Replace conflicting local changes")
+    args = parser.parse_args()
+    if args.status:
+        if args.targets or args.init or args.force or args.dry_run:
+            parser.error("--status takes only --root and --ref")
+        return status(args.root, args.ref)
+    if not args.targets:
+        parser.error("name at least one adopter checkout")
+    return max(sync(target, args.ref, args.init, args.dry_run, args.force) for target in args.targets)
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as error:
+        print(error, file=sys.stderr)
+        sys.exit(1)

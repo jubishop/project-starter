@@ -22,7 +22,7 @@ def main():
         if not shutil.which(tool):
             print("Install " + tool + " before running bin/check.", file=sys.stderr)
             return 1
-    for folder in (root / "bin", root / "tests", root / "starter/bin", root / "starter/tests"):
+    for folder in (root / "bin", root / "tests", root / "starter/bin"):
         for path in folder.iterdir():
             if path.is_file() and (path.suffix == ".py" or path.read_bytes().startswith(b"#!/usr/bin/env python3")):
                 ast.parse(path.read_text(), filename=str(path))
@@ -32,7 +32,6 @@ def main():
     workflows = sorted((root / ".github/workflows").glob("*.yml"))
     workflows += sorted((root / "extras/github/.github/workflows").glob("*.yml"))
     subprocess.run(["actionlint", *map(str, workflows)], cwd=root, check=True)
-    subprocess.run([sys.executable, "-B", "-m", "unittest", "discover", "-s", "starter/tests", "-v"], cwd=root, check=True)
     subprocess.run([sys.executable, "-B", "-m", "unittest", "discover", "-s", "tests", "-v"], cwd=root, check=True)
     subprocess.run(["git", "diff", "--check"], cwd=root, check=True)
     subprocess.run(["git", "diff", "--cached", "--check"], cwd=root, check=True)

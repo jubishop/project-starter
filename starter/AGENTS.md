@@ -1,5 +1,6 @@
 # Project instructions
 
+<!-- project-starter:begin -->
 Keep durable guidance and non-derivable context in [memory](memory/README.md).
 Keep designs, decisions, and research in [docs](docs/README.md).
 
@@ -65,3 +66,4 @@ Read the relevant memory or docs index for its format and maintenance rules.
 Keep accepted decisions separate from proposals. Preserve existing project
 instructions, setup commands, hooks, and unrelated changes when adapting this
 foundation. Keep secrets and generated caches out of Git.
+<!-- project-starter:end -->
