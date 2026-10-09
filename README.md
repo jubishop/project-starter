@@ -1,45 +1,37 @@
 # Project Starter
 
-A standalone guide and starter-file bundle for repository memory, docs,
-QMD search, Git hooks, worktrees, and local task tracking with td. Point a coding agent at
-[GUIDE.md](GUIDE.md) when setting up a new repository.
+An opinionated foundation for one owner's repositories: Markdown memory and
+docs with QMD search, Git hooks, worktree support, td task tracking, shared
+engineering policy, and private SourceHut mirroring. The repository is public,
+but it is not a general-purpose template; its defaults reflect those projects.
 
-> Read https://github.com/jubishop/project-starter/blob/main/GUIDE.md and apply
-> its starter bundle to my project. Inspect existing files and hooks first,
-> preserve their behavior, and verify the resulting setup.
+- [Guide](GUIDE.md): adopt or update a repository.
+- [Starter bundle](starter/): the files `bin/sync` installs.
+- [Changelog](CHANGELOG.md): releases and their manual follow-up.
+- [Design and validation](docs/README.md): decisions, releases, and evidence.
 
-No skill installation or automatic context loading is required. Copied files
-belong to the new project and can evolve independently.
-New hosted projects default to a private SourceHut repository alongside their
-primary host, with ordinary Git pushes updating both. Explicit hosting choices
-take precedence; see [Git remote setup](starter/docs/git-remotes.md).
-Agents applying the guide [propose reusable improvements](GUIDE.md#6-propose-improvements-to-project-starter)
-and ask the user before updating the starter or opening a pull request.
+## Use
 
-- [Guide](GUIDE.md): how to apply and verify the foundation.
-- [Starter files](starter/): the copyable bundle, including its own checks.
-- [Optional GitHub workflow](extras/github/.github/workflows/check.yml): run
-  the full checks in GitHub Actions.
-- [Design and validation](docs/README.md): decisions, guarantees, and evidence.
-- [Local task tracking](starter/docs/task-tracking.md): td installation,
-  initialization, progress, and session handoffs for this repository and adopters.
+```sh
+bin/sync --init /path/to/project   # adopt the latest release
+bin/sync /path/to/project          # update an adopter
+bin/sync --status                  # versions, drift, and overrides under ~/projects
+```
 
-The scripts target macOS and Linux. The
-[starter CI](.github/workflows/check.yml) runs checks on both platforms,
-including an adopted copy with the optional GitHub workflow. See
-[validation](docs/validation.md) for executed results. Git and Python 3.9+ are required.
-ShellCheck is required for checks. QMD and direnv are optional.
+Sync copies managed files, records their hashes in `.project-starter.json`,
+and never commits. An adopter's `bin/check` verifies those hashes, and
+`bin/check --full` adds the project's `bin/check-application`.
 
-Copied projects use `bin/check` for fast checks, `--documents-only` for
-Markdown edits, and `--full` for foundation tests and CI. Discussion needs
-no checks. Batch edits and reuse passing results until relevant inputs change.
+The scripts target macOS and Linux and need Git and Python 3.9 or later;
+checks need ShellCheck. QMD, direnv, and td are optional at runtime.
 
-In this source repository, maintainers run `bin/check`, which always runs
-the full suite and also requires
-[actionlint](https://github.com/rhysd/actionlint/blob/main/docs/install.md) to
-check the maintained and copyable workflows. This extra dependency is only
-for maintaining the starter. For a real-QMD smoke test using existing local
-models, run `bin/smoke-qmd`.
+## Maintain
 
-Released under the [MIT license](LICENSE). Keep `LICENSE.project-starter`
-with copied material; choose the new project's own license independently.
+`bin/check` runs the maintainer suite: document checks, ShellCheck,
+[actionlint](https://github.com/rhysd/actionlint/blob/main/docs/install.md),
+and behavior tests against copies of the bundle.
+[CI](.github/workflows/check.yml) runs it on Ubuntu and macOS. `bin/smoke-qmd`
+runs a real-QMD smoke test locally. See [releases](docs/releases.md) for
+cutting a version and syncing adopters.
+
+Released under the [MIT license](LICENSE).

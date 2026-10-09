@@ -16,31 +16,27 @@ tool versions in each run. See the
 [workflow runs](https://github.com/jubishop/project-starter/actions/workflows/check.yml)
 for results tied to exact commits.
 
-The command runs the base foundation tests and a GitHub adoption regression.
-The regression copies the actual optional workflow into a disposable project,
-links it from the README and development docs, then runs the three document
-tests that create further copies. This detects missing workflow files in
-those test fixtures. The base tests also verify use without GitHub files.
+Since 2.0.0, the behavior suite runs only here, against copies of the bundle
+itself, so adopter documents never become test fixtures. It covers:
 
-A license adoption regression links the starter notice from an adopted
-README, with and without a separate project `LICENSE`. It runs document
-checks in the adopter and its disposable test copies, so valid license links
-remain valid without requiring the adopter to choose a project license.
+- Knowledge tooling: setup, search routing, freshness, refresh coordination,
+  hooks, worktrees, model caches, diagnostics, and refresh-log timestamps.
+- Check modes: `bin/check-application` runs only under `--full`, only after
+  the foundation checks pass, and its failures propagate, while syntax, lint,
+  and whitespace errors still fail the routine modes.
+- `bin/sync`: initial adoption, hash and block enforcement with overrides,
+  updates between tagged releases with conflict refusal and `--force`, 1.x
+  migration through recorded source revisions, and fleet `--status`. The
+  adoption test also confirms that the copied CI workflow runs
+  `bin/check --full`.
+- Maintainer consistency: the tested QMD release in the helpers must match the
+  validation manifest.
 
-A separate adoption regression adds an existing resolved memory page before
-running the copied archive checks. It verifies that those checks accept an
-existing `memory/archive/` directory and preserve the archived source page.
-
-actionlint validates both maintained and copyable workflows. It is a
-maintainer dependency; copied projects still require only ShellCheck for
-their foundation checks. QMD and direnv are simulated in automated tests.
-These checks do not establish real-QMD compatibility on a CI runner.
-
-Copied projects now use a fast default `bin/check` for document, syntax,
-ShellCheck, and whitespace validation. `--documents-only` checks Markdown;
-`--full` adds the behavior suite. Regression tests verify mode selection,
-failure propagation, required test files, and retained syntax/lint/whitespace
-checks. The adoption regression also verifies that copied CI uses `--full`.
+Adopters run the same check modes, verify managed-file hashes against the
+release that passed this suite, and add their own `bin/check-application`.
+actionlint validates both maintained and copyable workflows; it is a
+maintainer dependency. QMD and direnv are simulated in automated tests, which
+do not establish real-QMD compatibility on a CI runner.
 
 ## Current real-QMD commands
 

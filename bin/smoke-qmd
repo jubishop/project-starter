@@ -162,11 +162,11 @@ def main():
             assert not json.loads(run("bin/knowledge", "search", term, "--json").stdout), term
         passed("memory archive, review records, and document archive exclusions")
         result = json.loads(run("bin/knowledge", "vsearch", "Each branch needs an independent search database", "--json", "-n", "5").stdout)
-        assert result and any(name in json.dumps(result) for name in ("retrieval-proof.md", "development-workflow.md")), result
+        assert result and any(name in json.dumps(result) for name in ("retrieval-proof.md", "knowledge-search.md")), result
         passed("real embedding generation and semantic retrieval")
         result = json.loads(run("bin/knowledge", "query", "How do independent branches keep their notes separate?",
                                 "--json", "-n", "5", "-C", "5").stdout)
-        assert result and any(name in json.dumps(result) for name in ("retrieval-proof.md", "development-workflow.md")), result
+        assert result and any(name in json.dumps(result) for name in ("retrieval-proof.md", "knowledge-search.md")), result
         passed("query expansion and reranking with real models")
         assert json.loads(run("bin/knowledge", "search", "homemarkerzeta", "--json").stdout)
         run("git", "config", "--unset", "knowledge.homeMemoryPath")

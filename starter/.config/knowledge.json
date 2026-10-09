@@ -10,8 +10,13 @@
     "docs": {
       "path": "docs",
       "pattern": "**/*.md",
-      "ignore": ["archive/**"],
+      "ignore": ["archive/**", "foundation/**"],
       "context": {"/": "Project designs, decisions, research, and reference guides. A current document does not imply implementation or user approval."}
+    },
+    "foundation": {
+      "path": "docs/foundation",
+      "pattern": "**/*.md",
+      "context": {"/": "Shared Project Starter policy for engineering, knowledge search, and task tracking. Project pages may add stronger rules."}
     }
   },
   "checks": {"exclude": ["memory/pr_reviews/**"]}

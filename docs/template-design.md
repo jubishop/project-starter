@@ -79,7 +79,7 @@ is not pruned against home guidance. This pruning applies only to
 project-owned content outside the block.
 
 Keep engineering requirements concise in the guide and agent instructions.
-Maintain their details in the [development workflow](../starter/docs/development-workflow.md)
+Maintain their details in the [engineering policy](../starter/docs/foundation/engineering-policy.md)
 and link to the relevant policy. The user wants to reduce repeated context
 and prevent separate copies of the same rule from drifting.
 
@@ -114,7 +114,7 @@ criteria stay in that tracker; local tasks link to relevant issues. Memory and
 docs retain durable guidance and decisions rather than temporary progress.
 
 Keep the new-context instruction short and place setup and workflow details in
-[the task guide](../starter/docs/task-tracking.md). Install td explicitly and
+[the task guide](../starter/docs/foundation/task-tracking.md). Install td explicitly and
 initialize each primary checkout. Keep `.todos/` out of Git; linked worktrees
 share its state. CI and application startup do not require td. The tradeoff is
 that Git pushes do not preserve local task state, so exports or deliberately
@@ -188,7 +188,7 @@ The user reported that warning-only behavior lets agents silently substitute
 direct reads and leave search broken indefinitely. The tradeoff is a freshness
 check on each lookup and a possible wait for pending indexing. Keep ordinary
 known-file reads and deliberate operation without optional QMD available.
-The detailed contract is in the [search failure policy](../starter/docs/development-workflow.md#search-failures).
+The detailed contract is in the [search failure policy](../starter/docs/foundation/knowledge-search.md#search-failures).
 
 ## Improvements accepted — 2026-09-04
 
@@ -241,7 +241,7 @@ this source repository continues to run the complete suite.
 Agent instructions choose validation by changed files and delivery stage.
 Discussion and read-only work need no checks. Batch edits and reuse passing
 results until relevant inputs change. Follow the current
-[validation schedule](../starter/docs/development-workflow.md#checks-and-project-extensions),
+[validation schedule](../starter/docs/foundation/engineering-policy.md#checks),
 which distinguishes focused local checks from the full validation gate.
 Existing projects must update their application wrappers and CI commands with
 the mode change.
@@ -292,7 +292,7 @@ packages. A library can still reduce the total work or risk.
 
 Use ordinary technical judgment without a separate package approval step.
 Preserve existing stack choices during adoption. Keep the detailed
-[dependency policy](../starter/docs/development-workflow.md#third-party-dependencies)
+[dependency policy](../starter/docs/foundation/engineering-policy.md#third-party-dependencies)
 in the copied workflow so each project can apply it to its own requirements.
 
 ## Portable engineering guidance — 2026-09-08
@@ -301,7 +301,7 @@ Include concise, stack-neutral guidance for file organization, test cost and
 coverage, checkout isolation, runtime compatibility, and local versus CI
 validation. Keep the guide, maintainer instructions, and copied project
 instructions consistent, with details in the
-[copied workflow](../starter/docs/development-workflow.md).
+[copied workflow](../starter/docs/foundation/engineering-policy.md).
 
 Files should have cohesive responsibilities. Approximately 1,000 lines is a
 review threshold, not a hard cap. Test optimizations must preserve behavioral

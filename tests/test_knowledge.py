@@ -129,7 +129,7 @@ else:
         record = self.records()[0]
         self.assertEqual(record["cwd"], str(self.repo))
         self.assertEqual(record["index"], str(self.repo / ".cache/qmd/index.sqlite"))
-        self.assertEqual(set(record["collections"]), {"memory", "docs"})
+        self.assertEqual(set(record["collections"]), {"memory", "docs", "foundation"})
         self.assertIn("context", record["collections"]["docs"])
         result = self.run_command("../bin/knowledge", "search", "reference", root=self.repo / "docs")
         self.assertEqual(json.loads(result.stdout)["index"], record["index"])
@@ -226,6 +226,15 @@ else:
         result = self.run_command("git", "knowledge", "search", "reference", extra=hook_environment)
         self.assertNotIn("freshness", result.stderr)
 
+    def test_doctor_flags_every_release_except_the_tested_one(self):
+        self.run_command("bin/setup")
+        tested = json.loads(self.run_command("bin/doctor", "--json").stdout)["tested_qmd"]
+        for version, flagged in ((tested, False), (tested + "0", True), (tested + "-rc.1", True), ("2.1.0", True)):
+            with self.subTest(version=version):
+                report = json.loads(self.run_command("bin/doctor", "--json", extra={"QMD_TEST_VERSION": version},
+                                                     check=False).stdout)
+                self.assertEqual(any("differs from the tested version" in item for item in report["notices"]), flagged)
+
     def test_installed_broken_qmd_is_not_reported_as_absent(self):
         result = self.run_command("bin/setup", extra={"BROKEN_QMD": "1"}, check=False)
         self.assertNotEqual(result.returncode, 0)
@@ -272,6 +281,15 @@ else:
         self.assertIn("freshness", result.stderr)
         self.drain()
         self.run_command("bin/doctor")
+
+    def test_refresh_log_sections_record_time_and_qmd_version(self):
+        self.run_command("bin/setup")
+        self.run_command("bin/qmd-index", "--force", extra={"QMD_TEST_VERSION": "2.2.0"})
+        starts = [line for line in (self.repo / ".cache/qmd/index.log").read_text().splitlines()
+                  if "Refresh started" in line]
+        self.assertEqual(len(starts), 2)
+        self.assertRegex(starts[0], r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\S* Refresh started with qmd 2\.1\.0")
+        self.assertIn("qmd 2.2.0", starts[1])
 
     def test_missing_database_forces_rebuild(self):
         self.run_command("bin/setup")

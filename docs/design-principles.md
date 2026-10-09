@@ -111,7 +111,7 @@ or reader task. Review long pages before extending them. Split independent
 topics when that improves reading and maintenance, using those signals without
 numeric size thresholds. Keep decision reasons and evidence together, repair
 links and indexes, and allow longer pages when readers need the material together.
-Keep detailed rules in the [Markdown guidance](../starter/docs/development-workflow.md#markdown-pages).
+Keep detailed rules in the [Markdown guidance](../starter/docs/foundation/engineering-policy.md#markdown-pages).
 
 ## Validate the copied result and record its version
 

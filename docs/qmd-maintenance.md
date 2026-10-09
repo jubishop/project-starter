@@ -25,11 +25,15 @@ Custom launchers must preserve an explicit `QMD_CONFIG_DIR`, `INDEX_PATH`, and
 ## Tested runtime and release detection
 
 [The validation manifest](../tools/qmd/package.json) and its lockfile select
-QMD 2.8.3 and node-llama-cpp 3.21.1. The backend override fixes M5 Metal tensor
-initialization; QMD 2.8.3 otherwise selects backend 3.20.0. Review removal of
-that override once QMD's bundled backend includes the fix. The backend's
-[release notes](https://github.com/withcatai/node-llama-cpp/releases/tag/v3.21.0)
-identify the M5 fix. This pairing was verified on September 26, 2026.
+QMD 2.8.3 and node-llama-cpp 3.22.1. QMD 2.8.3 otherwise selects backend
+3.20.0, whose llama.cpp build cannot compile the Metal 4 tensor-API probe on
+M5 Macs. That backend logs `ggml_metal_library_init_from_source: error
+compiling source`, disables M5 tensor acceleration, and embeds about 30
+percent slower while still using the GPU. Backend 3.21.0 and later fix the
+probe, as its [release notes](https://github.com/withcatai/node-llama-cpp/releases/tag/v3.21.0)
+state. Remove the override once QMD's own backend dependency is at least
+3.21.0. This pairing passed strict smoke validation on an Apple M5 Pro with
+macOS 27.0.1 on October 9, 2026 (PDT).
 
 Dependabot checks both direct dependencies weekly and groups their updates.
 The [compatibility workflow](../.github/workflows/qmd-compatibility.yml) runs
@@ -67,6 +71,9 @@ It checks releases without installing them or accessing knowledge content.
    warnings in indexing logs after a successful command. `--cpu-only` forces
    CPU operation for hosted runners and allows only QMD's exact no-GPU notice;
    all other warning and error diagnostics still fail strict validation.
+   On Apple M5 Macs, `ggml_metal_library_init_from_source: error compiling
+   source` means the backend disabled Metal tensor acceleration. Treat it as a
+   failed candidate rather than noise; hosted CPU runners cannot detect it.
    Failure reports retain worker logs, including setup timeouts. CI downloads
    models in a separate bounded step and allows 600 seconds per smoke command.
    The real-model step unsets `CI` because QMD disables inference whenever that
@@ -74,7 +81,10 @@ It checks releases without installing them or accessing knowledge content.
 4. Back up the current runtime, update affected helpers, then replace the
    shared runtime. Run each integration's coordinated refresh and real lookup.
    Keep the old runtime until these checks pass. Do not use direct `qmd update`
-   against managed indexes or share databases between worktrees.
+   against managed indexes or share databases between worktrees. Index logs
+   keep entries from replaced runtimes until they rotate at about 1 MB. Since
+   2.0.0, each refresh section starts with a timestamp and QMD version; judge
+   a runtime only by sections written after its first refresh.
 5. Update the tested version and evidence. If compatibility breaks, fix the
    integration and add a regression test. Keep any temporary pin visible in
    the update checks and state the condition for removing it.
