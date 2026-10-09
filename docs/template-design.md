@@ -26,6 +26,10 @@ Maintain the guide and starter files together in the `project-starter`
 repository. It must stand on its own, without references to another project
 as its origin or a requirement for using it.
 
+[Fleet-first audience](#fleet-first-audience--2026-10-09) refines this
+decision: the starter serves the user's projects and may hold personal
+conventions, but not secrets or private data.
+
 ### Public distribution — 2026-09-04
 
 Publish the template as a public GitHub repository. Users can point an agent
@@ -69,6 +73,10 @@ is a baseline, not a requirement to repeat every policy locally. The tradeoff
 is that a shortened project file can rely on home guidance remaining available.
 Keep the adaptation in the setup guide; do not add a recurring cleanup task
 to automatically loaded instructions or change the home file during adoption.
+
+From 2.0.0, the [managed AGENTS.md block](#managed-vendoring-and-sync--2026-10-09)
+is not pruned against home guidance. This pruning applies only to
+project-owned content outside the block.
 
 Keep engineering requirements concise in the guide and agent instructions.
 Maintain their details in the [development workflow](../starter/docs/development-workflow.md)
@@ -137,6 +145,10 @@ scaffolding. The guide directs the agent to add missing files, merge setup
 instructions, and integrate with existing hooks while preserving their
 behavior. Do not provide a separate installer for this adaptation.
 
+[Managed vendoring and sync](#managed-vendoring-and-sync--2026-10-09)
+supersedes the no-installer choice. Agents still merge existing instructions,
+hooks, and setup commands where judgment is required.
+
 ### Enforced documentation checks — 2026-09-04
 
 Require `bin/check` to validate memory metadata, document status fields,
@@ -161,6 +173,8 @@ Use the following defaults to implement the requested foundation:
   existing environment setup.
 - Treat copied starter files as project-owned files that can evolve with the
   project. Keep the guide and bundle usable without an installed skill.
+  From 2.0.0, [managed files](#managed-vendoring-and-sync--2026-10-09) are
+  synced from releases instead; other copied files remain project-owned.
 
 ## Search reliability decision — 2026-09-13
 
@@ -317,6 +331,102 @@ require deployment or a package release. Keep required checks and assess all
 changes since the last successful release. Projects with automatic deployment
 must document a supported way to skip it. Follow explicit deployment requests.
 
+
+## Project Starter 2.0 — 2026-10-09
+
+The user accepted these decisions after a review of the starter and its 21
+adopters. They take effect with the 2.0.0 release; td tracks implementation.
+
+### Fleet-first audience — 2026-10-09
+
+Project Starter primarily serves the user's own projects. The repository
+stays public and the README states that it is opinionated; it makes no
+promise of generic use. Private SourceHut, td, and home-guidance defaults stay
+in the core rather than optional extras. Maintainer guidance excludes secrets
+and private data instead of all personal conventions.
+
+The user is the only consumer. Staying public avoids Actions minutes that
+private macOS runs would consume.
+
+### Managed vendoring and sync — 2026-10-09
+
+Adopters keep vendored copies of managed files: helpers, hooks, `bin/check`,
+license notice, and the [managed docs](#managed-docs-and-guide--2026-10-09).
+`bin/sync` in this repository copies a tagged release into adopters, creates
+new adoptions with `--init`, and reports fleet versions, overrides, and drift
+with `--status`. It never commits or pushes. Project-owned pages (README,
+development workflow, Git remotes, memory and docs indexes, CI workflow) are
+copied only by `--init`. `AGENTS.md` and `.gitignore` carry managed blocks
+between markers; content outside the markers belongs to the project.
+
+Clones and CI stay self-contained. The accepted rationale was drift and
+manual effort: 17 adopters had byte-identical `_knowledge.py` and 16 had
+identical `_checks.py`, while updates were merged by hand across eight source
+revisions and ad hoc manifest fields. The tradeoff is that projects no longer
+edit managed files freely.
+
+### Extension points — 2026-10-09
+
+`_checks.py` runs a project-owned executable `bin/check-application` under
+`--full`, after foundation checks pass. Routine modes never run it. Foundation
+behavior tests use bundled fixture documents instead of copying adopter docs.
+
+Every substantive adopter customization was application checks added to
+`_checks.py` or a test fixture patched to satisfy that project's links. The
+fixture coupling also caused three earlier starter fixes.
+
+### Adopter verification and overrides — 2026-10-09
+
+The foundation behavior suite runs only in starter CI. Every adopter
+`bin/check` mode verifies managed files against hashes recorded in
+`.project-starter.json`, which records only the version, source, managed
+hashes, and overrides. A file that needs local changes is a declared override
+with a reason; sync reports it for manual merge. A need becomes an extension
+point when a second repository has it.
+
+Rerunning identical code in each adopter added no evidence once managed files
+are verified. The tradeoff is that adopters no longer exercise the suite on
+their own runners.
+
+### Managed docs and guide — 2026-10-09
+
+Shared policy moves to managed `docs/foundation/` pages for engineering
+policy, knowledge search operations, and task tracking, in a separate QMD
+collection. Each rule has one authoritative page; project pages link to it and
+add only stronger or project-specific rules. The managed `AGENTS.md` block
+stays near 20 lines. `GUIDE.md` becomes a checklist of judgment steps around
+`bin/sync --init`; maintenance, runtime, and deployment sections move to docs.
+Foundation docs receive a concision pass, with rationale kept in this document.
+
+Rules were repeated in up to six files, and most starter commits were policy
+changes merged into adopters by hand.
+
+### Releases and migration — 2026-10-09
+
+Cut semver tags after CI passes on `main`; sync targets the latest tag.
+`CHANGELOG.md` separates synced changes from manual follow-up. Major versions
+change extension points or required actions. 2.0.0 may span several pull
+requests but ships as one tag, so adopters migrate once.
+
+Pilot the migration in health, screenr, and podhaven, then migrate the other
+adopters. Every adopter uses the same managed set; printing adopts the full
+set rather than a knowledge-only subset.
+
+### Tool versions — 2026-10-09
+
+Use upstream td from its Homebrew tap; 0.66.0 was installed on 2026-10-09
+(PDT). Record verified td and QMD versions once per starter release, not
+in each adopter. The QMD constant in `_knowledge.py` is the runtime source;
+maintainer checks assert that it matches `tools/qmd/package.json`, and
+`bin/doctor` compares parsed versions exactly.
+
+### Unchanged choices — 2026-10-09
+
+Keep the [search reliability decision](#search-reliability-decision--2026-09-13)
+and state it once in the managed docs; no adopter had a failed refresh state
+on 2026-10-09. Keep this repository's maintainer `bin/check` rather than
+adopting the managed set, because a broken managed file would also break the
+tools needed to repair it. Sync receives its own fixture tests.
 
 ## License — 2026-09-04
 

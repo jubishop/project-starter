@@ -125,3 +125,7 @@ check with a supported real QMD version to verify actual configuration,
 collection exclusions, and retrieval. Record tested versions and a starter
 revision so maintainers can compare later changes manually. Copied projects
 remain independent, without an automatic update service.
+
+From 2.0.0, the behavior suite runs only in starter CI. Adopters verify
+managed-file hashes and sync releases explicitly; see
+[adopter verification](template-design.md#adopter-verification-and-overrides--2026-10-09).
