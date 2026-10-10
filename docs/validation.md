@@ -56,6 +56,34 @@ Model-cache regressions exercise unrelated repositories, linked worktrees,
 separate Git metadata, verified duplicate removal, conflict preservation,
 external symlink migration, and broken-link repair in isolated home directories.
 
+## Release 2.0 and fleet migration — 2026-10-09
+
+Version 2.0.0 and patch 2.0.1 passed `bin/check` (57 tests) and the starter
+checks on Ubuntu 24.04 and macOS 15. Strict real-QMD smoke checks passed on
+the 2.0 bundle with QMD 2.8.3 and node-llama-cpp 3.22.1 on an Apple M5 Pro
+running macOS 27.0.1, using both the validation lockfile and the shared
+runtime.
+
+All 21 adopters moved from 1.x manifests to 2.0.0 with `bin/sync`, then to
+2.0.1. Three pilots (health, screenr, podhaven) preceded the other 18. Each
+adopter's `bin/check` passed with verified managed-file hashes, and its
+`bin/check --full` passed locally except where noted below. GitHub Actions
+passed for every pushed commit in the 20 repositories with workflows;
+podhaven has no test CI and passed its `bin/test-all --ensure` gate instead.
+`bin/sync --status` reported every adopter at 2.0.1 with no drift; podhaven
+records two overrides.
+
+The pilots found three starter defects, fixed with regression tests before
+the sweep or in 2.0.1: 1.x migration treated `.envrc` as an obsolete managed
+file, hook guidance named a moved section, and the managed `AGENTS.md` block
+omitted the 1.x decisions-and-secrets rule. Fixture-coupled project tests in
+podhaven needed `docs/foundation/` and `LICENSE.project-starter`.
+
+Limits: screenr's two TMDB-dependent application tests failed locally for
+lack of catalog configuration in the test environment, and passed in its CI
+for the same commit. Removing duplicated `.gitignore` lines was verified per
+adopter by comparing ignored untracked files before and after.
+
 ## Environment
 
 | Component | Executed version |
