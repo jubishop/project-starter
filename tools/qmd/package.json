@@ -2,11 +2,11 @@
   "name": "project-starter-qmd-validation",
   "private": true,
   "engines": {
-    "node": "24.x"
+    "node": ">=24"
   },
   "dependencies": {
-    "@tobilu/qmd": "2.8.3",
-    "node-llama-cpp": "3.22.1"
+    "@tobilu/qmd": "latest",
+    "node-llama-cpp": "latest"
   },
   "overrides": {
     "node-llama-cpp": "$node-llama-cpp"

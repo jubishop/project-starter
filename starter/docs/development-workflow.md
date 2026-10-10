@@ -16,6 +16,8 @@ bin/check --full
 ```
 
 Setup needs Git and Python 3.9 or later, and checks also need ShellCheck.
+`bin/setup` then runs an executable `bin/setup-application`, when present, for
+application dependencies such as `npm ci`.
 QMD and direnv are optional; setup reports skipped features. Install td and
 run `td init` as described in [task tracking](foundation/task-tracking.md).
 Create `.envrc` only when the project needs environment settings, and review
@@ -29,8 +31,8 @@ has no application checks yet.
 
 ## Runtime and toolchain versions
 
-List the supported versions and where they are declared, following the
-[version policy](foundation/engineering-policy.md#runtime-and-toolchain-versions).
+List the minimum supported versions and where they are declared, following
+the [version policy](foundation/engineering-policy.md#runtime-and-toolchain-versions).
 
 ## Deployment
 

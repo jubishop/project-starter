@@ -29,29 +29,18 @@ jobs:
   real-qmd:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        runtime: [tested, latest]
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
-          node-version: '24'
-      - name: Install the selected QMD runtime in isolation
-        env:
-          RUNTIME: ${{ matrix.runtime }}
+          node-version: lts/*
+      - name: Install the latest QMD and backend in isolation
         run: |
           mkdir -p "$RUNNER_TEMP/qmd-runtime"
-          cp tools/qmd/package*.json "$RUNNER_TEMP/qmd-runtime/"
-          if [ "$RUNTIME" = latest ]; then
-            npm --prefix "$RUNNER_TEMP/qmd-runtime" pkg set 'dependencies.@tobilu/qmd=latest' 'dependencies.node-llama-cpp=latest'
-            npm --prefix "$RUNNER_TEMP/qmd-runtime" install --no-audit --no-fund
-          else
-            npm --prefix "$RUNNER_TEMP/qmd-runtime" ci --no-audit --no-fund
-          fi
+          cp tools/qmd/package.json "$RUNNER_TEMP/qmd-runtime/"
+          npm --prefix "$RUNNER_TEMP/qmd-runtime" install --no-audit --no-fund
           npm --prefix "$RUNNER_TEMP/qmd-runtime" ls @tobilu/qmd node-llama-cpp
       - name: Download models before timing indexing and search
         timeout-minutes: 10
@@ -66,7 +55,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
-          name: qmd-${{ matrix.runtime }}
+          name: qmd-latest
           path: .cache/validation/
           retention-days: 14
           include-hidden-files: true

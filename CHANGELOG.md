@@ -3,6 +3,26 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 2.1.0 — 2026-10-09
+
+### Synced
+
+- `bin/setup` runs an executable `bin/setup-application` after the foundation
+  setup succeeds, so application dependencies install with one command.
+- The engineering policy uses the latest stable runtimes and tools: projects
+  declare minimum versions, CI installs the latest stable release (`lts/*` for
+  Node), and machines and servers update automatically with rollback.
+- `bin/doctor` no longer reports a tested QMD version or warns about newer
+  releases.
+
+### Manual follow-up
+
+- Replace exact runtime pins: `engines` and similar fields declare minimums,
+  version files say `lts/*`, CI installs `lts/*`, and application checks
+  accept any version at or above the minimum.
+- Move dependency installation from separate setup instructions into
+  `bin/setup-application`.
+
 ## 2.0.1 — 2026-10-09
 
 ### Synced

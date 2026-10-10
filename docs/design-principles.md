@@ -121,10 +121,10 @@ hooks, missing optional tools, subdirectory searches,
 repeated setup, concurrent refresh requests, and worktree isolation.
 
 Keep routine tests independent of model downloads. Add an explicit smoke
-check with a supported real QMD version to verify actual configuration,
-collection exclusions, and retrieval. Record tested versions and a starter
-revision so maintainers can compare later changes manually. Copied projects
-remain independent, without an automatic update service.
+check with real QMD to verify actual configuration, collection exclusions,
+and retrieval against the latest release. Record the versions each release
+was validated with as evidence, not as pins; see
+[latest stable toolchains](template-design.md#latest-stable-toolchains--2026-10-09).
 
 From 2.0.0, the behavior suite runs only in starter CI. Adopters verify
 managed-file hashes and sync releases explicitly; see

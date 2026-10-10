@@ -420,6 +420,33 @@ in each adopter. The QMD constant in `_knowledge.py` is the runtime source;
 maintainer checks assert that it matches `tools/qmd/package.json`, and
 `bin/doctor` compares parsed versions exactly.
 
+[Latest stable toolchains](#latest-stable-toolchains--2026-10-09) supersedes the
+tested-version constant and its checks.
+
+### Latest stable toolchains — 2026-10-09
+
+Use the latest stable release of runtimes and tools instead of pinning
+versions that someone must remember to bump; for Node, the latest LTS line.
+Projects declare minimum versions, CI installs the latest stable release on
+every run, and developer machines and servers update weekly with
+verification and rollback. QMD and its backend follow the latest releases;
+the tested-version constant, its `bin/doctor` notice, the validation
+lockfile, and Dependabot updates are removed. A pin is allowed only for a
+known incompatibility, with its removal condition recorded beside it.
+
+The user asked for this so versions do not go stale when nobody is watching.
+The tradeoff is that a breaking release can reach a machine or server before
+anyone reviews it; scheduled CI, the strict QMD smoke check, health checks,
+and automatic rollback limit that risk. This supersedes the 2026-09-08 rule
+against unbounded version selectors and the per-release tested versions above.
+
+### Setup extension point — 2026-10-09
+
+`bin/setup` runs an executable, project-owned `bin/setup-application` after
+the foundation setup succeeds, so application dependencies install with the
+same single command. The user noted that a project needing a dependency
+install is not special; several Node adopters need one.
+
 ### Unchanged choices — 2026-10-09
 
 Keep the [search reliability decision](#search-reliability-decision--2026-09-13)

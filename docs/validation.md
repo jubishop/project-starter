@@ -29,8 +29,8 @@ itself, so adopter documents never become test fixtures. It covers:
   migration through recorded source revisions, and fleet `--status`. The
   adoption test also confirms that the copied CI workflow runs
   `bin/check --full`.
-- Maintainer consistency: the tested QMD release in the helpers must match the
-  validation manifest.
+- Setup: `bin/setup-application` runs only after a successful foundation
+  setup, must be executable, and its failure fails setup.
 
 Adopters run the same check modes, verify managed-file hashes against the
 release that passed this suite, and add their own `bin/check-application`.

@@ -18,7 +18,8 @@ and what needs manual follow-up. The decisions behind this process are in the
 | Project-owned | `README.md`, `docs/README.md`, `memory/README.md`, `docs/development-workflow.md`, `docs/git-remotes.md`, `.config/knowledge.json`, `.github/workflows/check.yml` | Copied by `--init` when missing, then never changed. |
 
 A managed file that differs from its recorded hash is a conflict, and sync
-writes nothing until it is resolved. Move the change into an extension point,
+writes nothing until it is resolved. Move the change into an extension point
+(`bin/check-application` or `bin/setup-application`),
 record an override with its reason in `.project-starter.json`, or discard it
 with `--force`. Sync skips overridden files and reports upstream changes to
 them. Add a new extension point once a second repository needs the same

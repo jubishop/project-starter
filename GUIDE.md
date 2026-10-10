@@ -36,6 +36,8 @@ request; do not install it as a skill or load it automatically.
    `bin/check --full` runs. Point CI at `bin/check --full`. Confirm that the
    routine modes start no application tools, that `--full` runs them after the
    foundation checks, and that failures propagate. Time the routine modes.
+   Put dependency installation, such as `npm ci`, in an executable
+   `bin/setup-application`, which `bin/setup` runs after the foundation setup.
 6. **Integrate hooks.** Setup activates `bin/hooks` when nothing would be
    displaced. Otherwise follow
    [existing hooks](starter/docs/foundation/knowledge-search.md#existing-hooks)
@@ -63,7 +65,7 @@ request; do not install it as a skill or load it automatically.
 On a clean checkout, run `bin/sync --dry-run /path/to/project`, then
 `bin/sync /path/to/project`. A conflict means a managed file has local
 changes. Move the change into an extension point (`bin/check-application`,
-project pages, or the project section of `AGENTS.md`), record an override with
+`bin/setup-application`, project pages, or the project section of `AGENTS.md`), record an override with
 its reason in `.project-starter.json`, or discard it with `--force`. Apply the
 release's manual follow-up from the [changelog](CHANGELOG.md), run
 `bin/check --full`, and commit. `bin/sync --status` reports each adopter's
