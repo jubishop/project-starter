@@ -3,6 +3,19 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 2.1.1 — 2026-10-09
+
+### Synced
+
+- The engineering policy asks CI setup actions to check for the latest
+  release (`check-latest: true`) instead of reusing a cached older one.
+
+### Manual follow-up
+
+Add `check-latest: true` beside `lts/*`, `stable`, or similar version
+selectors in CI setup actions. New adoptions' GitHub workflow uses
+`ubuntu-latest`.
+
 ## 2.1.0 — 2026-10-09
 
 ### Synced
