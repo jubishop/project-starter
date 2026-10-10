@@ -10,10 +10,19 @@ follow-up it cannot apply. See [releases](docs/releases.md).
 - Hook setup messages and `bin/doctor` point to
   `docs/foundation/knowledge-search.md#existing-hooks` instead of the section
   that moved out of `docs/development-workflow.md` in 2.0.0.
+- The managed `AGENTS.md` block restores the 1.x rule to keep accepted
+  decisions separate from proposals, preserve unrelated changes, and keep
+  secrets and generated caches out of Git.
+- The check schedule states that a sync changing only managed files needs
+  `bin/check`; the release's CI already tested that code.
 
 ### Manual follow-up
 
-Projects that override `bin/_knowledge.py` apply the same message change.
+- Projects that override `bin/_knowledge.py` apply the same message change.
+- Remove project copies of the restored `AGENTS.md` rule outside the block.
+- Optionally remove `.gitignore` lines outside the block that duplicate block
+  lines; the only negation they share, `!.env.example`, keeps its order inside
+  the block.
 
 ## 2.0.0 — 2026-10-09
 
