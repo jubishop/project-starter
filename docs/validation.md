@@ -84,6 +84,22 @@ lack of catalog configuration in the test environment, and passed in its CI
 for the same commit. Removing duplicated `.gitignore` lines was verified per
 adopter by comparing ignored untracked files before and after.
 
+## Release 2.1 and latest-stable toolchains — 2026-10-09
+
+Versions 2.1.0 and 2.1.1 passed `bin/check` (53 tests) and both workflows. The
+QMD compatibility job now installs the newest QMD and backend on the newest
+Node LTS with no lockfile; on October 9 that resolved to QMD 2.8.3 and
+node-llama-cpp 3.22.1. All 21 adopters synced to 2.1.1 with `bin/check`
+passing, and GitHub Actions passed for every repository's latest commit.
+
+Sixteen adopters replaced exact runtime pins with minimums, `lts/*` or
+`3.x` selectors, and `check-latest: true`, adding tests that newer major
+versions are accepted. CI then installed Node 24.21.0 everywhere and Python
+3.14.8; Python 3.15.0, released the same day, was not yet in GitHub's
+version manifest. The VPS's shared Node runtime moved kidsbank from Node 20
+and screenr from 24.20.0 to 24.21.0, with local and public health checks
+returning 200, and the end-of-life NodeSource package was removed.
+
 ## Environment
 
 | Component | Executed version |
