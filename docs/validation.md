@@ -11,7 +11,7 @@ Version 1.0.0 passed its initial local macOS validation on September 4, 2026
 ## Current automated checks
 
 The [maintainer workflow](../.github/workflows/check.yml) runs `bin/check` on
-Ubuntu 24.04 and macOS 15 for pull requests and pushes to `main`. It records
+the latest Ubuntu and macOS runner images for pull requests and pushes to `main`. It records
 tool versions in each run. See the
 [workflow runs](https://github.com/jubishop/project-starter/actions/workflows/check.yml)
 for results tied to exact commits.
