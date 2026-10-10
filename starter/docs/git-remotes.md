@@ -7,8 +7,10 @@ status: current
 New hosted projects use their primary host, normally GitHub, plus a private
 SourceHut repository. Ordinary pushes update both hosts; fetches and pulls
 use the primary host. Honor explicit choices for other hosting arrangements.
-During adoption, replace the example URLs below with this project's actual
-URLs and preserve existing custom settings.
+Adoption records this project's actual URLs in the commands below in place of
+the `your-account/your-project` placeholders. Preserve existing custom
+settings. Prefer SSH URLs for GitHub: HTTPS pushes that change workflow files
+need a token with the `workflow` scope.
 
 ## Create the private SourceHut repository
 
@@ -17,8 +19,7 @@ Complete the initial commit and required checks before publishing it.
 Infer the SourceHut account from known remotes or account information; do not
 assume it matches the GitHub username. Ask if the account cannot be established.
 
-For a new repository with no `sourcehut` remote, replace the account and project
-in this example and run:
+For a new repository with no `sourcehut` remote, run:
 
 ```sh
 git remote add sourcehut git@git.sr.ht:~your-account/your-project
@@ -50,8 +51,8 @@ git config --get-regexp 'branch\..*\.push[Rr]emote'
 
 A missing optional setting can return a nonzero status. Preserve the primary
 push URL, including its existing SSH or HTTPS form. For a new project with one
-primary destination and no explicit push URLs, replace the example primary
-URL below with that exact existing push URL:
+primary destination and no explicit push URLs, run the following, using the
+primary URL exactly as `git remote get-url --push origin` prints it:
 
 ```sh
 git remote set-url --add --push origin git@github.com:your-account/your-project.git

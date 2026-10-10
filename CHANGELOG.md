@@ -3,6 +3,15 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 2.1.2 — 2026-10-09
+
+### Project-owned template
+
+- `docs/git-remotes.md` reads correctly once adoption fills in the actual URLs,
+  and recommends SSH for GitHub because HTTPS pushes that change workflow files
+  need a token with the `workflow` scope. Only new adoptions receive it; sync
+  never changes existing project-owned pages.
+
 ## 2.1.1 — 2026-10-09
 
 ### Synced
