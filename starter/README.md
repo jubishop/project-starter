@@ -1,6 +1,7 @@
 # Project
 
 Replace this introduction with the project's purpose and main entry points.
+Until the project has an application, say so instead of listing entry points.
 
 ## Development
 

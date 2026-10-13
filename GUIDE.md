@@ -5,6 +5,12 @@ an adopter. `bin/sync` in this repository copies files and records their
 hashes; these steps cover the judgment it cannot apply. Read the guide on
 request; do not install it as a skill or load it automatically.
 
+Links in this guide resolve from this repository. Sync copies each page under
+`starter/` to the same path in the target without that prefix, so
+`starter/docs/git-remotes.md` becomes `docs/git-remotes.md`; read the target's
+copy when working there. The changelog, `bin/sync`, and `bin/smoke-qmd` exist
+only here, and the other `bin/` commands run in the target.
+
 ## Adopt a repository
 
 1. **Inspect the target.** Confirm its path, branch, and a clean working tree.
@@ -25,8 +31,10 @@ request; do not install it as a skill or load it automatically.
    commits.
 3. **Merge project-owned pages.** Fold starter guidance into an existing
    README and knowledge indexes, keep useful existing content, and link
-   `foundation/README.md` from `docs/README.md`. Record the project's actual
-   commands in `docs/development-workflow.md`.
+   `foundation/README.md` from `docs/README.md`. The copied
+   `docs/development-workflow.md` describes a project with no application
+   yet; keep that wording only when it is true, and otherwise record the
+   project's actual checks, runtime minimums, and deployment.
 4. **Tailor `AGENTS.md`.** Leave the managed block intact. Below it, keep
    project commands, stronger requirements, and intentional exceptions, and
    remove rules that the block or applicable inherited instructions already

@@ -25,20 +25,24 @@ it before running `direnv allow`; search does not need it.
 
 ## Checks
 
-Follow the [check schedule](foundation/engineering-policy.md#checks). Describe
-what this project's `bin/check-application` runs, or state that the project
-has no application checks yet.
+Follow the [check schedule](foundation/engineering-policy.md#checks). This
+project has no application yet, so it has no `bin/check-application`, and
+`bin/check --full` runs only the foundation checks. When application code
+arrives, add `bin/check-application` and describe what it runs here.
 
 ## Runtime and toolchain versions
 
-List the minimum supported versions and where they are declared, following
-the [version policy](foundation/engineering-policy.md#runtime-and-toolchain-versions).
+No application runtime is declared yet; the foundation tools under
+[Setup](#setup) are the only requirements. When the project adds a runtime or
+toolchain, list its minimum supported version and where it is declared,
+following the
+[version policy](foundation/engineering-policy.md#runtime-and-toolchain-versions).
 
 ## Deployment
 
-Describe how the project deploys, how nonfunctional changes skip deployment,
-and the manual override, following the
-[deployment policy](foundation/engineering-policy.md#deployment-decisions).
+Nothing deploys yet. When the project first deploys, describe how it deploys,
+how nonfunctional changes skip deployment, and the manual override, following
+the [deployment policy](foundation/engineering-policy.md#deployment-decisions).
 
 ## Project Starter
 

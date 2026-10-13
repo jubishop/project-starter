@@ -3,6 +3,22 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 2.1.3 — 2026-10-13
+
+### Project-owned template
+
+- New adoptions' `docs/development-workflow.md` describes a project with no
+  application yet: it has no `bin/check-application`, declares no application
+  runtime, and deploys nothing, and each section says what to record when
+  that changes. The README introduction asks a project without an
+  application to say so. Only new adoptions receive these pages; sync never
+  changes existing project-owned pages.
+
+### Manual follow-up
+
+None. The guide now explains that its links resolve from this repository and
+where copied pages live in the target.
+
 ## 2.1.2 — 2026-10-09
 
 ### Project-owned template
