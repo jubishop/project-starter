@@ -102,7 +102,9 @@ bump. For Node, that is the newest LTS line.
   asking.
 - Workflows reference GitHub Actions by major tag, such as
   `actions/checkout@v7`, not by commit SHA, and install CI tools at their
-  latest version. Move to a new major tag when one ships.
+  latest version. Move to a new major tag when one ships. A job that holds
+  deployment credentials pins each third-party action it runs to a commit
+  SHA, with that reason in a comment beside the pin.
 - Developer machines and servers update on a schedule that verifies the
   result and rolls back on failure.
 - Pin a version only to work around a known incompatibility, and record the

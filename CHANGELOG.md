@@ -3,6 +3,24 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 2.3.0 — 2026-10-15
+
+### Synced
+
+- The engineering policy's runtime and toolchain section says workflows
+  reference GitHub Actions by major tag, such as `actions/checkout@v7`, not
+  by commit SHA, and install CI tools at their latest version. A job that
+  holds deployment credentials pins each third-party action it runs to a
+  commit SHA, with that reason beside the pin.
+
+### Manual follow-up
+
+In each workflow, replace commit-SHA and exact-version action references with
+the action's current major tag, and install CI tools at their latest version.
+In a job that holds deployment credentials, keep each third-party action
+pinned to a commit SHA and add a comment giving that reason. New adoptions'
+GitHub workflow uses `actions/checkout@v7`.
+
 ## 2.2.0 — 2026-10-14
 
 ### Synced
