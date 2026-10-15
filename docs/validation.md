@@ -100,6 +100,24 @@ version manifest. The VPS's shared Node runtime moved kidsbank from Node 20
 and screenr from 24.20.0 to 24.21.0, with local and public health checks
 returning 200, and the end-of-life NodeSource package was removed.
 
+## Release 2.2 and Markdown-only CI — 2026-10-14
+
+Version 2.2.0 passed `bin/check` (53 tests), the starter checks on Ubuntu and
+macOS, and the QMD compatibility job. All 22 adopters synced to 2.2.0 with
+`bin/check` passing, and `bin/sync --status` reported no drift; podhaven
+still records two overrides. The 21 adopters with push or pull-request
+workflows now skip runs for Markdown-only changes, and `actionlint` passed
+on each changed workflow. trading re-includes the two strategy pages its
+application serves and its tests render. Adopters ran `bin/check`, not
+`bin/check --full`, because the release changed only a policy page, the
+manifest, and workflow triggers.
+
+GitHub Actions passed for the pushed commit in all nine public repositories
+with workflows, and news and screenr deployed. In the twelve private
+repositories, jobs did not start because the account's Actions spending
+limit was reached, so CI was unavailable for those commits, not passed.
+kidsbank's deployment rule found nothing to deploy.
+
 ## Environment
 
 | Component | Executed version |
