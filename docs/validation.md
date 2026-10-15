@@ -164,8 +164,8 @@ and the latest Sentry CLI.
 Version 2.4.1 removes the task workflow's warning against rotating td sessions
 to bypass review checks. All 21 adopters synced to 2.4.1 on their default
 branches with no drift; podhaven still records two overrides. At the user's
-direction, no checks ran and nothing was pushed: the release commit, the
-`v2.4.1` tag, and each adopter's sync commit are local only.
+direction, no checks ran. Its commits were pushed with 2.5.0, which made
+unchecked sync-only releases the process.
 
 ## Environment
 

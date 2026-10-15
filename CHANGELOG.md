@@ -3,6 +3,18 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 2.5.0 — 2026-10-15
+
+### Synced
+
+- A Project Starter sync with no manual follow-up needs no checks, CI, or
+  deployment. Its commit holds only the synced files and carries `[skip ci]`,
+  so GitHub Actions starts no push workflows, and it is pushed directly.
+
+### Manual follow-up
+
+None.
+
 ## 2.4.1 — 2026-10-15
 
 ### Synced

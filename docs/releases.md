@@ -31,6 +31,24 @@ a file as unchanged when it matches the content at any recorded revision
 removes unchanged files the release no longer ships, and inserts the managed
 blocks, placing the `AGENTS.md` block after the page title.
 
+## Sync-only releases
+
+When a release needs no manual follow-up, each adopter receives only what
+`bin/sync` writes. Ship it without checks, CI waits, deployments, validation
+records, or a td task:
+
+1. Set the version, add the changelog entry, commit, tag `vX.Y.Z`, and run
+   `git push origin main vX.Y.Z`.
+2. Fetch every adopter listed by `bin/sync --status`, then sync each one.
+   Commit only the synced files, with `[skip ci]` in the message so GitHub
+   Actions starts no push workflows, and push.
+
+Sync only an adopter that is on its default branch and even with its remote.
+Skip and report any other, and never force, stash, or push someone else's
+commits. Report a rejected push, such as from enforced branch protection,
+instead of bypassing it. A release with manual follow-up uses the full process
+below.
+
 ## Cut a release
 
 1. Choose the version. A major release changes extension points or requires

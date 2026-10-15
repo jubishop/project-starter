@@ -11,7 +11,7 @@ for dependencies, red-green tests through public interfaces, test cost, file
 and page organization, checkout isolation, and toolchain versions.
 
 Run `bin/check` once for a completed batch of changes; it tests copies of the
-bundle. Reuse a passing result while relevant inputs are unchanged.
+bundle. A [sync-only release](docs/releases.md#sync-only-releases) skips it. Reuse a passing result while relevant inputs are unchanged.
 Discussion and read-only work need no checks. Use `bin/smoke-qmd` for
 explicit real-QMD validation. Cut releases and sync adopters as described in
 [releases](docs/releases.md), and record manual follow-up in the

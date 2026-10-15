@@ -468,7 +468,19 @@ touches only workflows or documentation. The user asked for this after
 trading's branch rule sent the 2.3.0 sync through a pull request because the
 manifest isn't Markdown. The release itself is reviewed and checked here, and
 the sync is mechanical. Checks still run, and enforced branch protection still
-applies.
+applies. [Unchecked sync-only releases](#unchecked-sync-only-releases--2026-10-15)
+later dropped those checks for releases with no manual follow-up.
+
+### Unchecked sync-only releases — 2026-10-15
+
+A release with no manual follow-up ships without checks, CI waits,
+deployments, or validation records, in the starter and in adopters. Each
+adopter's sync commit carries `[skip ci]`, so GitHub Actions starts neither CI
+nor a deployment for it. The user asked for this because small starter
+changes are frequent, and running every gate across 21 adopters made each one
+slow. The tradeoff is that a defect in a managed script reaches every adopter
+before any check sees it; the starter's own CI still runs on the pushed
+release, after the fact.
 
 ### Setup extension point — 2026-10-09
 
