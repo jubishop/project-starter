@@ -102,7 +102,10 @@ bump. For Node, that is the newest LTS line.
   asking.
 - Workflows reference GitHub Actions by major tag, such as
   `actions/checkout@v7`, not by commit SHA, and install CI tools at their
-  latest version. Move to a new major tag when one ships.
+  latest version. Move to a new major tag when one ships. A job that holds
+  deployment credentials pins each third-party action it runs to a commit
+  SHA, with that reason in a comment beside the pin. Actions from publishers
+  the owner trusts, currently only `tailscale/*`, keep their major tags.
 - Developer machines and servers update on a schedule that verifies the
   result and rolls back on failure.
 - Pin a version only to work around a known incompatibility, and record the
@@ -166,6 +169,13 @@ files through Project Starter releases, or record an override with its reason;
 checks skip overridden files. Exclude generated or externally owned docs with
 deliberate `checks.exclude` patterns in `.config/knowledge.json`, never to
 bypass failures in hand-written pages.
+
+A Project Starter sync may go directly to the default branch without a pull
+request or review, even where the project otherwise requires one. This covers
+the files `bin/sync` writes, `.project-starter.json`, and the release's manual
+follow-up when it touches only workflows or documentation. Its checks still
+run, other changes follow the project's usual process, and the carve-out never
+bypasses enforced branch protection.
 
 ## Deployment decisions
 

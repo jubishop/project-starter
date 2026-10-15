@@ -451,12 +451,25 @@ Major tags are each action's latest stable release; a default branch such as
 tag runs in CI without review. These workflows hold no secrets and have only
 read access to the repository, which limits that risk.
 
-Release 2.3.0 kept third-party actions pinned to commit SHAs in jobs that hold
-deployment credentials, since a hijacked tag there could steal those
-credentials or deploy its own code, as the tj-actions/changed-files compromise
-of March 2025 stole CI secrets. The same day the user chose to float those
-too: they trust the actions they use, such as Tailscale's, not to be
-hijacked, so release 2.3.1 removed the exception.
+A job that holds deployment credentials is the exception for third-party
+actions. A hijacked tag there could steal those credentials or deploy its own
+code, as the tj-actions/changed-files compromise of March 2025 stole CI
+secrets. Such jobs pin each third-party action to a commit SHA and say why
+beside it. GitHub's own `actions/*` keep their major tags, because those jobs
+already trust GitHub's runners. Release 2.4.0 adds publishers the user trusts
+by name: the user trusts Tailscale, so `tailscale/*` floats too, but not every
+third-party action in a deployment job.
+
+### Direct starter syncs — 2026-10-15
+
+A Project Starter sync may go directly to an adopter's default branch without
+a pull request or review, even where the project otherwise requires one. It
+covers the files `bin/sync` writes, the manifest, and manual follow-up that
+touches only workflows or documentation. The user asked for this after
+trading's branch rule sent the 2.3.0 sync through a pull request because the
+manifest isn't Markdown. The release itself is reviewed and checked here, and
+the sync is mechanical. Checks still run, and enforced branch protection still
+applies.
 
 ### Setup extension point — 2026-10-09
 

@@ -3,17 +3,28 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
-## 2.3.1 — 2026-10-15
+## 2.4.0 — 2026-10-15
 
 ### Synced
 
-- The engineering policy no longer pins third-party actions in jobs that hold
-  deployment credentials. Every action reference uses its major tag.
+- A Project Starter sync may go directly to the default branch without a pull
+  request or review, even where the project otherwise requires one. It covers
+  the files `bin/sync` writes, `.project-starter.json`, and manual follow-up
+  that touches only workflows or documentation.
+- In jobs that hold deployment credentials, the engineering policy still pins
+  third-party actions to commit SHAs, except actions from publishers the
+  owner trusts. Currently that is only `tailscale/*`, which keeps its major
+  tag.
 
 ### Manual follow-up
 
-Replace any third-party action that a deployment job pins to a commit SHA
-with its major tag, and remove the pin's comment.
+In deployment jobs, replace a commit-SHA pin of a `tailscale/*` action with
+its major tag, such as `tailscale/github-action@v4`, and remove the pin's
+comment. Leave other third-party pins in those jobs as they are.
+
+If the project's own instructions require pull requests for changes a sync
+makes, add the same carve-out there, since project rules may be stricter than
+the foundation.
 
 ## 2.3.0 — 2026-10-15
 
