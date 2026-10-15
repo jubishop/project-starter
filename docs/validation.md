@@ -142,6 +142,23 @@ and for trading's pull request. The news and screenr deploy jobs ran with the
 new tags and deployed. podhaven's only workflow runs on a daily schedule, so
 its first run on the new tags comes later.
 
+## Release 2.4 and direct starter syncs — 2026-10-15
+
+Version 2.4.0 lets a sync go directly to an adopter's default branch. Untagged
+2.3.1 commits that floated `tailscale/*` in deployment jobs were superseded
+before release; the user kept that pin. 2.4.0 passed `bin/check` (53 tests).
+Its last non-Markdown commit, `dbc2094`, passed the starter checks on Ubuntu
+and macOS and the QMD compatibility job. The release commit changed only
+Markdown, so the local check was its gate.
+
+All 21 adopters synced to 2.4.0 directly on their default branches, with no
+drift. That includes trading, after its branch rule adopted the carve-out.
+Each passed `bin/check`; news, sourdough, and trading ran `bin/check --full`.
+Hosted CI passed for the pushed commit in all 20 repositories with a push
+workflow, including the news and screenr deploy jobs. A manual run of
+podhaven's scheduled Sentry Feedback workflow passed on the new action tags
+and the latest Sentry CLI.
+
 ## Environment
 
 | Component | Executed version |
