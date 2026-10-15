@@ -3,6 +3,18 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 2.3.1 — 2026-10-15
+
+### Synced
+
+- The engineering policy no longer pins third-party actions in jobs that hold
+  deployment credentials. Every action reference uses its major tag.
+
+### Manual follow-up
+
+Replace any third-party action that a deployment job pins to a commit SHA
+with its major tag, and remove the pin's comment.
+
 ## 2.3.0 — 2026-10-15
 
 ### Synced

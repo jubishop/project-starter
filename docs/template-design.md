@@ -451,12 +451,12 @@ Major tags are each action's latest stable release; a default branch such as
 tag runs in CI without review. These workflows hold no secrets and have only
 read access to the repository, which limits that risk.
 
-A job that holds deployment credentials is the exception for third-party
-actions. A hijacked tag there could steal those credentials or deploy its own
-code, as the tj-actions/changed-files compromise of March 2025 stole CI
-secrets. Such jobs pin each third-party action to a commit SHA and say why
-beside it. GitHub's own `actions/*` keep their major tags, because those jobs
-already trust GitHub's runners.
+Release 2.3.0 kept third-party actions pinned to commit SHAs in jobs that hold
+deployment credentials, since a hijacked tag there could steal those
+credentials or deploy its own code, as the tj-actions/changed-files compromise
+of March 2025 stole CI secrets. The same day the user chose to float those
+too: they trust the actions they use, such as Tailscale's, not to be
+hijacked, so release 2.3.1 removed the exception.
 
 ### Setup extension point — 2026-10-09
 
