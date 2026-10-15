@@ -118,6 +118,30 @@ repositories, jobs did not start because the account's Actions spending
 limit was reached, so CI was unavailable for those commits, not passed.
 kidsbank's deployment rule found nothing to deploy.
 
+## Release 2.3 and floating action tags — 2026-10-15
+
+Version 2.3.0 passed `bin/check` (53 tests), the starter checks on Ubuntu and
+macOS, and the QMD compatibility job, which runs the floating
+`actions/checkout`, `actions/setup-node`, and `actions/upload-artifact` tags.
+Twenty of the 21 adopters synced to 2.3.0 with no drift; podhaven still
+records two overrides. trading's sync went to
+[a pull request](https://github.com/jubishop/trading/pull/21), as its branch
+rule requires for non-Markdown changes. Its workflow had already moved to
+major tags.
+
+Every commit-SHA or exact-version action reference moved to its major tag,
+and podhaven's Sentry CLI moved to its latest release. The only remaining
+pins are `tailscale/github-action` in the news and screenr deploy jobs, with
+the reason beside each. `actionlint` passed on every changed workflow and
+`bin/check` passed in each adopter; news, sourdough, and trading ran
+`bin/check --full`, as their instructions require.
+
+The Actions spending limit no longer blocked private repositories. Hosted
+CI passed for every pushed commit with a push workflow, public and private,
+and for trading's pull request. The news and screenr deploy jobs ran with the
+new tags and deployed. podhaven's only workflow runs on a daily schedule, so
+its first run on the new tags comes later.
+
 ## Environment
 
 | Component | Executed version |
