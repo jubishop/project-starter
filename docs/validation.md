@@ -159,6 +159,14 @@ workflow, including the news and screenr deploy jobs. A manual run of
 podhaven's scheduled Sentry Feedback workflow passed on the new action tags
 and the latest Sentry CLI.
 
+## Release 2.4.1 and the session-rotation rule — 2026-10-15
+
+Version 2.4.1 removes the task workflow's warning against rotating td sessions
+to bypass review checks. All 21 adopters synced to 2.4.1 on their default
+branches with no drift; podhaven still records two overrides. At the user's
+direction, no checks ran and nothing was pushed: the release commit, the
+`v2.4.1` tag, and each adopter's sync commit are local only.
+
 ## Environment
 
 | Component | Executed version |
