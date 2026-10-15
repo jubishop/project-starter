@@ -11,16 +11,8 @@ follow-up it cannot apply. See [releases](docs/releases.md).
   request or review, even where the project otherwise requires one. It covers
   the files `bin/sync` writes, `.project-starter.json`, and manual follow-up
   that touches only workflows or documentation.
-- In jobs that hold deployment credentials, the engineering policy still pins
-  third-party actions to commit SHAs, except actions from publishers the
-  owner trusts. Currently that is only `tailscale/*`, which keeps its major
-  tag.
 
 ### Manual follow-up
-
-In deployment jobs, replace a commit-SHA pin of a `tailscale/*` action with
-its major tag, such as `tailscale/github-action@v4`, and remove the pin's
-comment. Leave other third-party pins in those jobs as they are.
 
 If the project's own instructions require pull requests for changes a sync
 makes, add the same carve-out there, since project rules may be stricter than

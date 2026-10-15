@@ -456,9 +456,8 @@ actions. A hijacked tag there could steal those credentials or deploy its own
 code, as the tj-actions/changed-files compromise of March 2025 stole CI
 secrets. Such jobs pin each third-party action to a commit SHA and say why
 beside it. GitHub's own `actions/*` keep their major tags, because those jobs
-already trust GitHub's runners. Release 2.4.0 adds publishers the user trusts
-by name: the user trusts Tailscale, so `tailscale/*` floats too, but not every
-third-party action in a deployment job.
+already trust GitHub's runners. The user considered floating
+`tailscale/github-action` the same day and kept the pin.
 
 ### Direct starter syncs — 2026-10-15
 
