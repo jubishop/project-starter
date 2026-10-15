@@ -440,6 +440,17 @@ anyone reviews it; scheduled CI, the strict QMD smoke check, health checks,
 and automatic rollback limit that risk. This supersedes the 2026-09-08 rule
 against unbounded version selectors and the per-release tested versions above.
 
+### Floating action tags — 2026-10-15
+
+Workflows reference GitHub Actions by major tag, such as
+`actions/checkout@v7`, instead of commit SHAs, and install CI tools such as
+actionlint at their latest version. The user prefers references that stay on
+the latest release. With Dependabot removed, nothing would update SHA pins.
+Major tags are each action's latest stable release; a default branch such as
+`@main` carries unreleased code. The tradeoff is that a moved or compromised
+tag runs in CI without review. These workflows hold no secrets and have only
+read access to the repository, which limits that risk.
+
 ### Setup extension point — 2026-10-09
 
 `bin/setup` runs an executable, project-owned `bin/setup-application` after
