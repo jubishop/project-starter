@@ -3,6 +3,17 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 2.4.1 — 2026-10-15
+
+### Synced
+
+- The task workflow no longer warns against rotating td sessions to bypass
+  review checks. Agents approve their own work with `td approve --self-review`.
+
+### Manual follow-up
+
+None.
+
 ## 2.4.0 — 2026-10-15
 
 ### Synced
