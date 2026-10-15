@@ -3,6 +3,26 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 2.2.0 — 2026-10-14
+
+### Synced
+
+- The engineering policy's new hosted CI section skips hosted CI for
+  Markdown-only changes with trigger-level `paths-ignore: ['**.md']`. Those
+  changes merge on a passing `bin/check --documents-only`. Projects whose
+  Markdown affects behavior re-include those pages through a `paths` filter.
+- When hosted CI cannot run only because the Actions quota is exhausted or
+  GitHub is rate limiting, a local `bin/check --full` pass on the delivered
+  revision satisfies the merge or release gate. CI is reported as
+  unavailable, not passed.
+
+### Manual follow-up
+
+Add `paths-ignore: ['**.md']` to the `push` and `pull_request` triggers of
+workflows that run checks. If Markdown affects behavior, use a `paths` filter
+of `'**'`, `'!**.md'`, then those pages. Do not make a path-filtered workflow
+a required check. New adoptions' GitHub workflow includes the filter.
+
 ## 2.1.3 — 2026-10-13
 
 ### Project-owned template

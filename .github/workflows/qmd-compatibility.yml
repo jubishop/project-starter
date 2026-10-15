@@ -7,6 +7,7 @@ on:
       - 'bin/smoke-qmd'
       - 'tools/qmd/**'
       - '.github/workflows/qmd-compatibility.yml'
+      - '!**.md'
   push:
     branches: [main]
     paths:
@@ -14,6 +15,7 @@ on:
       - 'bin/smoke-qmd'
       - 'tools/qmd/**'
       - '.github/workflows/qmd-compatibility.yml'
+      - '!**.md'
   schedule:
     - cron: '23 16 * * 1'
   workflow_dispatch:

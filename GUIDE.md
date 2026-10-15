@@ -41,9 +41,12 @@ only here, and the other `bin/` commands run in the target.
    cover. A runtime that needs another filename should reference `AGENTS.md`.
 5. **Wire application checks.** Put application typechecking, lint, tests, and
    builds in an executable `bin/check-application`, which only
-   `bin/check --full` runs. Point CI at `bin/check --full`. Confirm that the
-   routine modes start no application tools, that `--full` runs them after the
-   foundation checks, and that failures propagate. Time the routine modes.
+   `bin/check --full` runs. Point CI at `bin/check --full`, skipping
+   Markdown-only changes as
+   [hosted CI](starter/docs/foundation/engineering-policy.md#hosted-ci)
+   describes. Confirm that the routine modes start no application tools, that
+   `--full` runs them after the foundation checks, and that failures
+   propagate. Time the routine modes.
    Put dependency installation, such as `npm ci`, in an executable
    `bin/setup-application`, which `bin/setup` runs after the foundation setup.
 6. **Integrate hooks.** Setup activates `bin/hooks` when nothing would be

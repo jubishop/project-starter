@@ -56,5 +56,6 @@ bin/sync /path/to/project
 
 Apply the changelog's manual follow-up, run `bin/check --full` there, commit
 on its default branch, push to both hosts, and confirm CI for the pushed
-commit. Rerun `bin/sync --status` to confirm that no adopter reports drift.
+commit. When the Actions quota blocks CI, follow
+[hosted CI](../starter/docs/foundation/engineering-policy.md#hosted-ci). Rerun `bin/sync --status` to confirm that no adopter reports drift.
 Coordinate a fleet-wide sync with a td task in the home database.
