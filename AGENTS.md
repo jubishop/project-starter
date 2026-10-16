@@ -7,12 +7,15 @@ repository. Do not install or register a skill.
 
 Follow the [task workflow](starter/docs/foundation/task-tracking.md) for td
 and the [engineering policy](starter/docs/foundation/engineering-policy.md)
-for dependencies, red-green tests through public interfaces, test cost, file
-and page organization, checkout isolation, and toolchain versions.
+for dependencies, red-green tests through public interfaces, test cost, flaky
+tests, file and page organization, checkout isolation, and toolchain versions.
+
+Finish every change to Project Starter with a release synced to every adopter,
+as described in [releases](docs/releases.md), so no adopter falls behind
+`main`.
 
 Run `bin/check` once for a completed batch of changes; it tests copies of the
 bundle. A [sync-only release](docs/releases.md#sync-only-releases) skips it. Reuse a passing result while relevant inputs are unchanged.
 Discussion and read-only work need no checks. Use `bin/smoke-qmd` for
-explicit real-QMD validation. Cut releases and sync adopters as described in
-[releases](docs/releases.md), and record manual follow-up in the
+explicit real-QMD validation. Record manual follow-up in the
 [changelog](CHANGELOG.md). Keep the guide, bundle, and changelog consistent.
