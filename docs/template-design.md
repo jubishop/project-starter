@@ -477,6 +477,16 @@ slow. The tradeoff is that a defect in a managed script reaches every adopter
 before any check sees it; the starter's own CI still runs on the pushed
 release, after the fact.
 
+### Secrets in private repositories — 2026-10-16
+
+Only public repositories must keep secrets out of Git. A private adopter may
+commit them, as the user does across private repositories; trading first
+committed its `.env` this way. The managed `.gitignore` block still ignores
+`.env` and `.env.*`, because sync cannot tell a repository's visibility and
+public adopters keep local `.env` files, so a private project that commits
+`.env` adds `!.env` after the block. This public repository still holds no
+secrets or private data.
+
 ### Setup extension point — 2026-10-09
 
 `bin/setup` runs an executable, project-owned `bin/setup-application` after

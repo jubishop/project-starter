@@ -3,6 +3,19 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 2.10.0 — 2026-10-16
+
+### Synced
+
+- The managed `AGENTS.md` block keeps secrets out of public repositories only.
+  A private repository may commit them, such as its `.env` by adding `!.env`
+  after the `.gitignore` block, which still ignores `.env` by default.
+
+### Manual follow-up
+
+None required. A private project that restated this exception outside the
+block can remove its copy.
+
 ## 2.9.0 — 2026-10-16
 
 ### Synced
