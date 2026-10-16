@@ -72,7 +72,8 @@ bin/sync --dry-run /path/to/project
 bin/sync /path/to/project
 ```
 
-Apply the changelog's manual follow-up, run `bin/check --full` there, commit
+Apply the changelog's manual follow-up, run the checks it needs there (none
+when it changes nothing the application runs), commit
 on its default branch, push to both hosts, and confirm CI for the pushed
 commit. When the Actions quota blocks CI, follow
 [hosted CI](../starter/docs/foundation/engineering-policy.md#hosted-ci). Rerun `bin/sync --status` to confirm that no adopter reports drift.

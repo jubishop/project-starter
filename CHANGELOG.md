@@ -3,6 +3,28 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 2.6.0 — 2026-10-15
+
+### Synced
+
+- Changes outside the runtime, which can't affect what runs when the
+  application executes, go directly to the default branch without checks,
+  tests, CI waits, or a pull request. They include Markdown, docs, memory,
+  agent instructions, AI skills, and tests, CI, and tooling the running
+  application doesn't use. Markdown edits no longer need
+  `bin/check --documents-only`.
+- A project's own rules take precedence over the managed block and the
+  foundation pages wherever they differ, stricter or looser, so a project can
+  set its own edge cases. Previously only stronger project rules won.
+- A Project Starter sync goes directly to the default branch as a change
+  outside the runtime, no longer as a carve-out that overrides project rules.
+
+### Manual follow-up
+
+None required. A project page that still requires checks or a pull request
+for changes outside the runtime keeps doing so, because project rules take
+precedence; remove such a rule unless it is a deliberate exception.
+
 ## 2.5.0 — 2026-10-15
 
 ### Synced
