@@ -3,6 +3,25 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 2.8.0 — 2026-10-15
+
+### Synced
+
+- The engineering policy sorts changes into three kinds. Text, such as
+  Markdown and AI skill prose, goes directly to the default branch without
+  checks. Development code, such as tests, CI, hooks, tooling, and skill
+  scripts, goes directly after its checks pass. Production code goes through a
+  pull request after its checks. This corrects 2.6.0, which let tests, CI, and
+  tooling skip checks.
+- The managed `AGENTS.md` block summarizes the three kinds, and
+  "Changes outside the runtime" is now "Kinds of change".
+
+### Manual follow-up
+
+None required. A project page that links to
+`engineering-policy.md#changes-outside-the-runtime`, or that exempts tests, CI,
+or tooling from checks, should be updated.
+
 ## 2.7.0 — 2026-10-15
 
 ### Synced
