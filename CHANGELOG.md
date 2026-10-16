@@ -3,6 +3,20 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 2.9.0 — 2026-10-16
+
+### Synced
+
+- Only the recorded release version. The remote page that new projects copy,
+  `docs/git-remotes.md`, now records only the primary `origin` remote with no
+  second push destination, and the starter README and docs index match it.
+
+### Manual follow-up
+
+None required. A project-owned `docs/git-remotes.md`, `docs/README.md`, or
+`README.md` that still describes a second push destination should be updated;
+the fleet's copies were updated directly on 2026-10-16.
+
 ## 2.8.1 — 2026-10-15
 
 ### Synced

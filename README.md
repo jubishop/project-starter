@@ -1,9 +1,9 @@
 # Project Starter
 
 An opinionated foundation for one owner's repositories: Markdown memory and
-docs with QMD search, Git hooks, worktree support, td task tracking, shared
-engineering policy, and private SourceHut mirroring. The repository is public,
-but it is not a general-purpose template; its defaults reflect those projects.
+docs with QMD search, Git hooks, worktree support, td task tracking, and shared
+engineering policy. The repository is public, but it is not a general-purpose
+template; its defaults reflect those projects.
 
 - [Guide](GUIDE.md): adopt or update a repository.
 - [Starter bundle](starter/): the files `bin/sync` installs.

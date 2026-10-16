@@ -90,20 +90,15 @@ and uses its chosen issue tracker for tasks. Projects hosted on GitHub also
 receive a GitHub Actions workflow that runs the same checks. The foundation
 must also work with other Git hosts and local repositories.
 
-### Private SourceHut and dual pushes — 2026-09-29
+### Primary remote only — 2026-10-16
 
-New hosted projects default to a private SourceHut repository in addition
-to their primary Git host. Keep primary-host visibility independent. Configure
-`origin` with both push URLs so ordinary pushes reach both hosts, while fetches
-and pulls keep using the primary host. Keep the named `sourcehut` remote for
-verification and retries. Honor explicit hosting choices.
+New hosted projects publish to one primary Git host, normally GitHub, as
+`origin`, with no second push destination. Honor explicit hosting choices.
 
-Make this an explicit creation step in the guide. Applying the foundation to
-an existing repository does not itself authorize adding a host. Routine local
+Make publication an explicit step in the guide. Applying the foundation to an
+existing repository does not itself authorize adding a host. Routine local
 setup, hooks, and CI must not create repositories or publish commits. Record
-the actual URLs in the copied [remote guide](../starter/docs/git-remotes.md)
-so fresh clones can restore the local settings. The tradeoffs are separate
-push failures and configuration that does not travel with a clone.
+the actual URL in the copied [remote guide](../starter/docs/git-remotes.md).
 
 ### Local task tracking — 2026-09-28
 
@@ -341,8 +336,8 @@ adopters. They take effect with the 2.0.0 release; td tracks implementation.
 
 Project Starter primarily serves the user's own projects. The repository
 stays public and the README states that it is opinionated; it makes no
-promise of generic use. Private SourceHut, td, and home-guidance defaults stay
-in the core rather than optional extras. Maintainer guidance excludes secrets
+promise of generic use. The td and home-guidance defaults stay in the core
+rather than optional extras. Maintainer guidance excludes secrets
 and private data instead of all personal conventions.
 
 The user is the only consumer. Staying public avoids Actions minutes that

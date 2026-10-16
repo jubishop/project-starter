@@ -64,10 +64,10 @@ only here, and the other `bin/` commands run in the target.
    `bin/smoke-qmd --project /path/to/project` exercises a snapshot with real
    QMD. Report missing optional tools as skipped features, and check CI for
    the pushed commit.
-10. **Set up remotes for new hosted projects.** After the first commit and
-    checks, follow [Git remote setup](starter/docs/git-remotes.md) to add a
-    private SourceHut repository with dual pushes. Adopting an existing
-    repository does not authorize adding a host or changing visibility.
+10. **Set up the remote for new hosted projects.** After the first commit and
+    checks, follow [Git remote setup](starter/docs/git-remotes.md) to publish
+    to the primary host. Adopting an existing repository does not authorize
+    adding a host or changing visibility.
 11. **Report** changes, checks actually run, skipped features, and overrides.
     Commit and push according to the user's request and the repository's rules.
 
