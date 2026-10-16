@@ -3,6 +3,17 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 2.8.1 — 2026-10-15
+
+### Synced
+
+- Only the recorded release version. Project Starter's QMD maintenance guide
+  now names the home repository's updater `~/bin/auto-update`, its new name.
+
+### Manual follow-up
+
+None.
+
 ## 2.8.0 — 2026-10-15
 
 ### Synced

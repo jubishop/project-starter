@@ -44,7 +44,7 @@ each update itself.
 
 ## Automatic updates on the Mac
 
-The home repository's `~/bin/toolchain-update` runs weekly from a
+The home repository's `~/bin/auto-update` runs weekly from a
 LaunchAgent. For QMD it installs the latest QMD and backend into a fresh
 package root, runs `bin/smoke-qmd --qmd <candidate> --strict-diagnostics`
 from this repository, and replaces the shared runtime only when that passes.
