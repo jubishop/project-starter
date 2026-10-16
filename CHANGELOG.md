@@ -3,6 +3,18 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 2.10.1 — 2026-10-16
+
+### Synced
+
+- The managed `AGENTS.md` secrets rule drops its `.env` example, leaving
+  "Keep secrets out of public repositories only; a private one may commit
+  them."
+
+### Manual follow-up
+
+None.
+
 ## 2.10.0 — 2026-10-16
 
 ### Synced
