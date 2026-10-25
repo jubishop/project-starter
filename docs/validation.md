@@ -206,6 +206,54 @@ finished, which is unrelated to the sync, so its deploy was skipped;
 [screenr#316](https://github.com/jubishop/screenr/issues/316) tracks it.
 podhaven has no push workflow.
 
+## Release 2.12 and orphaned vector cleanup — 2026-10-24
+
+Version 2.12.0 runs `qmd cleanup` after `qmd embed` on every refresh whose
+inputs changed ([issue #3](https://github.com/jubishop/project-starter/issues/3)).
+New tests failed first for the expected reasons: a replaced page left one
+orphaned vector, no cleanup ran under the worker lock, and a lookup succeeded
+with cleanup set to fail, because none ran. They passed after the change, and `bin/check` passed 58
+tests. The real-QMD smoke check now asserts that a linked worktree's refresh
+after an edit leaves no orphaned vectors; without the change it reported
+`Orphaned: 1 embedding chunks (6%)`. The strict check passed locally with QMD
+2.8.3 and node-llama-cpp 3.22.2 on an Apple M5 Pro running macOS 27.0.1, and
+the starter checks passed on Ubuntu and macOS along with the QMD compatibility
+job.
+
+All 22 adopters synced to 2.12.0 on their default branches, and `bin/check`
+passed in each. podhaven merged the change into its `bin/_knowledge.py`
+override and its tests, which failed without it, and passed
+`bin/check --full` with 319 tests. Every adopter's refresh after the sync left
+no orphaned vectors. Each index was then deleted and rebuilt, as the changelog
+allows, and `bin/doctor --json` reported current freshness with no issues.
+`bin/sync --status` reported no drift; podhaven still records two overrides.
+
+| Adopter | Before | Orphaned | After cleanup | Rebuilt |
+| --- | --- | --- | --- | --- |
+| trading | 32.5 MB | 7,595 of 7,896 | 23.7 MB | 4.8 MB |
+| screenr | 13.3 MB | 2,041 of 2,354 | 11.4 MB | 5.0 MB |
+| news | 12.7 MB | 2,317 of 2,500 | 7.5 MB | 4.4 MB |
+| sourdough | 12.2 MB | 2,786 of 2,850 | 6.8 MB | 3.7 MB |
+| stories | 9.0 MB | 1,529 of 1,706 | 7.4 MB | 4.3 MB |
+| podhaven | 5.7 MB | 556 of 789 | 4.7 MB | 4.7 MB |
+
+The other 16 indexes were 3.5 to 4.3 MB with 43 to 92 percent of their
+vectors orphaned. Cleanup brought them to 3.4 to 3.8 MB, and rebuilding
+changed each by at most 8 KB. The gap left after cleanup in larger indexes is
+sqlite-vec's partly used vector blocks.
+
+Hosted CI passed for the pushed commit in ten repositories: jeeves,
+jubishop.github.io, news, pantrydates, printing, radio, scoreboard, sourdough,
+steam-starter, and td-dashboard, and news deployed. In the ten private
+repositories, jobs again did not start because of the Actions spending limit,
+so CI was unavailable, not passed. Each passed its workflow's commands locally
+on the pushed revision: trading's test job and its Python 3.12.15 floor job
+ran in disposable clones, which must sit where Docker can see them for its
+Linux-only tests, and the Node repositories ran `npm ci` in disposable clones.
+screenr's CI failed only on the same date-dependent weekly test that
+[screenr#316](https://github.com/jubishop/screenr/issues/316) tracks, so its
+deploy was skipped.
+
 ## Environment
 
 | Component | Executed version |

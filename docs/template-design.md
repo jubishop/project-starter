@@ -519,7 +519,7 @@ fails the refresh like any other QMD command.
 
 Cleanup does not compact sqlite-vec 0.1.9's vector table: it allocates blocks
 of 1024 vectors, appends only to the newest block, and frees a block only once
-all its vectors are deleted. Trading's 31 MB index shrank to 22.6 MB with
+all its vectors are deleted. Trading's 32.5 MB index shrank to 23.7 MB with
 cleanup, while a fresh embedding of the same 301 chunks took 5.6 seconds and
 4.8 MB. Rebuilding the index on demand reclaims that space without making
 every refresh re-embed.
