@@ -3,7 +3,9 @@
 Read [the guide](GUIDE.md) and the relevant [design documents](docs/README.md).
 `starter/` holds the bundle that `bin/sync` installs, and `extras/` holds
 files it copies on adoption. Keep secrets and private data out of this public
-repository. Do not install or register a skill.
+repository. Do not install a skill outside this repository or register one
+for automatic loading; the [fleet sync skill](.agents/skills/sync-fleet/SKILL.md)
+runs only when invoked.
 
 Follow the [task workflow](starter/docs/foundation/task-tracking.md) for td
 and the [engineering policy](starter/docs/foundation/engineering-policy.md)

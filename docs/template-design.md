@@ -19,6 +19,8 @@ an agent at the guide when setting up a new repository.
 
 Do not provide a skill wrapper or register the guide for automatic loading.
 The user wants to avoid adding persistent agent context.
+[Fleet sync skill](#fleet-sync-skill--2026-10-24) later added an
+explicit-only maintainer skill that does not wrap the guide.
 
 ### Standalone repository — 2026-09-04
 
@@ -544,6 +546,17 @@ after 2.0.0 changed that file. The tradeoff is that of
 [unchecked sync-only releases](#unchecked-sync-only-releases--2026-10-15),
 now for releases that change an overridden file; the merged override is still
 checked.
+
+### Fleet sync skill — 2026-10-24
+
+The `sync-fleet` skill in `.agents/skills/` runs
+[fleet sync](releases.md#sync-the-fleet) for every adopter, so the user can
+start it with one command. The user asked for it to live in this repository
+rather than in home configuration. It defers to the release docs and the
+guide instead of restating them, and it is not in the bundle, so adopters
+never receive it. Agents load it only when invoked, keeping the
+[delivery format](#delivery-format--2026-09-04) goal of no persistent agent
+context; the guide itself is still not a skill.
 
 ### Setup extension point — 2026-10-09
 

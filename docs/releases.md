@@ -68,6 +68,10 @@ an optional step for every adopter, uses the full process below.
 
 ## Sync the fleet
 
+Invoke the [sync-fleet skill](../.agents/skills/sync-fleet/SKILL.md) from
+this repository to sync every adopter by this section or
+[sync-only releases](#sync-only-releases).
+
 Run `bin/sync --status` to list adopters under `~/projects`. For each one,
 starting from a clean, current checkout:
 

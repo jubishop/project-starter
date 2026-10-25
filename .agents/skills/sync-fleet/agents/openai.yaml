@@ -1,0 +1,6 @@
+interface:
+  display_name: "Sync Fleet"
+  short_description: "Sync the latest Project Starter release to every adopter"
+  default_prompt: "Use $sync-fleet to bring every Project Starter adopter up to the latest release."
+policy:
+  allow_implicit_invocation: false
