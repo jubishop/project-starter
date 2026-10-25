@@ -3,6 +3,22 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 2.11.1 — 2026-10-24
+
+### Synced
+
+- A single-file collection whose file is missing indexes nothing instead of
+  failing every refresh and lookup with "Collection readme file is missing".
+  Tools that search a sparse copy of the checkout without the README, such
+  as podhaven's memory audit, work again, and the knowledge-search page says
+  so.
+
+### Manual follow-up
+
+From 2.10.x, apply the 2.11.0 follow-up. A project that overrides
+`bin/_knowledge.py` merges both releases' changes into its copy. The fleet's
+copies were updated directly on 2026-10-24.
+
 ## 2.11.0 — 2026-10-24
 
 ### Synced
@@ -29,7 +45,7 @@ collection. Add it to `collections`:
 A collection rooted at `.` with `**/*.md` should list `README.md` in its
 `ignore` to avoid indexing the file twice. Then run `bin/check` and
 `bin/qmd-index`, and confirm that `bin/doctor --json` counts one `readme`
-document. The fleet's copies were updated directly on 2026-10-24.
+document. No adopter synced 2.11.0; the fleet moved to 2.11.1 directly.
 
 ### Verified
 

@@ -98,8 +98,6 @@ def config():
             raise ValueError("Shared collection paths must stay inside the checkout; use knowledge.homeMemoryPath for home notes")
         if not path.is_dir():
             raise ValueError("Collection directory is missing: " + str(path))
-        if single_file and not (path / pattern).is_file():
-            raise ValueError("Collection " + name + " file is missing: " + str(path / pattern))
         if set(collection) - {"path", "pattern", "ignore", "context"}:
             raise ValueError("Unsupported collection setting: " + name)
         rendered["collections"][name] = dict(collection, path=str(path))
@@ -154,7 +152,9 @@ def qmd_tool():
 def collection_files(collection):
     root = Path(collection["path"])
     if collection["pattern"] != "**/*.md":
-        yield root / collection["pattern"]
+        # A missing file indexes nothing, as in QMD, so sparse copies of a checkout still search.
+        if (root / collection["pattern"]).is_file():
+            yield root / collection["pattern"]
         return
     seen = set()
     def scan_error(error):

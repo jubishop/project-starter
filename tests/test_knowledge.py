@@ -665,10 +665,22 @@ fcntl.flock = flock
         self.assertEqual([r["command"] for r in self.records()[initial:]], ["update", "embed"])
         self.assertEqual(json.loads(self.run_command("bin/doctor", "--json").stdout)["freshness"], "current")
 
-    def test_single_file_collections_need_one_existing_markdown_name(self):
+    def test_missing_single_file_indexes_nothing_until_it_returns(self):
+        readme = self.repo / "README.md"
+        content = readme.read_text()
+        readme.unlink()
+        self.run_command("bin/setup")
+        self.assertEqual(json.loads(self.run_command("bin/doctor", "--json").stdout)["document_counts"]["readme"], 0)
+        readme.write_text(content)
+        self.assertEqual(json.loads(self.run_command("bin/doctor", "--json", check=False).stdout)["freshness"], "stale")
+        self.drain()
+        report = json.loads(self.run_command("bin/doctor", "--json").stdout)
+        self.assertEqual((report["freshness"], report["document_counts"]["readme"]), ("current", 1))
+
+    def test_single_file_collections_need_one_markdown_name(self):
         path = self.repo / ".config/knowledge.json"
         original = path.read_text()
-        for pattern in ("*.md", "**/README.md", "docs/README.md", ".hidden.md", "README.txt", "MISSING.md", None, ["README.md"]):
+        for pattern in ("*.md", "**/README.md", "docs/README.md", ".hidden.md", "README.txt", None, ["README.md"]):
             with self.subTest(pattern=pattern):
                 config = json.loads(original)
                 config["collections"]["readme"]["pattern"] = pattern

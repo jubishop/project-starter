@@ -498,8 +498,10 @@ indexing over documenting the gap
 collection rooted at `.` with `**/*.md` would also index `docs/`, `memory/`,
 nested worktrees, and vendored files, so a collection may instead name one
 Markdown file, which QMD matches only in that directory and the freshness
-fingerprint hashes alone. The root `AGENTS.md` stays unindexed, because agents
-already load it.
+fingerprint hashes alone. A missing file indexes nothing rather than failing,
+because 2.11.0's error broke podhaven's memory audit, which searches a sparse
+copy of the checkout without the README. The root `AGENTS.md` stays
+unindexed, because agents already load it.
 
 ### Setup extension point — 2026-10-09
 
