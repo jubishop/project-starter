@@ -209,6 +209,8 @@ def main():
         stale = json.loads(run("bin/doctor", "--json", cwd=worktree, check=False).stdout)
         assert stale["freshness"] == "stale", stale
         assert json.loads(run("git", "knowledge", "search", "worktreeonlymarkerzeta", "--json", cwd=worktree / "docs").stdout)
+        status = run("bin/knowledge", "status", cwd=worktree).stdout
+        assert "Vectors:" in status and "Orphaned" not in status, status
         assert not json.loads(run("bin/knowledge", "search", "worktreeonlymarkerzeta", "--json").stdout)
         assert not os.path.samefile(repo / ".cache/qmd/index.sqlite", worktree / ".cache/qmd/index.sqlite")
         assert (repo / ".cache/qmd/models").resolve() == (worktree / ".cache/qmd/models").resolve()
@@ -216,7 +218,7 @@ def main():
         assert Path(linked_report["hooks_path"]).relative_to(worktree) == Path(report["hooks_path"]).relative_to(repo), linked_report
         assert (worktree / ".cache/qmd/models").resolve() == models
         run("bin/doctor")
-        passed("real worktree database isolation, shared models, and uncommitted-edit refresh")
+        passed("real worktree database isolation, shared models, and uncommitted-edit refresh without orphaned vectors")
         run("git", "worktree", "remove", "--force", str(worktree))
         assert str(worktree) not in run("git", "worktree", "list").stdout
         passed("disposable worktree cleanup")

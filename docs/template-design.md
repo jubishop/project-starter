@@ -503,6 +503,27 @@ because 2.11.0's error broke podhaven's memory audit, which searches a sparse
 copy of the checkout without the README. The root `AGENTS.md` stays
 unindexed, because agents already load it.
 
+### Orphaned vector cleanup — 2026-10-24
+
+QMD's `update` and `embed` keep the vectors of replaced pages, and the
+knowledge docs steer agents away from running QMD's indexing commands, so
+nothing ran `qmd cleanup`. Orphans made up 68 to 96 percent of the vectors in
+five adopters ([issue #3](https://github.com/jubishop/project-starter/issues/3)).
+The worker now runs `cleanup` after `embed` on every refresh whose inputs
+changed. It took 1.4 seconds for trading's 7,595 orphans and 0.15 seconds with
+none, so a threshold or schedule would save little and need QMD's output
+format or schema. Cleanup changes nothing the freshness fingerprint reads, and
+it runs under the worker lock, so lookups wait or refuse as during `update`.
+QMD already clears its response cache on every `update`, and a failed cleanup
+fails the refresh like any other QMD command.
+
+Cleanup does not compact sqlite-vec 0.1.9's vector table: it allocates blocks
+of 1024 vectors, appends only to the newest block, and frees a block only once
+all its vectors are deleted. Trading's 31 MB index shrank to 22.6 MB with
+cleanup, while a fresh embedding of the same 301 chunks took 5.6 seconds and
+4.8 MB. Rebuilding the index on demand reclaims that space without making
+every refresh re-embed.
+
 ### Setup extension point — 2026-10-09
 
 `bin/setup` runs an executable, project-owned `bin/setup-application` after

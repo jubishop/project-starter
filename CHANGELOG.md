@@ -3,6 +3,28 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 2.12.0 — 2026-10-24
+
+### Synced
+
+- Each knowledge refresh whose inputs changed runs `qmd cleanup` after
+  `qmd embed`, so the index no longer keeps embedding chunks for replaced or
+  removed pages. Lookups during cleanup wait or refuse, as during the rest of
+  a refresh, and a failed cleanup fails the refresh. The knowledge-search page
+  describes this and how to reclaim the vector space cleanup cannot free.
+
+### Manual follow-up
+
+A project that overrides `bin/_knowledge.py` adds `cleanup` after `embed` to
+its refresh's QMD commands. Optionally, to reclaim vector blocks that cleanup
+cannot free, delete `.cache/qmd/index.sqlite` and run `bin/qmd-index`, which
+rebuilds it.
+
+### Verified
+
+QMD 2.8.3 with node-llama-cpp 3.22.2 (strict real-QMD smoke on an Apple M5
+Pro with macOS 27.0.1), td 0.69.0, and Python 3.15.1.
+
 ## 2.11.1 — 2026-10-24
 
 ### Synced

@@ -59,7 +59,8 @@ QMD release version.
    --download-models --strict-diagnostics`. Run it again with
    `--project /path/to/adopter` for affected integrations.
 3. The smoke check covers fresh indexes, exclusions, keyword and vector
-   retrieval, query expansion, reranking, repeat setup, and linked worktrees.
+   retrieval, query expansion, reranking, repeat setup, linked worktrees, and
+   orphaned-vector cleanup after an edit.
    It records diagnostics and rejects warnings in strict mode, including
    warnings in indexing logs after a successful command. `--cpu-only` forces
    CPU operation for hosted runners and allows only QMD's exact no-GPU notice;
