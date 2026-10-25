@@ -167,6 +167,45 @@ branches with no drift; podhaven still records two overrides. At the user's
 direction, no checks ran. Its commits were pushed with 2.5.0, which made
 unchecked sync-only releases the process.
 
+## Release 2.11 and root README search — 2026-10-24
+
+Versions 2.11.0 and 2.11.1 let a knowledge collection name one Markdown file
+and add a `readme` collection for each project's root `README.md`. They passed
+`bin/check` (55 and 56 tests), the starter checks on Ubuntu and macOS, and the
+QMD compatibility job. The real-QMD smoke check now finds a marker in the
+README and confirms that a root-level `NOTES.md`, a nested `notes/README.md`,
+and `worktrees/feature/README.md` stay out of the `readme` collection. The
+strict check passed locally with QMD 2.8.3 and node-llama-cpp 3.22.2 on an
+Apple M5 Pro running macOS 27.0.1.
+
+podhaven's `bin/check --full` found a 2.11.0 defect: its memory audit searches
+a sparse copy of the checkout without the README, and the missing-file error
+failed 26 of its tests. 2.11.1 indexes nothing for a missing file instead, and
+no adopter committed 2.11.0.
+
+All 22 adopters synced to 2.11.1 on their default branches and added the
+`readme` collection to `.config/knowledge.json`. podhaven merged the change
+into its `bin/_knowledge.py` override and its collection test. In each
+adopter, `bin/check` and `bin/qmd-index` passed, `bin/doctor --json` reported
+current freshness with one `readme` document, and a search for a distinctive
+README term returned `qmd://readme/README.md`. news, stories, radio, and
+podhaven also passed `bin/check --full`, as their instructions require.
+will's root `plans` collection already ignored `README.md`. `bin/sync --status`
+reported no drift; podhaven still records two overrides.
+
+Hosted CI passed for the pushed commit in ten repositories: jeeves,
+jubishop.github.io, news, pantrydates, printing, radio, scoreboard, sourdough,
+steam-starter, and td-dashboard, and news deployed. In ten private
+repositories (artisanalsoftware.com, health, home-infra, kidsbank, stories,
+taxes, trading, vidservey, vps-infra, and will), jobs did not start because
+the account's Actions spending limit was reached, so CI was unavailable, not
+passed. Each passed its workflow's commands locally on the pushed revision,
+and trading's Python floor job passed on Python 3.12.15 in a disposable clone.
+screenr's CI failed on a test that expects the week of 2026-10-19 to be
+finished, which is unrelated to the sync, so its deploy was skipped;
+[screenr#316](https://github.com/jubishop/screenr/issues/316) tracks it.
+podhaven has no push workflow.
+
 ## Environment
 
 | Component | Executed version |
