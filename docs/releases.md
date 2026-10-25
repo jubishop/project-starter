@@ -33,21 +33,26 @@ blocks, placing the `AGENTS.md` block after the page title.
 
 ## Sync-only releases
 
-When a release needs no manual follow-up, each adopter receives only what
+When a release needs no manual follow-up, or its follow-up applies only to
+adopters that override a managed file, the other adopters receive only what
 `bin/sync` writes. Ship it without checks, CI waits, deployments, validation
 records, or a td task:
 
 1. Set the version, add the changelog entry, commit, tag `vX.Y.Z`, and run
    `git push origin main vX.Y.Z`.
 2. Fetch every adopter listed by `bin/sync --status`, then sync each one.
-   Commit only the synced files, with `[skip ci]` in the message so GitHub
-   Actions starts no push workflows, and push.
+   Where no follow-up applies, commit only the synced files, with `[skip ci]`
+   in the message so GitHub Actions starts no push workflows, and push.
+3. Give each adopter with an override that the follow-up applies to the
+   [fleet sync](#sync-the-fleet) steps: apply the follow-up, run the checks it
+   needs, push without `[skip ci]`, and confirm CI. `bin/sync --status` lists
+   each adopter's overrides.
 
 Sync only an adopter that is on its default branch and even with its remote.
 Skip and report any other, and never force, stash, or push someone else's
 commits. Report a rejected push, such as from enforced branch protection,
-instead of bypassing it. A release with manual follow-up uses the full process
-below.
+instead of bypassing it. Any other release with manual follow-up, including
+an optional step for every adopter, uses the full process below.
 
 ## Cut a release
 

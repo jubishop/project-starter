@@ -475,7 +475,9 @@ nor a deployment for it. The user asked for this because small starter
 changes are frequent, and running every gate across 21 adopters made each one
 slow. The tradeoff is that a defect in a managed script reaches every adopter
 before any check sees it; the starter's own CI still runs on the pushed
-release, after the fact.
+release, after the fact. [Override-only follow-up](#override-only-follow-up--2026-10-24)
+later extended this to releases whose follow-up applies only to adopters with
+an override.
 
 ### Secrets in private repositories — 2026-10-16
 
@@ -523,6 +525,25 @@ all its vectors are deleted. Trading's 32.5 MB index shrank to 23.7 MB with
 cleanup, while a fresh embedding of the same 301 chunks took 5.6 seconds and
 4.8 MB. Rebuilding the index on demand reclaims that space without making
 every refresh re-embed.
+
+### Override-only follow-up — 2026-10-24
+
+A release whose manual follow-up applies only to adopters that override a
+managed file ships as a [sync-only release](releases.md#sync-only-releases).
+The starter and every other adopter skip checks, CI waits, and deployments,
+and those adopters' sync commits carry `[skip ci]`. Each adopter with an
+override that the follow-up applies to still merges the change, runs the
+checks it needs, and confirms CI. Any other follow-up, including an optional
+step for every adopter, keeps the full process. The user chose this
+([issue #5](https://github.com/jubishop/project-starter/issues/5)) after
+2.12.0, whose required follow-up applied only to podhaven's
+`bin/_knowledge.py` override, ran `bin/check` in all 22 adopters, waited on
+hosted CI in public adopters, and ran workflow commands locally in private
+ones whose Actions jobs the spending limit blocked. Five of the 20 releases
+after 2.0.0 changed that file. The tradeoff is that of
+[unchecked sync-only releases](#unchecked-sync-only-releases--2026-10-15),
+now for releases that change an overridden file; the merged override is still
+checked.
 
 ### Setup extension point — 2026-10-09
 

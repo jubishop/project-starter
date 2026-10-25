@@ -83,8 +83,9 @@ changes. Move the change into an extension point (`bin/check-application`,
 `bin/setup-application`, project pages, or the project section of `AGENTS.md`), record an override with
 its reason in `.project-starter.json`, or discard it with `--force`. Apply the
 release's manual follow-up from the [changelog](CHANGELOG.md), run
-`bin/check --full`, and commit. A release with no manual follow-up skips the
-check and deployment; see [sync-only releases](docs/releases.md#sync-only-releases). `bin/sync --status` reports each adopter's
+`bin/check --full`, and commit. An adopter skips the check and deployment
+when the release has no manual follow-up, or when the release's follow-up
+applies only to overrides the adopter lacks; see [sync-only releases](docs/releases.md#sync-only-releases). `bin/sync --status` reports each adopter's
 version, drift, and overrides.
 
 ## Propose starter improvements
