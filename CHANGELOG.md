@@ -3,6 +3,39 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 2.11.0 — 2026-10-24
+
+### Synced
+
+- A knowledge collection's pattern may name one Markdown file instead of
+  `**/*.md`. QMD then indexes only that file in the collection's directory,
+  and search freshness tracks it alone. The knowledge-search page documents
+  this, and new projects' `.config/knowledge.json` adds a `readme` collection
+  for the root `README.md`, so search returns `qmd://readme/README.md`.
+
+### Manual follow-up
+
+`.config/knowledge.json` is project-owned, so sync does not add the
+collection. Add it to `collections`:
+
+```json
+"readme": {
+  "path": ".",
+  "pattern": "README.md",
+  "context": {"/": "The project's purpose, main entry points, and development setup."}
+}
+```
+
+A collection rooted at `.` with `**/*.md` should list `README.md` in its
+`ignore` to avoid indexing the file twice. Then run `bin/check` and
+`bin/qmd-index`, and confirm that `bin/doctor --json` counts one `readme`
+document. The fleet's copies were updated directly on 2026-10-24.
+
+### Verified
+
+QMD 2.8.3 with node-llama-cpp 3.22.2 (strict real-QMD smoke on an Apple M5
+Pro with macOS 27.0.1), td 0.69.0, and Python 3.15.1.
+
 ## 2.10.1 — 2026-10-16
 
 ### Synced

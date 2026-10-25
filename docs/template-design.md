@@ -487,6 +487,20 @@ public adopters keep local `.env` files, so a private project that commits
 `.env` adds `!.env` after the block. This public repository still holds no
 secrets or private data.
 
+### Root README in search — 2026-10-24
+
+Knowledge search indexes the root `README.md` through a `readme` collection
+whose pattern names that one file. Adoption tailors the README to state the
+project's purpose and entry points, yet search could not find it, so the
+adoption search check had to target a docs page instead. The user chose
+indexing over documenting the gap
+([issue #2](https://github.com/jubishop/project-starter/issues/2)). A
+collection rooted at `.` with `**/*.md` would also index `docs/`, `memory/`,
+nested worktrees, and vendored files, so a collection may instead name one
+Markdown file, which QMD matches only in that directory and the freshness
+fingerprint hashes alone. The root `AGENTS.md` stays unindexed, because agents
+already load it.
+
 ### Setup extension point — 2026-10-09
 
 `bin/setup` runs an executable, project-owned `bin/setup-application` after

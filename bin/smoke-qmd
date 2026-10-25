@@ -135,6 +135,12 @@ def main():
         proof.write_text("---\nstatus: current\n---\n\n# Search isolation proof\n\nThe orionmosaic marker identifies this document. Each branch checkout keeps its own SQLite search database so another branch's notes cannot replace its results. Model weights can be shared.\n")
         with (repo / "docs/README.md").open("a") as stream:
             stream.write("\n- [Search isolation proof](retrieval-proof.md)\n")
+        with (repo / "README.md").open("a") as stream:
+            stream.write("\nThe lanternquay marker appears only in the root README.\n")
+        for name in ("NOTES.md", "notes/README.md", "worktrees/feature/README.md"):
+            page = repo / name
+            page.parent.mkdir(parents=True, exist_ok=True)
+            page.write_text("# Other page\n\nrootmarkerzeta stays out of the README collection.\n")
         for directory, filename, content in (
             ("memory/archive", "old-rule.md", "---\nname: old-rule\ndescription: An archived rule.\ntype: project\nstatus: resolved\n---\n\n# Old rule\n\narchivemarkerzeta\n"),
             ("memory/pr_reviews", "old-review.md", "# Review ledger\n\nreviewmarkerzeta\n"),
@@ -158,6 +164,12 @@ def main():
         assert context["/"] in json.dumps(result), result
         assert "orionmosaic" in run("bin/knowledge", "get", "qmd://docs/retrieval-proof.md").stdout
         passed("keyword retrieval, collection descriptions, focused reads, and subdirectory routing")
+        result = json.loads(run("bin/knowledge", "search", "lanternquay", "--json").stdout)
+        assert result and "qmd://readme/" in json.dumps(result).lower(), result
+        assert "lanternquay" in run("bin/knowledge", "get", "qmd://readme/README.md").stdout
+        result = json.loads(run("bin/knowledge", "search", "rootmarkerzeta", "--json").stdout)
+        assert "qmd://readme/" not in json.dumps(result).lower(), result
+        passed("root README retrieval without other root or nested Markdown")
         for term in ("archivemarkerzeta", "reviewmarkerzeta", "docsarchivemarkerzeta"):
             assert not json.loads(run("bin/knowledge", "search", term, "--json").stdout), term
         passed("memory archive, review records, and document archive exclusions")

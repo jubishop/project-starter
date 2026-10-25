@@ -141,7 +141,7 @@ else:
         record = self.records()[0]
         self.assertEqual(record["cwd"], str(self.repo))
         self.assertEqual(record["index"], str(self.repo / ".cache/qmd/index.sqlite"))
-        self.assertEqual(set(record["collections"]), {"memory", "docs", "foundation"})
+        self.assertEqual(set(record["collections"]), {"readme", "memory", "docs", "foundation"})
         self.assertIn("context", record["collections"]["docs"])
         result = self.run_command("../bin/knowledge", "search", "reference", root=self.repo / "docs")
         self.assertEqual(json.loads(result.stdout)["index"], record["index"])
@@ -642,6 +642,41 @@ fcntl.flock = flock
         path.write_text(json.dumps(config))
         self.drain()
         self.assertEqual(len(self.records()), initial + 2)
+
+    def test_root_readme_is_indexed_without_other_markdown(self):
+        self.run_command("bin/setup")
+        readme = self.records()[0]["collections"]["readme"]
+        self.assertEqual((readme["path"], readme["pattern"]), (str(self.repo), "README.md"))
+        self.assertEqual(json.loads(self.run_command("bin/doctor", "--json").stdout)["document_counts"]["readme"], 1)
+        initial = len(self.records())
+        for name in ("NOTES.md", "AGENTS.md", "notes/README.md", "worktrees/feature/README.md"):
+            page = self.repo / name
+            page.parent.mkdir(parents=True, exist_ok=True)
+            with page.open("a") as stream:
+                stream.write("\n# Unindexed page\n")
+        report = json.loads(self.run_command("bin/doctor", "--json").stdout)
+        self.assertEqual((report["freshness"], report["document_counts"]["readme"]), ("current", 1))
+        self.drain()
+        self.assertEqual(len(self.records()), initial)
+        with (self.repo / "README.md").open("a") as stream:
+            stream.write("\nReadme-only guidance.\n")
+        self.assertEqual(json.loads(self.run_command("bin/doctor", "--json", check=False).stdout)["freshness"], "stale")
+        self.drain()
+        self.assertEqual([r["command"] for r in self.records()[initial:]], ["update", "embed"])
+        self.assertEqual(json.loads(self.run_command("bin/doctor", "--json").stdout)["freshness"], "current")
+
+    def test_single_file_collections_need_one_existing_markdown_name(self):
+        path = self.repo / ".config/knowledge.json"
+        original = path.read_text()
+        for pattern in ("*.md", "**/README.md", "docs/README.md", ".hidden.md", "README.txt", "MISSING.md", None, ["README.md"]):
+            with self.subTest(pattern=pattern):
+                config = json.loads(original)
+                config["collections"]["readme"]["pattern"] = pattern
+                path.write_text(json.dumps(config))
+                result = self.run_command("bin/setup", check=False)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("readme", result.stderr)
+        self.assertEqual(self.records(), [])
 
     def test_only_full_check_runs_application_checks_after_foundation_checks(self):
         self.tool("shellcheck", "import sys\nsys.exit(0)\n")
