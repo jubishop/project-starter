@@ -52,7 +52,7 @@ class SyncTests(unittest.TestCase):
     def source(self):
         """Copy this checkout into a disposable source repository that can be tagged."""
         source = self.base / "starter source"
-        shutil.copytree(ROOT, source, ignore=shutil.ignore_patterns(".git", ".cache", ".todos", "__pycache__"))
+        shutil.copytree(ROOT, source, ignore=shutil.ignore_patterns(".git", ".cache", "__pycache__"))
         self.run_command("git", "init", "-b", "main", cwd=source)
         self.commit(source, "Release")
         self.run_command("git", "tag", "v2.0.0", cwd=source)
@@ -176,7 +176,7 @@ class SyncTests(unittest.TestCase):
 
     def test_legacy_adopter_migrates_from_recorded_source_refs(self):
         source = self.base / "starter source"
-        shutil.copytree(ROOT, source, ignore=shutil.ignore_patterns(".git", ".cache", ".todos", "__pycache__"))
+        shutil.copytree(ROOT, source, ignore=shutil.ignore_patterns(".git", ".cache", "__pycache__"))
         legacy_files = {"bin/doctor": "# legacy doctor\n", "tests/test_knowledge.py": "# legacy tests\n",
                         "docs/obsolete-guide.md": "---\nstatus: current\n---\n\n# Obsolete guide\n",
                         ".envrc": "export LEGACY_ENVIRONMENT=1\n"}

@@ -1,7 +1,7 @@
 # Project Starter
 
 An opinionated foundation for one owner's repositories: Markdown memory and
-docs with QMD search, Git hooks, worktree support, td task tracking, and shared
+docs with QMD search, Git hooks, worktree support, and shared
 engineering policy. The repository is public, but it is not a general-purpose
 template; its defaults reflect those projects.
 
@@ -23,7 +23,7 @@ and never commits. An adopter's `bin/check` verifies those hashes, and
 `bin/check --full` adds the project's `bin/check-application`.
 
 The scripts target macOS and Linux and need Git and Python 3.9 or later;
-checks need ShellCheck. QMD, direnv, and td are optional at runtime.
+checks need ShellCheck. QMD and direnv are optional at runtime.
 
 ## Maintain
 

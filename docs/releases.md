@@ -35,8 +35,8 @@ blocks, placing the `AGENTS.md` block after the page title.
 
 When a release needs no manual follow-up, or its follow-up applies only to
 adopters that override a managed file, the other adopters receive only what
-`bin/sync` writes. Ship it without checks, CI waits, deployments, validation
-records, or a td task:
+`bin/sync` writes. Ship it without checks, CI waits, deployments, or validation
+records:
 
 1. Set the version, add the changelog entry, commit, tag `vX.Y.Z`, and run
    `git push origin main vX.Y.Z`.
@@ -62,8 +62,8 @@ an optional step for every adopter, uses the full process below.
 1. Choose the version. A major release changes extension points or requires
    adopter action, a minor release adds features, and a patch fixes defects.
 2. Set `version` in `starter/.project-starter.json`, and add a changelog entry
-   with the synced changes, the manual follow-up, and the verified QMD, td,
-   and platform versions.
+   with the synced changes, the manual follow-up, and the verified QMD and
+   platform versions.
 3. Run `bin/check`, push `main`, and wait for the
    [starter checks](../.github/workflows/check.yml) to pass on Ubuntu and
    macOS.
@@ -88,4 +88,3 @@ when it changes only text), commit
 on its default branch, push, and confirm CI for the pushed
 commit. When the Actions quota blocks CI, follow
 [hosted CI](../starter/docs/foundation/engineering-policy.md#hosted-ci). Rerun `bin/sync --status` to confirm that no adopter reports drift.
-Coordinate a fleet-wide sync with a td task in the home database.

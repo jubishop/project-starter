@@ -7,8 +7,7 @@ repository. Do not install a skill outside this repository or register one
 for automatic loading; the [fleet sync skill](.agents/skills/sync-fleet/SKILL.md)
 runs only when invoked.
 
-Follow the [task workflow](starter/docs/foundation/task-tracking.md) for td
-and the [engineering policy](starter/docs/foundation/engineering-policy.md)
+Follow the [engineering policy](starter/docs/foundation/engineering-policy.md)
 for dependencies, red-green tests through public interfaces, test cost, flaky
 tests, file and page organization, checkout isolation, and toolchain versions.
 

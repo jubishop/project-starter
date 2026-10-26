@@ -104,6 +104,8 @@ the actual URL in the copied [remote guide](../starter/docs/git-remotes.md).
 
 ### Local task tracking — 2026-09-28
 
+Superseded by [task tracking retired](#task-tracking-retired--2026-10-25).
+
 The user selected td for local task progress and handoffs, and requested its
 adoption in the starter and existing projects that follow the starter patterns.
 Use td alongside the existing shared issue tracker. Shared scope and acceptance
@@ -111,13 +113,15 @@ criteria stay in that tracker; local tasks link to relevant issues. Memory and
 docs retain durable guidance and decisions rather than temporary progress.
 
 Keep the new-context instruction short and place setup and workflow details in
-[the task guide](../starter/docs/foundation/task-tracking.md). Install td explicitly and
+the task guide. Install td explicitly and
 initialize each primary checkout. Keep `.todos/` out of Git; linked worktrees
 share its state. CI and application startup do not require td. The tradeoff is
 that Git pushes do not preserve local task state, so exports or deliberately
 configured td sync are needed for transfer to another machine.
 
 ### Selective task tracking — 2026-09-30
+
+Superseded by [task tracking retired](#task-tracking-retired--2026-10-25).
 
 Keep td available, and require task records for work with multiple stages,
 interruptions, blockers, or agent handoffs. Tasks are optional for
@@ -321,6 +325,15 @@ in CI; the full gate must pass before delivery is complete. Preserve stronger
 existing project requirements during adoption. Keep these policies standalone,
 without references to another project or assumptions about its stack.
 
+### Task tracking retired — 2026-10-25
+
+The user retired td in 3.0.0, finding it organizational overhead with little
+benefit: the projects already track the work they need in GitHub issues, and
+a session normally stays with an issue until it is finished, so cross-session
+handoffs rarely arise. When one is wanted, the user says how to hand off.
+The starter no longer ships a task guide, a td rule in the managed
+`AGENTS.md` block, or a `.todos/` ignore, and setup never installs td.
+
 ### Nonfunctional delivery — 2026-09-28
 
 Documentation, task tracking, comments, and other nonfunctional changes do not
@@ -338,7 +351,7 @@ adopters. They take effect with the 2.0.0 release; td tracks implementation.
 
 Project Starter primarily serves the user's own projects. The repository
 stays public and the README states that it is opinionated; it makes no
-promise of generic use. The td and home-guidance defaults stay in the core
+promise of generic use. The home-guidance defaults, and td until 3.0.0, stay in the core
 rather than optional extras. Maintainer guidance excludes secrets
 and private data instead of all personal conventions.
 
@@ -411,8 +424,7 @@ set rather than a knowledge-only subset.
 
 ### Tool versions — 2026-10-09
 
-Use upstream td from its Homebrew tap; 0.66.0 was installed on 2026-10-09
-(PDT). Record verified td and QMD versions once per starter release, not
+Record verified QMD versions once per starter release, not
 in each adopter. The QMD constant in `_knowledge.py` is the runtime source;
 maintainer checks assert that it matches `tools/qmd/package.json`, and
 `bin/doctor` compares parsed versions exactly.

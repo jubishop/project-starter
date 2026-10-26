@@ -59,20 +59,18 @@ only here, and the other `bin/` commands run in the target.
    root `README.md`; a collection rooted at `.` with `**/*.md` should ignore
    `README.md` so it is not indexed twice. Bring existing pages into the
    documented formats, and do not invent memories.
-8. **Set up tasks.** Install td and run `td init` in the primary checkout, per
-   [task tracking](starter/docs/foundation/task-tracking.md).
-9. **Verify.** Run `bin/setup`, `bin/check --full`, and `bin/doctor`. With QMD,
+8. **Verify.** Run `bin/setup`, `bin/check --full`, and `bin/doctor`. With QMD,
    search for a distinctive term from the tailored root README, expecting
    `qmd://readme/README.md`, and for one from a real `docs/` or `memory/`
    page, and read each result.
    `bin/smoke-qmd --project /path/to/project` exercises a snapshot with real
    QMD. Report missing optional tools as skipped features, and check CI for
    the pushed commit.
-10. **Set up the remote for new hosted projects.** After the first commit and
+9. **Set up the remote for new hosted projects.** After the first commit and
     checks, follow [Git remote setup](starter/docs/git-remotes.md) to publish
     to the primary host. Adopting an existing repository does not authorize
     adding a host or changing visibility.
-11. **Report** changes, checks actually run, skipped features, and overrides.
+10. **Report** changes, checks actually run, skipped features, and overrides.
     Commit and push according to the user's request and the repository's rules.
 
 ## Update an adopter

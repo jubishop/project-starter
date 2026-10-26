@@ -3,6 +3,32 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 3.0.0 — 2026-10-25
+
+### Synced
+
+- td task tracking is retired; projects track work in their issue tracker.
+  Sync removes `docs/foundation/task-tracking.md`, the managed `AGENTS.md`
+  block drops its td rule, the managed `.gitignore` block no longer ignores
+  `.todos/`, and the foundation index no longer lists task tracking.
+
+### Manual follow-up
+
+- Remove td from the project-owned pages that 2.x installed: the td sentence
+  in `docs/development-workflow.md`, the task-tracking item and the sentence
+  about linking issues from td in `README.md`, the td clause in
+  `docs/README.md` and `memory/README.md`, and "task tracking" in the
+  `foundation` collection's context in `.config/knowledge.json`. Edit any
+  other project page that tells agents to use td or cites td task IDs.
+- Move any unfinished task's remaining work into an issue, then delete the
+  primary checkout's `.todos/` directory.
+
+### Verified
+
+`bin/check` on macOS 27.0 with Python 3.15.1. QMD is unchanged since 2.12.0's
+strict real-QMD smoke (QMD 2.8.3 with node-llama-cpp 3.22.2); this release
+does not rerun it.
+
 ## 2.13.0 — 2026-10-25
 
 ### Synced
