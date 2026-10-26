@@ -10,10 +10,21 @@ import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
+FEATURE = ROOT / "features/memory-audit"
 
 
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def feature_files():
+    """The adopter paths the memory audit feature installs."""
+    return sorted(p.relative_to(FEATURE).as_posix() for p in FEATURE.rglob("*")
+                  if p.is_file() and p.name != "feature.json" and "__pycache__" not in p.parts)
+
+
+def snapshot(repo):
+    return {p: p.read_bytes() for p in repo.rglob("*") if p.is_file() and ".git" not in p.parts}
 
 
 class SyncTests(unittest.TestCase):
@@ -67,6 +78,32 @@ class SyncTests(unittest.TestCase):
 
     def check_documents(self, repo, check=True):
         return self.run_command("bin/check", "--documents-only", cwd=repo, check=check)
+
+    def manifest(self, repo):
+        return json.loads((repo / ".project-starter.json").read_text())
+
+    def assert_feature_installed(self, repo):
+        manifest = self.manifest(repo)
+        self.assertEqual(manifest["features"], ["memory-audit"])
+        for relative in feature_files():
+            self.assertEqual((repo / relative).read_bytes(), (FEATURE / relative).read_bytes(), relative)
+            self.assertEqual(os.access(repo / relative, os.X_OK), os.access(FEATURE / relative, os.X_OK), relative)
+            self.assertEqual(manifest["managed"][relative], digest(repo / relative), relative)
+        self.assertFalse((repo / "feature.json").exists())
+        # The foundation index lists the feature's page, so index coverage passes.
+        index = repo / "docs/foundation/README.md"
+        self.assertIn("](memory-audit.md)", index.read_text())
+        self.assertEqual(manifest["managed"]["docs/foundation/README.md"], digest(index))
+        self.check_documents(repo)
+
+    def assert_feature_absent(self, repo):
+        manifest = self.manifest(repo)
+        self.assertNotIn("features", manifest)
+        for relative in feature_files():
+            self.assertFalse((repo / relative).exists(), relative)
+            self.assertNotIn(relative, manifest["managed"])
+        self.assertEqual((repo / "docs/foundation/README.md").read_bytes(),
+                         (ROOT / "starter/docs/foundation/README.md").read_bytes())
 
     def test_init_copies_bundle_records_hashes_and_never_commits(self):
         repo = self.target()
@@ -231,17 +268,133 @@ class SyncTests(unittest.TestCase):
         self.assertEqual(set(manifest), {"version", "source", "ref", "managed", "blocks", "overrides"})
         self.assertEqual(manifest["ref"], "v2.0.0")
 
+    def test_init_can_enable_a_feature(self):
+        repo = self.target()
+        self.sync("--init", "--ref", "WORKTREE", "--enable", "memory-audit", str(repo))
+        self.assertEqual(self.commits(repo), 1)
+        self.assert_feature_installed(repo)
+
+    def test_an_adopter_enables_keeps_and_disables_a_feature(self):
+        repo = self.target()
+        self.sync("--init", "--ref", "WORKTREE", str(repo))
+        self.assert_feature_absent(repo)
+        self.commit(repo, "Adopt")
+        self.sync("--ref", "WORKTREE", "--enable", "memory-audit", str(repo))
+        self.assert_feature_installed(repo)
+        self.commit(repo, "Enable")
+        before = snapshot(repo)
+        self.sync("--ref", "WORKTREE", str(repo))
+        self.assertEqual(snapshot(repo), before)
+
+        audit = repo / "bin/_memory_audit.py"
+        original = audit.read_bytes()
+        audit.write_text(audit.read_text() + "# local change\n")
+        self.assertIn("bin/_memory_audit.py", self.check_documents(repo, check=False).stderr)
+        self.commit(repo, "Local change")
+        refused = self.sync("--ref", "WORKTREE", "--disable", "memory-audit", str(repo), check=False)
+        self.assertNotEqual(refused.returncode, 0)
+        self.assertIn("bin/_memory_audit.py", refused.stderr)
+        self.assertTrue(audit.read_text().endswith("# local change\n"))
+        audit.write_bytes(original)
+        self.commit(repo, "Restore")
+        self.sync("--ref", "WORKTREE", "--disable", "memory-audit", str(repo))
+        self.assert_feature_absent(repo)
+        self.check_documents(repo)
+
+    def test_a_project_copy_of_a_feature_file_conflicts_until_removed(self):
+        repo = self.target()
+        self.sync("--init", "--ref", "WORKTREE", str(repo))
+        own = repo / "bin/_memory_audit.py"
+        own.write_text("# The project's own audit\n")
+        self.commit(repo, "Own audit")
+        before = snapshot(repo)
+        conflict = self.sync("--ref", "WORKTREE", "--enable", "memory-audit", str(repo), check=False)
+        self.assertNotEqual(conflict.returncode, 0)
+        self.assertIn("bin/_memory_audit.py", conflict.stderr)
+        self.assertIn("not managed", conflict.stderr)
+        self.assertEqual(snapshot(repo), before)
+        own.unlink()
+        self.commit(repo, "Remove own audit")
+        self.sync("--ref", "WORKTREE", "--enable", "memory-audit", str(repo))
+        self.assert_feature_installed(repo)
+
+    def test_unknown_or_contradictory_features_are_refused(self):
+        repo = self.target()
+        for args, message in ((("--enable", "memory-audti"), "memory-audit"),
+                              (("--disable", "memory-audti"), "memory-audit"),
+                              (("--enable", "memory-audit", "--disable", "memory-audit"), "both")):
+            with self.subTest(args=args):
+                result = self.sync("--init", "--ref", "WORKTREE", *args, str(repo), check=False)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(message, result.stderr)
+                self.assertFalse((repo / ".project-starter.json").exists())
+        self.assertNotEqual(self.sync("--status", "--enable", "memory-audit", check=False).returncode, 0)
+
+    def test_feature_changes_reach_only_the_adopters_that_enable_it(self):
+        source = self.base / "starter source"
+        shutil.copytree(ROOT, source, ignore=shutil.ignore_patterns(".git", ".cache", "__pycache__", "features"))
+        self.run_command("git", "init", "-b", "main", cwd=source)
+        self.commit(source, "Release without features")
+        self.run_command("git", "tag", "v2.0.0", cwd=source)
+        plain, featured = self.target("plain"), self.target("featured")
+        for repo in (plain, featured):
+            self.sync("--init", str(repo), source=source)
+            self.commit(repo, "Adopt")
+        early = self.sync("--enable", "memory-audit", str(featured), source=source, check=False)
+        self.assertNotEqual(early.returncode, 0)
+        self.assertIn("memory-audit", early.stderr)
+
+        shutil.copytree(FEATURE, source / "features/memory-audit", ignore=shutil.ignore_patterns("__pycache__"))
+        with (source / "features/memory-audit/bin/_memory_audit.py").open("a") as stream:
+            stream.write("# release note\n")
+        template = source / "starter/.project-starter.json"
+        template.write_text(template.read_text().replace(json.loads(template.read_text())["version"], "2.1.0"))
+        self.commit(source, "Release the feature")
+        self.run_command("git", "tag", "v2.1.0", cwd=source)
+
+        before = self.manifest(plain)
+        self.sync(str(plain), source=source)
+        changed = self.run_command("git", "status", "--porcelain", cwd=plain).stdout.splitlines()
+        self.assertEqual(changed, [" M .project-starter.json"])
+        after = self.manifest(plain)
+        self.assertEqual(set(after), {"version", "source", "ref", "managed", "blocks", "overrides"})
+        self.assertEqual((after["version"], after["ref"]), ("2.1.0", "v2.1.0"))
+        self.assertEqual(after["managed"], before["managed"])
+        self.sync("--enable", "memory-audit", str(featured), source=source)
+        self.assertTrue((featured / "bin/_memory_audit.py").read_text().endswith("# release note\n"))
+        self.assertEqual(self.manifest(featured)["features"], ["memory-audit"])
+        self.check_documents(featured)
+
+        # An overridden feature file keeps its local change and reports the upstream one.
+        with (featured / "bin/_memory_audit.py").open("a") as stream:
+            stream.write("# local change\n")
+        manifest = self.manifest(featured)
+        manifest["overrides"]["bin/_memory_audit.py"] = "Local audit experiment"
+        (featured / ".project-starter.json").write_text(json.dumps(manifest))
+        self.commit(featured, "Override the audit")
+        with (source / "features/memory-audit/bin/_memory_audit.py").open("a") as stream:
+            stream.write("# second release note\n")
+        self.commit(source, "Change the feature again")
+        self.run_command("git", "tag", "v2.2.0", cwd=source)
+        result = self.sync(str(featured), source=source)
+        self.assertIn("upstream changed since v2.1.0", result.stdout)
+        self.assertIn("-- features/memory-audit/bin/_memory_audit.py", result.stdout)
+        self.assertTrue((featured / "bin/_memory_audit.py").read_text().endswith("# local change\n"))
+
     def test_status_reports_versions_overrides_drift_and_legacy(self):
         fleet = self.base / "projects"
         fleet.mkdir()
-        for name in ("current", "drifted", "overridden"):
+        for name in ("current", "drifted", "overridden", "featured"):
             repo = fleet / name
             repo.mkdir()
             self.run_command("git", "init", "-b", "main", cwd=repo)
             self.run_command("git", "commit", "--allow-empty", "-m", "Start", cwd=repo)
-            self.sync("--init", "--ref", "WORKTREE", str(repo))
+            features = ("--enable", "memory-audit") if name == "featured" else ()
+            self.sync("--init", "--ref", "WORKTREE", *features, str(repo))
         doctor = fleet / "drifted/bin/doctor"
         doctor.write_text(doctor.read_text() + "# drift\n")
+        audit = fleet / "featured/bin/memory-audit"
+        audit.write_text(audit.read_text() + "# drift\n")
         manifest_path = fleet / "overridden/.project-starter.json"
         manifest = json.loads(manifest_path.read_text())
         manifest["overrides"] = {"bin/doctor": "Local diagnostics"}
@@ -256,6 +409,9 @@ class SyncTests(unittest.TestCase):
         self.assertIn("drift 1", lines["drifted"])
         self.assertIn("drift 0", lines["current"])
         self.assertIn("overrides 1", lines["overridden"])
+        self.assertIn("drift 1", lines["featured"])
+        self.assertIn("features memory-audit", lines["featured"])
+        self.assertNotIn("features", lines["current"])
 
 
 if __name__ == "__main__":

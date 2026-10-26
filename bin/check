@@ -13,7 +13,8 @@ from _checks import validate
 
 
 def main():
-    errors = validate(root, areas=("docs",), options={"checks": {"exclude": ["starter/**", "extras/**"]}})
+    # Feature pages link to adopter paths, so the sync tests check them in an adopter that enables them.
+    errors = validate(root, areas=("docs",), options={"checks": {"exclude": ["starter/**", "extras/**", "features/**"]}})
     errors += validate(root / "starter")
     if errors:
         print("\n".join(errors), file=sys.stderr)
@@ -22,7 +23,7 @@ def main():
         if not shutil.which(tool):
             print("Install " + tool + " before running bin/check.", file=sys.stderr)
             return 1
-    for folder in (root / "bin", root / "tests", root / "starter/bin"):
+    for folder in (root / "bin", root / "tests", root / "starter/bin", *sorted(root.glob("features/*/bin"))):
         for path in folder.iterdir():
             if path.is_file() and (path.suffix == ".py" or path.read_bytes().startswith(b"#!/usr/bin/env python3")):
                 ast.parse(path.read_text(), filename=str(path))

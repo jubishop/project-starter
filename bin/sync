@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Copy a Project Starter release into adopters, or report the fleet's versions and drift."""
+"""Copy a Project Starter release and its enabled features into adopters, or report the fleet's versions and drift."""
 
 import argparse
 import io
@@ -22,6 +22,10 @@ BLOCKS = ("AGENTS.md", ".gitignore")
 PROJECT_OWNED = {"README.md", "docs/README.md", "memory/README.md", "docs/development-workflow.md",
                  "docs/git-remotes.md", ".config/knowledge.json", ".github/workflows/check.yml", ".envrc"}
 EXTRAS = {".github/workflows/check.yml": "extras/github/.github/workflows/check.yml"}
+# Opt-in features live in features/<name>/ at adopter paths; adopters list theirs in the manifest.
+FEATURES = "features"
+FEATURE_METADATA = "feature.json"
+FOUNDATION_INDEX = "docs/foundation/README.md"
 LEGACY_REFS = ("source_ref", "knowledge_source_ref", "task_tracking_source_ref")
 WORKTREE = "WORKTREE"
 
@@ -41,29 +45,79 @@ def latest_tag():
 
 
 def release(ref):
-    """Return the label and {path: (bytes, executable)} for the bundle at a ref."""
-    files = {}
+    """Return the label, the bundle's {path: (bytes, executable)}, and each feature's files at a ref."""
+    files, features = {}, {}
+
+    def add(source, data, executable):
+        if source.startswith(FEATURES + "/"):
+            name, _, relative = source.removeprefix(FEATURES + "/").partition("/")
+            if relative:
+                features.setdefault(name, {})[relative] = (data, executable)
+        else:
+            relative = {source: target for target, source in EXTRAS.items()}.get(source, source.removeprefix("starter/"))
+            files[relative] = (data, executable)
+
     if ref == WORKTREE:
-        sources = [(p, p.relative_to(ROOT / "starter").as_posix()) for p in sorted((ROOT / "starter").rglob("*"))]
-        sources += [(ROOT / source, target) for target, source in EXTRAS.items()]
-        for path, relative in sources:
+        paths = sorted((ROOT / "starter").rglob("*")) + sorted((ROOT / FEATURES).glob("*/**/*"))
+        paths += [ROOT / source for source in EXTRAS.values()]
+        for path in paths:
             if path.is_file() and not {"__pycache__", ".cache"} & set(path.parts) and path.name != ".DS_Store":
-                files[relative] = (path.read_bytes(), os.access(path, os.X_OK))
-        return "worktree", files
-    archive = git("archive", "--format=tar", ref, "starter", *EXTRAS.values()).stdout
+                add(path.relative_to(ROOT).as_posix(), path.read_bytes(), os.access(path, os.X_OK))
+        return "worktree", files, features
+    sources = ["starter", *EXTRAS.values()]
+    if git("cat-file", "-e", ref + ":" + FEATURES, check=False).returncode == 0:  # Older releases have none.
+        sources.append(FEATURES)
+    archive = git("archive", "--format=tar", ref, *sources).stdout
     with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
         for member in tar.getmembers():
             if member.isfile():
-                relative = {source: target for target, source in EXTRAS.items()}.get(
-                    member.name, member.name.removeprefix("starter/"))
-                files[relative] = (tar.extractfile(member).read(), bool(member.mode & 0o111))
+                add(member.name, tar.extractfile(member).read(), bool(member.mode & 0o111))
     tagged = git("tag", "--points-at", ref).stdout.decode().split()
     label = ref if ref in tagged else git("rev-parse", "--short", ref + "^{commit}").stdout.decode().strip()
-    return label, files
+    return label, files, features
 
 
-def ref_content(ref, relative):
-    result = git("cat-file", "blob", ref + ":starter/" + relative, check=False)
+def choose_features(label, features, manifest, enable, disable):
+    """Return the sorted features an adopter keeps after --enable and --disable."""
+    both = sorted(set(enable) & set(disable))
+    if both:
+        raise RuntimeError("Cannot both enable and disable " + ", ".join(both))
+    current = set(manifest.get("features", []))
+    unknown = sorted((set(enable) | set(disable)) - set(features) - current)
+    chosen = (current | set(enable)) - set(disable)
+    missing = sorted(chosen - set(features))
+    if unknown or missing:
+        raise RuntimeError("Project Starter " + label + " has no feature " + ", ".join(unknown + missing)
+                           + "; available: " + (", ".join(sorted(features)) or "none")
+                           + ("; disable it with --disable" if missing else ""))
+    return sorted(chosen)
+
+
+def with_features(files, features, chosen):
+    """Add each chosen feature's files to the bundle and list its pages in the foundation index.
+
+    Also return each feature file's path in this repository, so overridden ones can report upstream changes.
+    """
+    files, origins, entries = dict(files), {}, []
+    for name in chosen:
+        feature = dict(features[name])
+        metadata = json.loads(feature.pop(FEATURE_METADATA, (b"{}", False))[0])
+        for relative, entry in feature.items():
+            if relative in files or relative in PROJECT_OWNED or relative == MANIFEST:
+                raise RuntimeError("Feature " + name + " cannot install " + relative + ", which the bundle already provides")
+            files[relative] = entry
+            origins[relative] = FEATURES + "/" + name + "/" + relative
+        if metadata.get("index"):
+            entries.append(metadata["index"])
+    if entries:
+        data, executable = files[FOUNDATION_INDEX]
+        section = "\n## Enabled features\n\nThis project enabled these optional Project Starter features.\n\n"
+        files[FOUNDATION_INDEX] = (data + (section + "\n".join(entries) + "\n").encode(), executable)
+    return files, origins
+
+
+def ref_content(ref, source):
+    result = git("cat-file", "blob", ref + ":" + source, check=False)
     return result.stdout if result.returncode == 0 else None
 
 
@@ -83,7 +137,7 @@ class Plan:
         self.summary = {"added": [], "updated": [], "removed": []}
 
 
-def plan(target, label, files, manifest, init):
+def plan(target, label, files, manifest, init, features=(), origins=None):
     """Decide every change before writing, so conflicts leave the target untouched."""
     result = Plan()
     overrides = dict(manifest.get("overrides", {}))
@@ -97,7 +151,7 @@ def plan(target, label, files, manifest, init):
         if not legacy:
             recorded = manifest.get("blocks" if block else "managed", {}).get(relative)
             return {recorded} if recorded else set()
-        contents = [ref_content(ref, relative) for ref in legacy_refs]
+        contents = [ref_content(ref, "starter/" + relative) for ref in legacy_refs]
         return {block_digest(c.decode()) if block else digest(c) for c in contents if c is not None}
 
     def change(relative, data, executable, current_digest, base_digests, new_digest):
@@ -109,6 +163,9 @@ def plan(target, label, files, manifest, init):
                 return
             result.summary["updated"].append(relative)
         elif current_digest in base_digests:
+            result.summary["updated"].append(relative)
+        elif not base_digests:
+            result.conflicts.append(relative + ": exists but is not managed by Project Starter; move or delete it")
             result.summary["updated"].append(relative)
         else:
             result.conflicts.append(relative + ": local changes differ from the recorded starter version")
@@ -122,8 +179,9 @@ def plan(target, label, files, manifest, init):
         if relative in overrides:
             note = relative + " is overridden (" + overrides[relative] + ")"
             old = manifest.get("ref")
-            if old and old != "worktree" and ref_content(old, relative) not in (None, data):
-                note += "; upstream changed since " + old + ": git -C " + str(ROOT) + " diff " + old + " " + label + " -- starter/" + relative
+            source = (origins or {}).get(relative, "starter/" + relative)
+            if old and old != "worktree" and ref_content(old, source) not in (None, data):
+                note += "; upstream changed since " + old + ": git -C " + str(ROOT) + " diff " + old + " " + label + " -- " + source
             result.notes.append(note)
             continue
         current = digest(path.read_bytes()) if path.is_file() else None
@@ -205,6 +263,8 @@ def plan(target, label, files, manifest, init):
         "blocks": {relative: block_digest(files[relative][0].decode()) for relative in BLOCKS},
         "overrides": overrides,
     }
+    if features:
+        updated_manifest["features"] = list(features)
     result.writes[MANIFEST] = ((json.dumps(updated_manifest, indent=2) + "\n").encode(), False)
     return template["version"], result
 
@@ -224,7 +284,7 @@ def apply(target, result):
             parent = parent.parent
 
 
-def sync(target, ref, init, dry_run, force):
+def sync(target, ref, init, dry_run, force, enable=(), disable=()):
     target = target.expanduser().resolve()
     top = git("rev-parse", "--show-toplevel", cwd=target, check=False)
     if top.returncode or Path(top.stdout.decode().strip()).resolve() != target:
@@ -236,9 +296,13 @@ def sync(target, ref, init, dry_run, force):
         raise RuntimeError(str(target) + " has no " + MANIFEST + "; use --init to adopt the starter")
     if not dry_run and git("status", "--porcelain", cwd=target).stdout.strip():
         raise RuntimeError(str(target) + " has uncommitted changes; commit or stash them before syncing")
-    label, files = release(ref or latest_tag())
-    version, result = plan(target, label, files, manifest or {}, init)
+    label, files, features = release(ref or latest_tag())
+    chosen = choose_features(label, features, manifest or {}, enable, disable)
+    files, origins = with_features(files, features, chosen)
+    version, result = plan(target, label, files, manifest or {}, init, chosen, origins)
     print("Project Starter " + version + " (" + label + ") -> " + str(target))
+    if chosen:
+        print("  features: " + ", ".join(chosen))
     for kind, paths in result.summary.items():
         if paths:
             print("  " + kind + ": " + ", ".join(paths))
@@ -259,7 +323,7 @@ def sync(target, ref, init, dry_run, force):
 
 
 def status(root, ref):
-    label, files = release(ref or latest_tag())
+    label, files, _ = release(ref or latest_tag())
     latest = json.loads(files[MANIFEST][0])["version"]
     for path in sorted(root.expanduser().glob("*/" + MANIFEST)):
         repo, manifest = path.parent, json.loads(path.read_text())
@@ -279,6 +343,8 @@ def status(root, ref):
                     current = None
                 drift += current != expected
         line = repo.name + "  " + manifest["version"] + " (" + manifest["ref"] + ")  drift " + str(drift) + "  overrides " + str(len(overrides))
+        if manifest.get("features"):
+            line += "  features " + ",".join(manifest["features"])
         print(line + ("" if manifest["version"] == latest else "  behind " + latest + " (" + label + ")"))
     return 0
 
@@ -292,14 +358,19 @@ def main():
     parser.add_argument("--ref", help="Release tag or commit (default: latest v* tag); WORKTREE uses this checkout")
     parser.add_argument("--dry-run", action="store_true", help="Report planned changes without writing")
     parser.add_argument("--force", action="store_true", help="Replace conflicting local changes")
+    parser.add_argument("--enable", action="append", default=[], metavar="FEATURE",
+                        help="Install an optional feature, such as memory-audit; repeatable")
+    parser.add_argument("--disable", action="append", default=[], metavar="FEATURE",
+                        help="Remove an enabled feature's unchanged files; repeatable")
     args = parser.parse_args()
     if args.status:
-        if args.targets or args.init or args.force or args.dry_run:
+        if args.targets or args.init or args.force or args.dry_run or args.enable or args.disable:
             parser.error("--status takes only --root and --ref")
         return status(args.root, args.ref)
     if not args.targets:
         parser.error("name at least one adopter checkout")
-    return max(sync(target, args.ref, args.init, args.dry_run, args.force) for target in args.targets)
+    return max(sync(target, args.ref, args.init, args.dry_run, args.force, args.enable, args.disable)
+               for target in args.targets)
 
 
 if __name__ == "__main__":
