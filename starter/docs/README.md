@@ -53,7 +53,7 @@ hand-written pages to bypass failed checks.
 
 ## Active pages
 
-- [Project Starter foundation](foundation/README.md): shared engineering,
+- [Project Starter foundation](foundation/README.md): shared engineering
   and knowledge search policy.
 - [Development workflow](development-workflow.md): this project's setup,
   checks, versions, and deployment.

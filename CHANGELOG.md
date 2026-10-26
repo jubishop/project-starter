@@ -3,6 +3,18 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 3.0.1 — 2026-10-25
+
+### Synced
+
+- New projects' `docs/README.md` describes the foundation as "shared
+  engineering and knowledge search policy", without 3.0.0's stray comma.
+  Existing adopters keep their own copy of that project-owned page.
+
+### Manual follow-up
+
+None.
+
 ## 3.0.0 — 2026-10-25
 
 ### Synced
