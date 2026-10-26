@@ -49,6 +49,7 @@ own audit files exist, so they remove theirs first, then keep the
 
    ```json
    "memoryAudit": {
+     "schedule": {"weekday": "Saturday", "hour": 8, "minute": 0},
      "issueLabels": ["bug", "area: tooling"],
      "commitTrailers": {
        "Screenr-Deploy": "skip",
@@ -60,9 +61,8 @@ own audit files exist, so they remove theirs first, then keep the
 
 4. Shorten `docs/development-workflow.md#scheduled-memory-audit` to link
    `docs/foundation/memory-audit.md` and keep only Screenr's specifics: the
-   deployment trailers, the labels, and the audit decisions. The audit now
-   starts at the shared Saturday 06:00 and takes turns with podhaven's,
-   instead of starting at 08:00.
+   Saturday 08:00 start, two hours after podhaven's, the deployment trailers,
+   the labels, and the audit decisions.
 5. Run `bin/check --full`, commit, and push. In the primary checkout, run
    `bin/memory-audit settings`, confirm the label is
    `com.jubishop.screenr.memory-audit`, and rerun `bin/memory-audit install`.
@@ -81,9 +81,9 @@ own audit files exist, so they remove theirs first, then keep the
    `ACTIVE_MEMORY_END` markers but keep the list, and replace the
    `bin/memory-index` paragraph with the hand-maintained rule: link each
    active note, and the audit removes an archived note's entry.
-5. Add its settings to `.config/knowledge.json`; the default schedule is
-   already Saturday 06:00, and `context` carries the project paragraph its
-   prompt had:
+5. Add its settings to `.config/knowledge.json`; it keeps the default
+   Saturday 06:00, and `context` carries the project paragraph its prompt
+   had:
 
    ```json
    "memoryAudit": {
@@ -105,6 +105,12 @@ own audit files exist, so they remove theirs first, then keep the
 8. Run `bin/check --full`, commit, and push. In the primary checkout, run
    `bin/memory-audit settings`, confirm the label is
    `com.jubishop.podhaven.memory-audit`, and rerun `bin/memory-audit install`.
+
+### Verified
+
+`bin/check` on macOS 27.0.1 with Python 3.15.1. QMD is unchanged since
+2.12.0's strict real-QMD smoke (QMD 2.8.3 with node-llama-cpp 3.22.2); this
+release does not rerun it.
 
 ## 3.1.0 — 2026-10-25
 

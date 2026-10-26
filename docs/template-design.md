@@ -591,7 +591,8 @@ settled three choices:
   Each run waits, up to `lockWaitMinutes` (180 by default), for a per-user
   lock that every project's runner computes the same way, and the wait does
   not count against the 90-minute model limit. A run that waits too long
-  fails and reports like any other failure.
+  fails and reports like any other failure. The existing projects keep their
+  times: screenr sets Saturday 08:00, and podhaven keeps 06:00.
 - **Feature-only follow-up:** a release whose manual follow-up applies only to
   adopters that enable a feature, such as the projects moving to the shared
   audit, ships to the others as a
