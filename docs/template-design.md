@@ -577,6 +577,24 @@ the foundation setup succeeds, so application dependencies install with the
 same single command. The user noted that a project needing a dependency
 install is not special; several Node adopters need one.
 
+### Check reuse and worktree setup — 2026-10-25
+
+The engineering policy already said to reuse a passing result until its inputs
+change, but nothing recorded a pass, so no later agent could rely on one. A
+review of the owner's October 24 and 25 merge workflow logs found the same
+commit validated three times: issue fixing, review, merge preparation, and
+the local CI fallback each ran `bin/check --full` again. `bin/check --full` now
+records a passing application run in the common Git directory, keyed by the
+clean tree and an environment fingerprint, and reuses it for 12 hours, a limit
+short enough that date-dependent tests still run again daily. Reuse covers only
+the application checks; the foundation checks are cheap and always run.
+
+The same review found agents in fresh worktrees rebuilding a missing `.venv`
+by hand. The setup extension point already installs dependencies after
+cloning, so a new worktree now runs it too, from the post-checkout hook that
+already prepares new worktrees. A failure there must not leave Git without a
+usable worktree, so the hook reports it and continues.
+
 ### Unchanged choices — 2026-10-09
 
 Keep the [search reliability decision](#search-reliability-decision--2026-09-13)

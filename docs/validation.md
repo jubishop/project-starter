@@ -30,7 +30,13 @@ itself, so adopter documents never become test fixtures. It covers:
   adoption test also confirms that the copied CI workflow runs
   `bin/check --full`.
 - Setup: `bin/setup-application` runs only after a successful foundation
-  setup, must be executable, and its failure fails setup.
+  setup, must be executable, and its failure fails setup. A new worktree and
+  `bin/prep-worktree` run it too; its failure fails `bin/prep-worktree` but
+  never `git worktree add`.
+- Check reuse: `bin/check --full` skips `bin/check-application` only for a
+  clean checkout whose tree and environment passed it within 12 hours,
+  including in a linked worktree; uncommitted changes, a new tree, changed
+  `.venv` packages, an older pass, a failed run, and `--no-reuse` run it.
 
 Adopters run the same check modes, verify managed-file hashes against the
 release that passed this suite, and add their own `bin/check-application`.

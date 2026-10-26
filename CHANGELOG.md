@@ -3,6 +3,34 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 3.1.0 — 2026-10-25
+
+### Synced
+
+- `bin/check --full` reuses a passing `bin/check-application` run for a clean
+  checkout whose tree and environment passed in the last 12 hours, and says
+  which commit passed. The record lives in the common Git directory, so
+  worktrees share it. Uncommitted changes always run the application checks,
+  and `bin/check --full --no-reuse` runs them regardless. The engineering
+  policy describes the reuse.
+- A new worktree, and `bin/prep-worktree`, run the project's executable
+  `bin/setup-application`, so a worktree gets its dependencies, such as a
+  `.venv`, without an agent rebuilding them. A failure in a new worktree is
+  reported without stopping Git; `bin/prep-worktree` fails with it.
+
+### Manual follow-up
+
+A project that overrides `bin/_checks.py` ports the application-check reuse
+to its copy. One that overrides `bin/_knowledge.py` runs
+`bin/setup-application` for new worktrees and in `bin/prep-worktree`, as the
+release's `setup_application` does.
+
+### Verified
+
+`bin/check` on macOS 27.0 with Python 3.15.1, and the starter checks on
+Ubuntu and macOS. QMD is unchanged since 2.12.0's strict real-QMD smoke (QMD
+2.8.3 with node-llama-cpp 3.22.2); this release does not rerun it.
+
 ## 3.0.1 — 2026-10-25
 
 ### Synced

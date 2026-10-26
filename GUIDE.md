@@ -48,7 +48,8 @@ only here, and the other `bin/` commands run in the target.
    `--full` runs them after the foundation checks, and that failures
    propagate. Time the routine modes.
    Put dependency installation, such as `npm ci`, in an executable
-   `bin/setup-application`, which `bin/setup` runs after the foundation setup.
+   `bin/setup-application`, which `bin/setup` runs after the foundation setup
+   and each new worktree runs when Git creates it.
 6. **Integrate hooks.** Setup activates `bin/hooks` when nothing would be
    displaced. Otherwise follow
    [existing hooks](starter/docs/foundation/knowledge-search.md#existing-hooks)
