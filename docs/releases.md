@@ -48,10 +48,13 @@ records, or a td task:
    needs, push without `[skip ci]`, and confirm CI. `bin/sync --status` lists
    each adopter's overrides.
 
-Sync only an adopter that is on its default branch and even with its remote.
-Skip and report any other, and never force, stash, or push someone else's
-commits. Report a rejected push, such as from enforced branch protection,
-instead of bypassing it. Any other release with manual follow-up, including
+Sync only an adopter whose checkout is clean, on its default branch, and even
+with its remote. Skip and report any other, and never force, stash, or push
+someone else's commits. Report a rejected push, such as from enforced branch
+protection, instead of bypassing it. Track each adopter left behind this way
+in a GitHub issue in this repository, reusing an open one, so a later agent
+finishes its sync without anyone having to remember it; the sync that brings
+the adopter current closes the issue. Any other release with manual follow-up, including
 an optional step for every adopter, uses the full process below.
 
 ## Cut a release
