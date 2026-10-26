@@ -254,6 +254,60 @@ screenr's CI failed only on the same date-dependent weekly test that
 [screenr#316](https://github.com/jubishop/screenr/issues/316) tracks, so its
 deploy was skipped.
 
+## Release 3.0 and td's retirement — 2026-10-25
+
+Version 3.0.0 retires td task tracking: sync removes
+`docs/foundation/task-tracking.md`, the managed `AGENTS.md` block drops its td
+rule, and the managed `.gitignore` block no longer ignores `.todos/`. The
+first `bin/check` failed on a design-record link to the removed page; after
+the fix, it passed 58 tests. The starter checks passed on Ubuntu and macOS,
+and so did the QMD compatibility job's real-QMD run. QMD itself did not
+change, so the local strict smoke check was not rerun. Version 3.0.1, a sync-only
+release, removes a stray comma that 3.0.0 left in the starter's
+project-owned `docs/README.md`.
+
+All 22 adopters synced on their default branches: 21 to 3.0.0 and then
+3.0.1, and screenr straight to 3.0.1 once its session had stopped using td.
+Each adopter's manual follow-up removed td from its project-owned pages,
+td task IDs cited as provenance (health, news, pantrydates, radio, and
+vidservey), and the `.gitignore` headers left empty when 2.0 moved `.todos/`
+into the managed block. In a few adopters it also changed:
+
+- podhaven: its sidecar and `.td-root` ignores;
+- will: its `.todos/**` knowledge exclusion;
+- artisanalsoftware.com: its deployment test, which named the removed page and
+  `.todos/` as example paths;
+- home-infra: its Pi notes, after td-sync and the td dashboard were removed
+  from the Pi.
+
+`bin/check --documents-only` passed in every adopter, and
+artisanalsoftware.com's deployment test passed its 5 cases. Each adopter's
+`.todos/` was deleted after its unfinished tasks were closed as done or moved
+into GitHub issues. `bin/sync --status` reported no drift; podhaven still
+records two overrides.
+
+For the 3.0.0 commit, hosted CI passed in ten public repositories: jeeves,
+jubishop.github.io, news, offline-librarian, pantrydates, printing, radio,
+scoreboard, sourdough, and steam-starter. news skipped deployment by its
+recorded decision. screenr's 3.0.1 commit failed one application shard when
+Docker Hub answered 502 to the caddy image pull, and it passed on a rerun of
+that job. Its deploy was skipped by its recorded decision. podhaven has no
+push workflow.
+
+In the ten private repositories, jobs did not start because of the Actions
+spending limit, so CI was unavailable, not passed. Each passed its workflow's
+commands locally on the pushed revision:
+
+- health, home-infra, taxes, vidservey, vps-infra, and will: `bin/check --full`
+  in their primary checkouts;
+- artisanalsoftware.com, kidsbank, and stories: `npm ci` and `bin/check --full`
+  in disposable clones;
+- trading: `bin/check --full` with Python 3.15.1, then its floor job's
+  `bin/check-application` with Python 3.12.15, in a temporary worktree.
+
+The 3.0.1 commits changed only `.project-starter.json`, so they carry
+`[skip ci]`.
+
 ## Environment
 
 | Component | Executed version |
