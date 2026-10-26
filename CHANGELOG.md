@@ -3,6 +3,20 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 2.13.0 — 2026-10-25
+
+### Synced
+
+- When a flaky test's fix does not fit the current change, agents file a
+  GitHub issue for it right away, without waiting to be asked, or reuse the
+  one that already tracks it, and name the issue when reporting the work. The
+  engineering policy states the rule, and the managed `AGENTS.md` block
+  summarizes it.
+
+### Manual follow-up
+
+None.
+
 ## 2.12.0 — 2026-10-24
 
 ### Synced
