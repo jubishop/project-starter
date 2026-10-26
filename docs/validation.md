@@ -332,8 +332,10 @@ screenr's runner copied verbatim into the feature, 22 of the 44 audit tests
 failed: those covering settings, the default label and repository, the
 configurable heading, labels, trailers, every push URL, and the empty-memory
 skip. The other 22, ported from screenr's suite, passed against both runners.
-After the change, `bin/check` passed 107 tests in 101 to 110 seconds on macOS 27.0.1
-with Python 3.15.1; the audit suite takes about 43 of them.
+The turn tests then failed because a run neither waited for another
+project's lock nor accepted `lockWaitMinutes`, and passed after the change.
+Rebased onto 3.1.0, `bin/check` passed 111 tests in 111 seconds on macOS
+27.0.1 with Python 3.15.1; the audit suite's 46 tests take 46 of them.
 
 Throwaway adopters made by `bin/sync --init` enabled the feature at adoption
 and later, kept it across a plain sync, disabled it, and refused it while a

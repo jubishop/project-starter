@@ -86,7 +86,7 @@ its reason in `.project-starter.json`, or discard it with `--force`. Apply the
 release's manual follow-up from the [changelog](CHANGELOG.md), run
 `bin/check --full`, and commit. An adopter skips the check and deployment
 when the release has no manual follow-up, or when the release's follow-up
-applies only to overrides the adopter lacks; see [sync-only releases](docs/releases.md#sync-only-releases). `bin/sync --status` reports each adopter's
+applies only to overrides or features the adopter lacks; see [sync-only releases](docs/releases.md#sync-only-releases). `bin/sync --status` reports each adopter's
 version, drift, overrides, and features.
 
 ## Enable or disable a feature

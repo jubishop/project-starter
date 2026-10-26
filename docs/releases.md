@@ -36,8 +36,9 @@ blocks, placing the `AGENTS.md` block after the page title.
 ## Sync-only releases
 
 When a release needs no manual follow-up, or its follow-up applies only to
-adopters that override a managed file, the other adopters receive only what
-`bin/sync` writes. Ship it without checks, CI waits, deployments, or validation
+adopters that override a managed file or enable a feature, the other adopters
+receive only what `bin/sync` writes. Follow-up for the adopters that enable a
+feature, or that are moving to one, is handled like override-only follow-up. Ship it without checks, CI waits, deployments, or validation
 records:
 
 1. Set the version, add the changelog entry, commit, tag `vX.Y.Z`, and run
@@ -45,10 +46,10 @@ records:
 2. Fetch every adopter listed by `bin/sync --status`, then sync each one.
    Where no follow-up applies, commit only the synced files, with `[skip ci]`
    in the message so GitHub Actions starts no push workflows, and push.
-3. Give each adopter with an override that the follow-up applies to the
-   [fleet sync](#sync-the-fleet) steps: apply the follow-up, run the checks it
-   needs, push without `[skip ci]`, and confirm CI. `bin/sync --status` lists
-   each adopter's overrides.
+3. Give each adopter with an override or feature that the follow-up applies
+   to the [fleet sync](#sync-the-fleet) steps: apply the follow-up, run the
+   checks it needs, push without `[skip ci]`, and confirm CI.
+   `bin/sync --status` lists each adopter's overrides and features.
 
 Sync only an adopter whose checkout is clean, on its default branch, and even
 with its remote. A clean checkout that is only behind its remote, such as one

@@ -586,6 +586,17 @@ settled three choices:
   feature that adopters share. Rejected: separate copies in each repository.
 - **Setup asks:** the user's `init-project` asks during setup whether to
   enable the audit, with No as the default.
+- **Same default time; runs take turns through a machine-wide lock:** every
+  enabled project defaults to Saturday 06:00 rather than a staggered time.
+  Each run waits, up to `lockWaitMinutes` (180 by default), for a per-user
+  lock that every project's runner computes the same way, and the wait does
+  not count against the 90-minute model limit. A run that waits too long
+  fails and reports like any other failure.
+- **Feature-only follow-up:** a release whose manual follow-up applies only to
+  adopters that enable a feature, such as the projects moving to the shared
+  audit, ships to the others as a
+  [sync-only release](releases.md#sync-only-releases), like
+  [override-only follow-up](#override-only-follow-up--2026-10-24).
 
 Optional features live in `features/<name>/`, laid out at adopter paths.
 `.project-starter.json` lists the features an adopter enables, and sync

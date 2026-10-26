@@ -25,13 +25,19 @@ follow-up it cannot apply. See [releases](docs/releases.md).
   to every push URL of `origin`, labels a new failure issue (unlabeled when
   the labels cannot be applied), skips the model when no note is active, and
   fails before the model when `memory/README.md` lacks the heading.
+- Every project's audit defaults to the same time, and runs take turns
+  through a per-user lock at `~/.cache/project-starter/memory-audit.lock`.
+  A run waits for its turn, up to `lockWaitMinutes` (180 by default), before
+  fetching evidence, and the wait does not count against the 90-minute model
+  limit. A run that waits longer fails and reports like any other failure.
 
 ### Manual follow-up
 
-Adopters that do not enable a feature need none. Sync refuses
-`--enable memory-audit` while a project's own audit files exist, so screenr
-and podhaven remove theirs first, then keep the `## Scheduled memory audit`
-heading, which their memory pages link to.
+Adopters that do not enable a feature need none and take the
+[sync-only](docs/releases.md#sync-only-releases) path; screenr and podhaven
+take the full path. Sync refuses `--enable memory-audit` while a project's
+own audit files exist, so they remove theirs first, then keep the
+`## Scheduled memory audit` heading, which their memory pages link to.
 
 **screenr**
 
@@ -43,7 +49,6 @@ heading, which their memory pages link to.
 
    ```json
    "memoryAudit": {
-     "schedule": {"hour": 8},
      "issueLabels": ["bug", "area: tooling"],
      "commitTrailers": {
        "Screenr-Deploy": "skip",
@@ -55,8 +60,9 @@ heading, which their memory pages link to.
 
 4. Shorten `docs/development-workflow.md#scheduled-memory-audit` to link
    `docs/foundation/memory-audit.md` and keep only Screenr's specifics: the
-   08:00 start two hours after podhaven's, the deployment trailers, the
-   labels, and the audit decisions.
+   deployment trailers, the labels, and the audit decisions. The audit now
+   starts at the shared Saturday 06:00 and takes turns with podhaven's,
+   instead of starting at 08:00.
 5. Run `bin/check --full`, commit, and push. In the primary checkout, run
    `bin/memory-audit settings`, confirm the label is
    `com.jubishop.screenr.memory-audit`, and rerun `bin/memory-audit install`.
@@ -89,10 +95,14 @@ heading, which their memory pages link to.
 
 6. Shorten `docs/development-workflow.md#scheduled-memory-audit` to link
    `docs/foundation/memory-audit.md`, and make its Project Starter section
-   name only the `bin/_knowledge.py` override. `bin/knowledge-config` no
-   longer serves the audit; delete it and its test if nothing else needs
-   them.
-7. Run `bin/check --full`, commit, and push. In the primary checkout, run
+   name only the `bin/_knowledge.py` override.
+7. Delete `bin/knowledge-config`: only the old audit and its own test in
+   `bin/tests/test_knowledge.py` use it, and no workflow or doc does. Move
+   that test's `sentry-history` `includeByDefault: false` assertion into the
+   lookup test that records the rendered collections, so the override keeps
+   coverage, drop the now unused `include_local` parameter from the override's
+   `config()`, and remove "for CI configuration" from the override's reason.
+8. Run `bin/check --full`, commit, and push. In the primary checkout, run
    `bin/memory-audit settings`, confirm the label is
    `com.jubishop.podhaven.memory-audit`, and rerun `bin/memory-audit install`.
 
