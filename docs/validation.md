@@ -28,7 +28,16 @@ itself, so adopter documents never become test fixtures. It covers:
   updates between tagged releases with conflict refusal and `--force`, 1.x
   migration through recorded source revisions, and fleet `--status`. The
   adoption test also confirms that the copied CI workflow runs
-  `bin/check --full`.
+  `bin/check --full`. Feature tests enable a feature at adoption and later,
+  keep it across syncs, refuse to disable a changed copy, refuse a project
+  file in a feature's path until it is removed, and leave adopters without
+  the feature unchanged by a release that changes only feature files; each
+  enabled adopter passes `bin/check --documents-only`.
+- Memory audit feature: `bin/memory-audit` in an adopter that enabled it, with
+  fake `claude`, `gh`, `qmd`, `osascript`, and `launchctl` and real Git
+  remotes: proposal and session validation, publishing and rebasing, the
+  change gate, failure issues and their labels, and the settings. The
+  LaunchAgent installer tests run only on macOS.
 - Setup: `bin/setup-application` runs only after a successful foundation
   setup, must be executable, and its failure fails setup. A new worktree and
   `bin/prep-worktree` run it too; its failure fails `bin/prep-worktree` but
@@ -313,6 +322,27 @@ commands locally on the pushed revision:
 
 The 3.0.1 commits changed only `.project-starter.json`, so they carry
 `[skip ci]`.
+
+## Release 3.2 and the shared memory audit — 2026-10-25
+
+Version 3.2.0 adds optional features and the memory audit
+([issue #6](https://github.com/jubishop/project-starter/issues/6)). The new
+`bin/sync` tests failed first because sync rejected `--enable`. Against
+screenr's runner copied verbatim into the feature, 22 of the 44 audit tests
+failed: those covering settings, the default label and repository, the
+configurable heading, labels, trailers, every push URL, and the empty-memory
+skip. The other 22, ported from screenr's suite, passed against both runners.
+After the change, `bin/check` passed 107 tests in 101 to 110 seconds on macOS 27.0.1
+with Python 3.15.1; the audit suite takes about 43 of them.
+
+Throwaway adopters made by `bin/sync --init` enabled the feature at adoption
+and later, kept it across a plain sync, disabled it, and refused it while a
+project copy of `bin/_memory_audit.py` existed, then accepted it once the
+copy was gone; each passed its `bin/check`. With podhaven's
+`bin/_knowledge.py` override and `.config/knowledge.json`, a faked audit kept
+its `includeByDefault: false` collection out of default search, indexed only
+the clone, and removed the archived note from an `Active notes` list. No real
+audit or LaunchAgent install ran.
 
 ## Environment
 

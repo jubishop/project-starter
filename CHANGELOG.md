@@ -3,6 +3,99 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 3.2.0 — 2026-10-25
+
+### Synced
+
+- Optional features. `bin/sync --enable <feature>` and `--disable <feature>`,
+  with or after `--init`, change the features an adopter's
+  `.project-starter.json` lists. Sync manages an enabled feature's files like
+  the bundle's and lists its page in `docs/foundation/README.md`. An adopter
+  that enables none receives only the version bump, and `bin/sync --status`
+  shows each adopter's features. A new file whose path holds a file sync does
+  not manage is a conflict.
+- The `memory-audit` feature shares screenr's weekly local Claude audit of
+  memory notes: `bin/memory-audit`, its runner and prompt, and
+  `docs/foundation/memory-audit.md`. An optional `memoryAudit` object in
+  `.config/knowledge.json` sets the repository, LaunchAgent label, schedule,
+  failure-issue labels, commit trailers, active-index heading, and prompt
+  context; `bin/memory-audit settings` prints them. The defaults keep
+  `com.<owner>.<repo>.memory-audit` from `origin`, Saturday 06:00, and the
+  starter's `Active pages` heading. Unlike screenr's copy, the audit pushes
+  to every push URL of `origin`, labels a new failure issue (unlabeled when
+  the labels cannot be applied), skips the model when no note is active, and
+  fails before the model when `memory/README.md` lacks the heading.
+
+### Manual follow-up
+
+Adopters that do not enable a feature need none. Sync refuses
+`--enable memory-audit` while a project's own audit files exist, so screenr
+and podhaven remove theirs first, then keep the `## Scheduled memory audit`
+heading, which their memory pages link to.
+
+**screenr**
+
+1. Delete `bin/memory-audit`, `bin/_memory_audit.py`,
+   `bin/memory-audit-prompt.md`, and `tests/test_memory_audit.py`, and
+   commit.
+2. Run `bin/sync --enable memory-audit /path/to/screenr`.
+3. Add its settings to `.config/knowledge.json`:
+
+   ```json
+   "memoryAudit": {
+     "schedule": {"hour": 8},
+     "issueLabels": ["bug", "area: tooling"],
+     "commitTrailers": {
+       "Screenr-Deploy": "skip",
+       "Screenr-Deploy-Reason": "The weekly memory audit changes only memory notes, which do not run in production."
+     },
+     "indexHeading": "Active memory index"
+   }
+   ```
+
+4. Shorten `docs/development-workflow.md#scheduled-memory-audit` to link
+   `docs/foundation/memory-audit.md` and keep only Screenr's specifics: the
+   08:00 start two hours after podhaven's, the deployment trailers, the
+   labels, and the audit decisions.
+5. Run `bin/check --full`, commit, and push. In the primary checkout, run
+   `bin/memory-audit settings`, confirm the label is
+   `com.jubishop.screenr.memory-audit`, and rerun `bin/memory-audit install`.
+
+**podhaven**
+
+1. Delete `bin/memory-audit`, `bin/_memory_audit.py`,
+   `bin/memory-audit-prompt.md`, `bin/memory-index`, `bin/_memory_index.py`,
+   `bin/tests/test_local_memory_audit.py`, and
+   `bin/tests/test_memory_audit.py`, and drop the `bin/memory-index` call
+   from the index-coverage test in `bin/tests/test_knowledge.py`.
+2. Delete `bin/_checks.py` and its override in `.project-starter.json`, so
+   sync restores the managed copy, and commit.
+3. Run `bin/sync --enable memory-audit /path/to/podhaven`.
+4. In `memory/README.md`, remove the `ACTIVE_MEMORY_START` and
+   `ACTIVE_MEMORY_END` markers but keep the list, and replace the
+   `bin/memory-index` paragraph with the hand-maintained rule: link each
+   active note, and the audit removes an archived note's entry.
+5. Add its settings to `.config/knowledge.json`; the default schedule is
+   already Saturday 06:00, and `context` carries the project paragraph its
+   prompt had:
+
+   ```json
+   "memoryAudit": {
+     "issueLabels": ["memory-audit-failure"],
+     "indexHeading": "Active notes",
+     "context": "The user selected this local Claude Code job with Haiku through their Claude subscription to replace the paid OpenRouter memory audit and the later Codex job. That choice supersedes older model preferences in the notes. The Sentry Feedback GitHub workflow remains in use."
+   }
+   ```
+
+6. Shorten `docs/development-workflow.md#scheduled-memory-audit` to link
+   `docs/foundation/memory-audit.md`, and make its Project Starter section
+   name only the `bin/_knowledge.py` override. `bin/knowledge-config` no
+   longer serves the audit; delete it and its test if nothing else needs
+   them.
+7. Run `bin/check --full`, commit, and push. In the primary checkout, run
+   `bin/memory-audit settings`, confirm the label is
+   `com.jubishop.podhaven.memory-audit`, and rerun `bin/memory-audit install`.
+
 ## 3.1.0 — 2026-10-25
 
 ### Synced

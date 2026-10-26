@@ -7,7 +7,8 @@ request; do not install it as a skill or load it automatically.
 
 Links in this guide resolve from this repository. Sync copies each page under
 `starter/` to the same path in the target without that prefix, so
-`starter/docs/git-remotes.md` becomes `docs/git-remotes.md`; read the target's
+`starter/docs/git-remotes.md` becomes `docs/git-remotes.md`, and likewise
+for an enabled feature's pages under `features/<name>/`; read the target's
 copy when working there. The changelog, `bin/sync`, and `bin/smoke-qmd` exist
 only here, and the other `bin/` commands run in the target.
 
@@ -28,7 +29,8 @@ only here, and the other `bin/` commands run in the target.
    Sync copies the latest release: managed files, the managed blocks in
    `AGENTS.md` and `.gitignore`, and any project-owned pages that do not exist
    yet. It keeps and reports existing project-owned files, and it never
-   commits.
+   commits. Add `--enable <feature>` to install an
+   [optional feature](#enable-or-disable-a-feature) too.
 3. **Merge project-owned pages.** Fold starter guidance into an existing
    README and knowledge indexes, keep useful existing content, and link
    `foundation/README.md` from `docs/README.md`. The copied
@@ -78,14 +80,50 @@ only here, and the other `bin/` commands run in the target.
 
 On a clean checkout, run `bin/sync --dry-run /path/to/project`, then
 `bin/sync /path/to/project`. A conflict means a managed file has local
-changes. Move the change into an extension point (`bin/check-application`,
+changes, or that a new file would replace one sync does not manage. Move the change into an extension point (`bin/check-application`,
 `bin/setup-application`, project pages, or the project section of `AGENTS.md`), record an override with
 its reason in `.project-starter.json`, or discard it with `--force`. Apply the
 release's manual follow-up from the [changelog](CHANGELOG.md), run
 `bin/check --full`, and commit. An adopter skips the check and deployment
 when the release has no manual follow-up, or when the release's follow-up
 applies only to overrides the adopter lacks; see [sync-only releases](docs/releases.md#sync-only-releases). `bin/sync --status` reports each adopter's
-version, drift, and overrides.
+version, drift, overrides, and features.
+
+## Enable or disable a feature
+
+Optional features live in `features/<name>/` here, laid out at adopter paths.
+Sync installs a feature's files only in adopters that enable it, then manages
+them like the rest of the bundle: it records their hashes, `bin/check`
+verifies them, and releases update them. It also lists the feature's page in
+`docs/foundation/README.md`. Adopters that do not enable a feature never
+receive its files.
+
+| Feature | What it adds |
+| --- | --- |
+| `memory-audit` | A weekly local Claude audit of memory notes that commits validated changes and reports failures in a GitHub issue; macOS and GitHub only. See [its page](features/memory-audit/docs/foundation/memory-audit.md). |
+
+On a clean checkout:
+
+```sh
+bin/sync --enable memory-audit /path/to/project
+bin/sync --disable memory-audit /path/to/project
+```
+
+Both repeat for several features and combine with `--init` and `--dry-run`.
+`.project-starter.json` lists the enabled features, and later syncs keep
+them. Disabling removes the feature's unchanged files and refuses, as a
+conflict, to remove changed ones. Review the feature's page for its setup,
+such as `bin/memory-audit install`, and its settings, and stop anything it
+scheduled before disabling it.
+
+A feature file whose path already holds a file that sync does not manage, such
+as a project's own copy of the audit, is a conflict, and sync writes nothing.
+Delete or move that copy and commit, then sync with `--enable`. To migrate a
+project-owned memory audit, delete its `bin/memory-audit`,
+`bin/_memory_audit.py`, `bin/memory-audit-prompt.md`, and tests, enable the
+feature, move its schedule, labels, and other differences into the
+`memoryAudit` settings, point the project's docs at
+`docs/foundation/memory-audit.md`, and rerun `bin/memory-audit install`.
 
 ## Propose starter improvements
 

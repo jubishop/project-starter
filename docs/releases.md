@@ -16,6 +16,7 @@ and what needs manual follow-up. The decisions behind this process are in the
 | Managed | Everything in `starter/` not listed below | Replaced each release; hashes recorded in `.project-starter.json` and verified by every `bin/check` mode. |
 | Managed blocks | The marked sections of `AGENTS.md` and `.gitignore` | Only the text between the `project-starter:begin` and `project-starter:end` markers is replaced and hashed. |
 | Project-owned | `README.md`, `docs/README.md`, `memory/README.md`, `docs/development-workflow.md`, `docs/git-remotes.md`, `.config/knowledge.json`, `.github/workflows/check.yml` | Copied by `--init` when missing, then never changed. |
+| Features | Everything in `features/<name>/` except its `feature.json` | Managed like the bundle, but only in adopters whose `.project-starter.json` lists the feature; `--enable` and `--disable` change that list. The foundation index lists each enabled feature's page. |
 
 A managed file that differs from its recorded hash is a conflict, and sync
 writes nothing until it is resolved. Move the change into an extension point
@@ -23,7 +24,8 @@ writes nothing until it is resolved. Move the change into an extension point
 record an override with its reason in `.project-starter.json`, or discard it
 with `--force`. Sync skips overridden files and reports upstream changes to
 them. Add a new extension point once a second repository needs the same
-override.
+override. A new managed or feature file whose path holds a file sync does not
+manage is a conflict too; move or delete that file first.
 
 Version 1.x adopters recorded starter revisions instead of hashes. Sync treats
 a file as unchanged when it matches the content at any recorded revision
@@ -49,7 +51,9 @@ records:
    each adopter's overrides.
 
 Sync only an adopter whose checkout is clean, on its default branch, and even
-with its remote. Skip and report any other, and never force, stash, or push
+with its remote. A clean checkout that is only behind its remote, such as one
+whose [memory audit](../features/memory-audit/docs/foundation/memory-audit.md)
+pushed notes, fast-forwards first. Skip and report any other, and never force, stash, or push
 someone else's commits. Report a rejected push, such as from enforced branch
 protection, instead of bypassing it. Track each adopter left behind this way
 in a GitHub issue in this repository, reusing an open one, so a later agent

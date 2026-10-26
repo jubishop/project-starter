@@ -24,8 +24,8 @@ behind, before changing anything.
 
 Work from this repository's primary checkout, with `main` and its tags even
 with the remote. If the checkout has local work or cannot fast-forward, stop
-and report it. If `starter/` or `extras/` on `main` differs from the latest
-release tag, show the unreleased changes and ask whether to cut a release with
+and report it. If `starter/`, `extras/`, or `features/` on `main` differs from
+the latest release tag, show the unreleased changes and ask whether to cut a release with
 them first.
 
 ## Sync each adopter

@@ -570,6 +570,33 @@ never receive it. Agents load it only when invoked, keeping the
 [delivery format](#delivery-format--2026-09-04) goal of no persistent agent
 context; the guide itself is still not a skill.
 
+### Shared memory audit — 2026-10-25
+
+Screenr and podhaven each ran a project-owned copy of the weekly Claude memory
+audit, so every fix had to be ported by hand
+([issue #6](https://github.com/jubishop/project-starter/issues/6)). The user
+settled three choices:
+
+- **Active-note index:** keep the hand-maintained active index in
+  `memory/README.md`. When the audit archives a note, the runner deletes that
+  note's list entry itself; the model may not edit the README. Adopters need
+  no generated list and no override of the managed `bin/_checks.py`. Rejected:
+  podhaven's generated list, whose verification overrode `bin/_checks.py`.
+- **Shared implementation:** the audit becomes one opt-in Project Starter
+  feature that adopters share. Rejected: separate copies in each repository.
+- **Setup asks:** the user's `init-project` asks during setup whether to
+  enable the audit, with No as the default.
+
+Optional features live in `features/<name>/`, laid out at adopter paths.
+`.project-starter.json` lists the features an adopter enables, and sync
+manages their files like the bundle's only there, so other adopters receive
+nothing. Sync adds each enabled feature's page to the foundation index,
+because index coverage would otherwise reject a managed page that only some
+adopters have. Per-project differences, such as the LaunchAgent label,
+schedule, failure-issue labels, and commit trailers, live in an optional
+`memoryAudit` object in the project-owned `.config/knowledge.json`, so the
+managed files stay identical everywhere.
+
 ### Setup extension point — 2026-10-09
 
 `bin/setup` runs an executable, project-owned `bin/setup-application` after
