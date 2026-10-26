@@ -29,7 +29,10 @@ MODEL = "claude-haiku-5-5"
 FAILURE_ISSUE = "Memory audit failing"
 RETENTION_DAYS = 60
 WEEKDAYS = ("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
-SETTINGS = ("repository", "launchAgentLabel", "schedule", "issueLabels", "commitTrailers", "indexHeading", "context")
+SETTINGS = ("repository", "launchAgentLabel", "schedule", "issueLabels", "commitTrailers", "indexHeading", "context",
+            "lockWaitMinutes")
+# Every project's audit on this machine computes the same path, so their runs take turns.
+TURN_LOCK = Path(".cache/project-starter/memory-audit.lock")
 GITHUB_URL = r"(?:git@github\.com:|ssh://git@github\.com/|https://github\.com/)([A-Za-z0-9-]+)/([A-Za-z0-9._-]+?)(?:\.git)?/?"
 # Renders the clone's shared search collections with its own Project Starter loader. A fresh clone has
 # no local Git settings, so the personal home-memory collection is never added.
@@ -104,8 +107,11 @@ def settings(root, env):
     context = raw.get("context", "")
     if not isinstance(context, str):
         raise invalid("context must be a string")
+    wait = raw.get("lockWaitMinutes", 180)
+    if not isinstance(wait, int) or isinstance(wait, bool) or wait < 0:
+        raise invalid("lockWaitMinutes must be a whole number of minutes, 0 or more")
     return {"repository": repository, "launchAgentLabel": label, "schedule": schedule, "issueLabels": labels,
-            "commitTrailers": trailers, "indexHeading": heading, "context": context.strip()}
+            "commitTrailers": trailers, "indexHeading": heading, "context": context.strip(), "lockWaitMinutes": wait}
 
 
 def output_schema():
@@ -347,6 +353,27 @@ def close_failure_issue(root, env, repository, run_name):
         print("Could not close the failure issue: " + str(problem), file=sys.stderr, flush=True)
 
 
+def take_turn(minutes, state, meta):
+    """Wait for this machine's audit lock, which other projects' audits share; return its open file."""
+    path = Path.home() / TURN_LOCK
+    path.parent.mkdir(parents=True, exist_ok=True)
+    lock = path.open("a")
+    deadline = time.monotonic() + minutes * 60
+    while True:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return lock
+        except BlockingIOError:
+            if time.monotonic() >= deadline:
+                lock.close()
+                raise RuntimeError(f"Waited {minutes} minutes for another memory audit on this machine to release "
+                                   f"{path}; the next run tries again") from None
+            if meta["status"] != "waiting":
+                meta["status"] = "waiting"
+                atomic_json(state / "latest.json", meta)
+            time.sleep(1)
+
+
 def prune_runs(state, keep):
     cutoff = time.time() - RETENTION_DAYS * 86400
     for directory in (state / "runs").glob("*"):
@@ -427,10 +454,13 @@ def run(root=ROOT, force=False):
         meta = {"status": "running", "directory": str(run_dir), "model": MODEL, "provider": "claude.ai"}
         atomic_json(state / "latest.json", meta)
         env = environment()
-        options = None
+        options = turn = None
         try:
             options = settings(root, env)
             repository, heading = options["repository"], options["indexHeading"]
+            # Waiting happens before the evidence is gathered and before the model's time limit starts.
+            turn = take_turn(options["lockWaitMinutes"], state, meta)
+            meta["status"] = "running"
             command(["git", "fetch", "--quiet", "origin", "main"], root, env)
             base = command(["git", "rev-parse", "FETCH_HEAD"], root, env).strip()
             meta["baseSha"] = base
@@ -542,6 +572,8 @@ def run(root=ROOT, force=False):
             meta["finishedAt"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
             atomic_json(run_dir / "run-meta.json", meta)
             atomic_json(state / "latest.json", meta)
+            if turn:
+                turn.close()
 
 
 def install(root=ROOT):

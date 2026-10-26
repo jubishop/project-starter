@@ -16,7 +16,7 @@ It needs macOS, a GitHub repository as `origin`, and a `main` branch.
 Run `bin/memory-audit install` in the primary checkout to register the weekly
 launchd job; it does not run an audit. The job runs at the
 [scheduled](#settings) time in the Mac's local time zone, Saturday at 06:00 by
-default. A sleeping Mac runs a missed calendar job after wake; the user must
+default for every project; their runs [take turns](#taking-turns). A sleeping Mac runs a missed calendar job after wake; the user must
 be logged in. The LaunchAgent is
 `~/Library/LaunchAgents/<launchAgentLabel>.plist`.
 
@@ -52,9 +52,19 @@ defaults filled in, and every command rejects an unknown or invalid setting.
 | `commitTrailers` | `{}` | Trailers for the audit's commit, such as a deployment skip. |
 | `indexHeading` | `Active pages` | The level-two heading in `memory/README.md` over the active-note list. |
 | `context` | none | Project context added to the prompt. |
+| `lockWaitMinutes` | `180` | How long a run waits for its turn before failing. |
 
-Stagger the schedules of projects on the same Mac so their audits do not run
-at once.
+## Taking turns
+
+Audits of different projects on the same Mac run one after another, so they
+can share a start time. Each run computes the same per-user lock,
+`~/.cache/project-starter/memory-audit.lock`, and waits for it before it
+fetches evidence; `latest.json` shows `waiting` meanwhile. The 90-minute model
+limit starts only after the run's turn begins. A run that waits longer than
+`lockWaitMinutes` fails and reports like any other failure, and the next
+scheduled run tries again. A second run of the same project, such as a manual
+run during a scheduled one, still skips at once through the project's own
+lock.
 
 ## Model and evidence
 
@@ -81,8 +91,8 @@ downloads.
 
 Unchanged repository, GitHub, and audit inputs skip the model call, except
 right after a failed or interrupted run; `--force` always audits. A project
-without active notes skips the model too. A lock prevents overlapping runs,
-and model attempts share a 90-minute limit.
+without active notes skips the model too. Model attempts share a 90-minute
+limit.
 
 ## Validation
 

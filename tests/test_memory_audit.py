@@ -436,6 +436,46 @@ class MemoryAuditTests(unittest.TestCase):
             self.assertEqual(self.run_audit()["status"], "skipped")
         self.assertFalse(self.calls.exists())
 
+    def hold_turn(self):
+        """Hold the lock that every project's audit on this machine takes turns with."""
+        path = self.base / ".cache/project-starter/memory-audit.lock"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        lock = path.open("a")
+        self.addCleanup(lock.close)
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        return lock
+
+    def test_audits_of_different_projects_take_turns(self):
+        lock = self.hold_turn()
+        self.response.write_text(json.dumps(self.result))
+        self.session_file.write_text(json.dumps(self.session))
+        process = subprocess.Popen([str(self.repo / "bin/memory-audit"), "run"], cwd=self.repo, env=self.env,
+                                   text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.addCleanup(lambda: process.poll() is None and process.kill())
+        latest = self.repo / ".cache/memory-audit/latest.json"
+        deadline = time.monotonic() + 30
+        while not (latest.exists() and json.loads(latest.read_text())["status"] == "waiting"):
+            self.assertLess(time.monotonic(), deadline, "the audit never waited for its turn")
+            time.sleep(0.05)
+        time.sleep(1.5)
+        self.assertIsNone(process.poll())
+        self.assertEqual(self.model_calls(), [])
+        self.assertFalse(self.gh_calls.exists())
+        lock.close()
+        stdout, stderr = process.communicate(timeout=60)
+        self.assertEqual(process.returncode, 0, stderr)
+        self.assertEqual(json.loads(stdout)["status"], "success")
+        self.assertEqual(len(self.model_calls()), 1)
+
+    def test_a_turn_that_never_comes_fails_and_reports(self):
+        self.configure(repository=REPOSITORY, lockWaitMinutes=0)
+        self.hold_turn()
+        self.failed_audit("Waited 0 minutes for another memory audit on this machine")
+        self.assertEqual(self.model_calls(), [])
+        self.assertIn("Waited 0 minutes", " ".join(json.loads(self.notifications.read_text())))
+        [created] = self.gh("issue", "create")
+        self.assertIn("~/.cache/project-starter/memory-audit.lock", created["body"])
+
     def test_runs_older_than_the_retention_window_are_pruned(self):
         runs = self.repo / ".cache/memory-audit/runs"
         old, recent = runs / "20260101T000000Z-old", runs / "20261001T000000Z-recent"
@@ -607,7 +647,7 @@ class MemoryAuditTests(unittest.TestCase):
                 self.assertEqual(self.settings(origin), {
                     "repository": "jubishop/screenr", "launchAgentLabel": "com.jubishop.screenr.memory-audit",
                     "schedule": {"weekday": "Saturday", "hour": 6, "minute": 0}, "issueLabels": [],
-                    "commitTrailers": {}, "indexHeading": "Active pages", "context": ""})
+                    "commitTrailers": {}, "indexHeading": "Active pages", "context": "", "lockWaitMinutes": 180})
         self.assertEqual(self.settings("git@github.com:JubiShop/PodHaven.git")["launchAgentLabel"],
                          "com.jubishop.podhaven.memory-audit")
         (self.repo / ".config/knowledge.json").write_text(
@@ -618,7 +658,7 @@ class MemoryAuditTests(unittest.TestCase):
         chosen = {"repository": "jubishop/screenr", "launchAgentLabel": "com.example.audit",
                   "schedule": {"weekday": "Sunday", "hour": 8, "minute": 30}, "issueLabels": ["bug", "area: tooling"],
                   "commitTrailers": {"Screenr-Deploy": "skip"}, "indexHeading": "Active memory index",
-                  "context": "Historical ledgers stay."}
+                  "context": "Historical ledgers stay.", "lockWaitMinutes": 30}
         self.configure(**chosen)
         self.assertEqual(self.settings("/not/github"), chosen)
         self.configure(schedule={"hour": 8})
@@ -634,7 +674,8 @@ class MemoryAuditTests(unittest.TestCase):
                  ({"issueLabels": ["bug,docs"]}, "issueLabels"), ({"commitTrailers": {"Bad key": "x"}}, "commitTrailers"),
                  ({"commitTrailers": {"Deploy": "two\nlines"}}, "commitTrailers"),
                  ({"indexHeading": "## Active"}, "indexHeading"), ({"indexHeading": ""}, "indexHeading"),
-                 ({"context": ["x"]}, "context"))
+                 ({"context": ["x"]}, "context"), ({"lockWaitMinutes": -1}, "lockWaitMinutes"),
+                 ({"lockWaitMinutes": 1.5}, "lockWaitMinutes"), ({"lockWaitMinutes": True}, "lockWaitMinutes"))
         for setting, message in cases:
             with self.subTest(setting=setting):
                 self.configure(**({"repository": REPOSITORY} | setting))
