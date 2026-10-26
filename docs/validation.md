@@ -343,8 +343,27 @@ project copy of `bin/_memory_audit.py` existed, then accepted it once the
 copy was gone; each passed its `bin/check`. With podhaven's
 `bin/_knowledge.py` override and `.config/knowledge.json`, a faked audit kept
 its `includeByDefault: false` collection out of default search, indexed only
-the clone, and removed the archived note from an `Active notes` list. No real
-audit or LaunchAgent install ran.
+the clone, and removed the archived note from an `Active notes` list.
+
+At version 3.2.0, `bin/check` passed the same 111 tests in 113 seconds, and
+the starter checks passed on Ubuntu and macOS for `80b2a42` along with the QMD
+compatibility job before the tag. The 20 adopters without the feature synced
+on their default branches with `[skip ci]` commits that changed only
+`.project-starter.json`.
+
+podhaven enabled the feature, dropped its `bin/_checks.py` override, and
+passed `bin/check --full` with 292 tests; it has no push workflow. Its
+LaunchAgent reinstalled for Saturday 06:00 under its existing label. A real
+`bin/memory-audit run --force` with Haiku took about four and a half minutes:
+it read all 16 active notes, kept them, and published one note update as
+`1da4275`.
+
+screenr's follow-up is committed locally as `a4d413c` but not pushed: its
+`bin/check --full` failed twice in the browser production build, where Next.js
+16.4.0 stops with a `SecurityFatalError` about a known vulnerability. Its
+application tests and every other check passed.
+[Issue #7](https://github.com/jubishop/project-starter/issues/7) tracks the
+rest of its sync, including its LaunchAgent and first shared audit.
 
 ## Environment
 

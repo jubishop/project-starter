@@ -108,7 +108,8 @@ own audit files exist, so they remove theirs first, then keep the
 
 ### Verified
 
-`bin/check` on macOS 27.0.1 with Python 3.15.1. QMD is unchanged since
+`bin/check` on macOS 27.0.1 with Python 3.15.1, and the starter checks on
+Ubuntu and macOS. A real audit ran in podhaven. QMD is unchanged since
 2.12.0's strict real-QMD smoke (QMD 2.8.3 with node-llama-cpp 3.22.2); this
 release does not rerun it.
 
