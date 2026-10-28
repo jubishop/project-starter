@@ -3,6 +3,45 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 3.3.0 — 2026-10-28
+
+### Synced
+
+- The `memory-audit` feature runs `claude-sonnet-5-5` instead of
+  `claude-haiku-5-5`, still at high effort.
+- An audit bills the project's own Anthropic API key when the checkout's
+  ignored `.env` sets `MEMORY_AUDIT_ANTHROPIC_API_KEY`. The runner reads only
+  that line and passes the key to Claude as `ANTHROPIC_API_KEY` for the
+  API-key attempt alone. Without the key, the audit uses the subscription
+  login as before.
+- When the API refuses the key for a low credit balance, a reached spend
+  limit, or HTTP 401 or 403, the runner reruns that attempt on the
+  subscription without a manual step. Other failures fail as before.
+  `latest.json` records the `credential` used, which replaces `provider`, and
+  the `fallback` with its `trigger`.
+
+### Manual follow-up
+
+Adopters without the `memory-audit` feature need none and take the
+[sync-only](docs/releases.md#sync-only-releases) path. Each adopter with it
+can add `MEMORY_AUDIT_ANTHROPIC_API_KEY=<key>` to its primary checkout's
+`.env` and run `chmod 600 .env`; no reinstall is needed. A project page that
+names the old model or calls the audit subscription-only should be updated:
+podhaven's `memoryAudit.context`, model-selection memory note, and scheduled
+audit section, and screenr's `.env.example` and scheduled audit section.
+
+### Verified
+
+`bin/check` on macOS 27.0.1 with Python 3.15.1, and the starter checks on
+Ubuntu and macOS. Claude Code 2.1.312 with a bogus `ANTHROPIC_API_KEY`
+reported `authMethod: api_key` from `ANTHROPIC_API_KEY`, and its `-p`
+stream-json run exited 1 with a result event marked `is_error`,
+`api_error_status: 401`, and "Invalid API key · Fix external API key". The
+credit and spend-limit shapes come from Claude Code's error handling and are
+covered by tests with recorded events; no paid API call was made. QMD is
+unchanged since 2.12.0's strict real-QMD smoke (QMD 2.8.3 with node-llama-cpp
+3.22.2); this release does not rerun it.
+
 ## 3.2.0 — 2026-10-25
 
 ### Synced

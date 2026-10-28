@@ -18,6 +18,45 @@ README = ("# Memory\n\nPreserve this policy.\n\n## Active pages\n\n"
 CONTENT = ("---\nname: incident\ndescription: An incident.\ntype: project\nstatus: active\n---\n\n"
            "# Incident\n\nA durable rule.\n")
 REPOSITORY = "example-owner/example"
+API_KEY = "sk-ant-api03-fixture"
+# Stream-json failures as Claude Code 2.1.312 prints them, trimmed to the fields the runner reads. The
+# invalid key is from a real run on a bogus key; Claude Code shortens the API's credit refusal.
+INVALID_KEY = (
+    {"type": "assistant", "message": {"model": "<synthetic>", "role": "assistant", "content": [
+        {"type": "text", "text": "Invalid API key · Fix external API key"}]},
+     "error": "authentication_failed", "is_api_error_message": True, "api_error_status": 401},
+    {"type": "result", "subtype": "success", "is_error": True, "api_error_status": 401,
+     "result": "Invalid API key · Fix external API key", "terminal_reason": "api_error"},
+)
+REVOKED_KEY = ({"type": "result", "subtype": "success", "is_error": True, "api_error_status": 403,
+                "result": "API Error: 403 permission_error", "terminal_reason": "api_error"},)
+LOW_CREDIT = (
+    {"type": "assistant", "message": {"model": "<synthetic>", "role": "assistant", "content": [
+        {"type": "text", "text": "Credit balance is too low"}]},
+     "error": "billing_error", "is_api_error_message": True, "api_error_status": 400},
+    {"type": "result", "subtype": "success", "is_error": True, "api_error_status": 400,
+     "result": "Credit balance is too low", "terminal_reason": "api_error"},
+)
+LOW_CREDIT_FROM_API = ({"type": "result", "subtype": "success", "is_error": True, "api_error_status": 400,
+                        "result": "Your credit balance is too low to access the Anthropic API. Please go to "
+                                  "Plans & Billing to upgrade or purchase credits.", "terminal_reason": "api_error"},)
+USAGE_LIMIT = (
+    {"type": "assistant", "message": {"content": [{"type": "text", "text": (
+        'API Error: 400 {"type":"error","error":{"type":"invalid_request_error","message":"You have reached your '
+        'specified API usage limits. You will regain access on 2026-11-01 at 00:00 UTC."}}')}]},
+     "error": "invalid_request", "is_api_error_message": True, "api_error_status": 400},
+    {"type": "result", "subtype": "success", "is_error": True, "api_error_status": 400,
+     "result": "You have reached your specified API usage limits. You will regain access on 2026-11-01 at 00:00 UTC."},
+)
+RATE_LIMITED = (
+    {"type": "assistant", "message": {"content": [{"type": "text", "text": "API Error: Rate limit reached"}]},
+     "error": "rate_limit", "is_api_error_message": True, "api_error_status": 429},
+    {"type": "result", "subtype": "success", "is_error": True, "api_error_status": 429,
+     "result": "API Error: Rate limit reached"},
+)
+# The model quoting a note is not an API refusal.
+QUOTED_CREDIT = ({"type": "assistant", "message": {"content": [
+    {"type": "text", "text": "The note says the credit balance is too low; the key was rejected with 401."}]}},)
 
 
 def clean_environment(home):
@@ -118,7 +157,13 @@ class MemoryAuditTests(unittest.TestCase):
             "status = sys.argv[1:3] == ['auth','status']\n"
             "prompt = '' if status else sys.stdin.read()\n"
             f"with open({str(self.calls)!r}, 'a') as f: f.write(json.dumps({{'args':sys.argv[1:], 'env':dict(os.environ), 'prompt':prompt}})+'\\n')\n"
-            "if status:\n print(json.dumps({'loggedIn':True,'authMethod':'claude.ai','apiProvider':'firstParty'}))\n"
+            # Like Claude Code, an ANTHROPIC_API_KEY takes precedence over the saved subscription login.
+            "if status and 'ANTHROPIC_API_KEY' in os.environ:\n"
+            " print(json.dumps({'loggedIn':True,'authMethod':'api_key','apiProvider':'firstParty',"
+            "'apiKeySource':'ANTHROPIC_API_KEY'}))\n"
+            f"elif status and pathlib.Path({str(self.base / 'logged-out')!r}).exists():\n"
+            " print(json.dumps({'loggedIn':False,'authMethod':'none','apiProvider':'firstParty'}))\n"
+            "elif status:\n print(json.dumps({'loggedIn':True,'authMethod':'claude.ai','apiProvider':'firstParty'}))\n"
             "else:\n"
             f" response=json.loads(pathlib.Path({str(self.response)!r}).read_text())\n"
             f" calls=[json.loads(x) for x in pathlib.Path({str(self.calls)!r}).read_text().splitlines()]\n"
@@ -355,12 +400,18 @@ class MemoryAuditTests(unittest.TestCase):
 
     # Model, evidence, and change gate
 
-    def test_subscription_only_read_only_claude_invocation(self):
-        self.env.update(ANTHROPIC_API_KEY="fixture-key", OPENROUTER_API_KEY="fixture-router")
-        self.run_audit()
+    def test_without_a_key_a_read_only_audit_uses_the_subscription(self):
+        # Only the checkout's .env supplies the audit's key, and an empty one is no key.
+        self.env.update(ANTHROPIC_API_KEY="fixture-key", OPENROUTER_API_KEY="fixture-router",
+                        MEMORY_AUDIT_ANTHROPIC_API_KEY="fixture-shell-key")
+        self.set_api_key("MEMORY_AUDIT_ANTHROPIC_API_KEY=")
+        output = self.run_audit()
+        self.assertEqual(output["credential"], "subscription")
+        self.assertNotIn("fallback", output)
         [call] = self.model_calls()
         args = call["args"]
-        self.assertEqual(args[args.index("--model") + 1], "claude-haiku-5-5")
+        self.assertEqual(args[args.index("--model") + 1], "claude-sonnet-5-5")
+        self.assertEqual(args[args.index("--effort") + 1], "high")
         for flag in ("--restricted", "--no-session-persistence", "--strict-mcp-config"):
             self.assertIn(flag, args)
         self.assertEqual(args[args.index("--tools") + 1], "Bash,Read,Glob,Grep")
@@ -368,8 +419,8 @@ class MemoryAuditTests(unittest.TestCase):
         self.assertEqual(args[args.index("--permission-prompts") + 1], "none")
         rules = json.loads(args[args.index("--settings") + 1])["permissions"]
         self.assertFalse([rule for rule in rules["allow"] if not rule.startswith(("Bash(jq ", "Bash(qmd search "))])
-        self.assertNotIn("ANTHROPIC_API_KEY", call["env"])
-        self.assertNotIn("OPENROUTER_API_KEY", call["env"])
+        for key in ("ANTHROPIC_API_KEY", "OPENROUTER_API_KEY", "MEMORY_AUDIT_ANTHROPIC_API_KEY"):
+            self.assertNotIn(key, call["env"])
         self.assertNotIn("{{", call["prompt"])
         self.assertNotIn("Project context", call["prompt"])
         self.assertIn('"Active pages" list', call["prompt"])
@@ -398,6 +449,116 @@ class MemoryAuditTests(unittest.TestCase):
                         "'apiProvider': 'firstParty'}))\n")
         self.failed_audit("Claude subscription")
         self.assertFalse((self.repo / ".cache/memory-audit/last-success.json").exists())
+
+    # Credentials
+
+    def set_api_key(self, line="MEMORY_AUDIT_ANTHROPIC_API_KEY=" + API_KEY):
+        """Write the project's key line into the checkout's ignored .env, among unrelated settings."""
+        (self.repo / ".env").write_text("DATABASE_URL=postgresql://localhost/example\n" + line + "\nOTHER=1\n")
+
+    def refuse_key(self, events, from_call=0):
+        """Make model runs that bill the API key, from the given model call on, print these events and exit 1."""
+        (self.base / "refusal.json").write_text(json.dumps(events))
+        working = self.base / "claude-working"
+        if not working.exists():
+            self.keep_working_model()
+        self.executable("claude", (
+            "import json,os,pathlib,sys\n"
+            f"log = pathlib.Path({str(self.calls)!r})\n"
+            "earlier = sum('-p' in json.loads(x)['args'] for x in log.read_text().splitlines()) if log.exists() else 0\n"
+            f"if '-p' in sys.argv and 'ANTHROPIC_API_KEY' in os.environ and earlier >= {from_call}:\n"
+            f" with open({str(self.calls)!r}, 'a') as f: f.write(json.dumps({{'args':sys.argv[1:], "
+            "'env':dict(os.environ), 'prompt':sys.stdin.read()})+'\\n')\n"
+            f" for event in json.loads(pathlib.Path({str(self.base / 'refusal.json')!r}).read_text()):\n"
+            "  print(json.dumps(event))\n"
+            " sys.exit(1)\n"
+            f"os.execv(sys.executable, [sys.executable, {str(working)!r}, *sys.argv[1:]])\n"
+        ))
+
+    def latest(self):
+        return json.loads((self.repo / ".cache/memory-audit/latest.json").read_text())
+
+    def test_the_projects_key_from_its_env_file_bills_the_audit(self):
+        self.set_api_key(f'export MEMORY_AUDIT_ANTHROPIC_API_KEY="{API_KEY}"  # this project only')
+        output = self.run_audit()
+        self.assertEqual((output["status"], output["credential"]), ("success", "api-key"))
+        self.assertNotIn("fallback", output)
+        [call] = self.model_calls()
+        self.assertEqual(call["env"]["ANTHROPIC_API_KEY"], API_KEY)
+        for key in ("MEMORY_AUDIT_ANTHROPIC_API_KEY", "DATABASE_URL", "OTHER"):
+            self.assertNotIn(key, call["env"])
+        self.assertEqual(json.loads((Path(output["directory"]) / "run-meta.json").read_text())["credential"], "api-key")
+
+    def test_a_key_claude_would_not_use_stops_before_the_model(self):
+        self.set_api_key()
+        self.executable("claude", "import json\nprint(json.dumps({'loggedIn': True, 'authMethod': 'claude.ai', "
+                        "'apiProvider': 'firstParty'}))\n")
+        self.failed_audit("MEMORY_AUDIT_ANTHROPIC_API_KEY")
+        self.assertEqual(self.model_calls(), [])
+
+    def test_a_refused_key_reruns_the_attempt_on_the_subscription(self):
+        self.set_api_key()
+        cases = (("invalid", INVALID_KEY, "key-rejected", 401), ("revoked", REVOKED_KEY, "key-rejected", 403),
+                 ("shortened credit message", LOW_CREDIT, "credit-balance", 400),
+                 ("API credit message", LOW_CREDIT_FROM_API, "credit-balance", 400),
+                 ("spend limit", USAGE_LIMIT, "usage-limit", 400))
+        for name, events, trigger, status in cases:
+            with self.subTest(name):
+                self.refuse_key(events)
+                before = len(self.model_calls())
+                output = self.run_audit(force=True)
+                key_attempt, subscription_attempt = self.model_calls()[before:]
+                self.assertEqual(key_attempt["env"]["ANTHROPIC_API_KEY"], API_KEY)
+                self.assertNotIn("ANTHROPIC_API_KEY", subscription_attempt["env"])
+                self.assertEqual(subscription_attempt["prompt"], key_attempt["prompt"])
+                self.assertEqual((output["status"], output["credential"]), ("success", "subscription"))
+                fallback = output["fallback"]
+                self.assertEqual((fallback["trigger"], fallback["status"]), (trigger, status))
+                self.assertEqual(fallback["message"], events[-1]["result"])
+                run_dir = Path(output["directory"])
+                self.assertIn("api_error_status", (run_dir / "api-key-events.jsonl").read_text())
+                self.assertTrue((run_dir / "api-key-claude.log").exists())
+                self.assertNotIn("api_error_status", (run_dir / "events.jsonl").read_text())
+
+    def test_a_refused_key_on_the_repair_attempt_also_falls_back(self):
+        self.set_api_key()
+        self.refuse_key(LOW_CREDIT, from_call=1)
+        # The key's first attempt skips a note, its repair is refused, and the subscription repairs it.
+        self.session = [{"reads": [], "lookups": 1}, None, {"reads": ["memory/incident.md"], "lookups": 1}]
+        output = self.run_audit()
+        self.assertEqual((output["status"], output["credential"]), ("success", "subscription"))
+        self.assertEqual(output["fallback"]["trigger"], "credit-balance")
+        first, refused, repaired = self.model_calls()
+        self.assertEqual([("ANTHROPIC_API_KEY" in call["env"]) for call in (first, refused, repaired)],
+                         [True, True, False])
+        self.assertEqual(repaired["prompt"], refused["prompt"])
+        self.assertIn("not read: memory/incident.md", repaired["prompt"])
+        run_dir = Path(output["directory"])
+        for name in ("first-attempt-events.jsonl", "api-key-events.jsonl", "events.jsonl"):
+            self.assertTrue((run_dir / name).exists(), name)
+
+    def test_other_failures_on_the_key_do_not_fall_back(self):
+        self.set_api_key()
+        for name, events in (("rate limit", RATE_LIMITED), ("quoted credit error", QUOTED_CREDIT)):
+            with self.subTest(name):
+                self.refuse_key(events)
+                before = len(self.model_calls())
+                self.failed_audit("Claude exited 1", force=True)
+                self.assertEqual(len(self.model_calls()) - before, 1)
+                latest = self.latest()
+                self.assertEqual((latest["status"], latest["credential"]), ("failed", "api-key"))
+                self.assertNotIn("fallback", latest)
+
+    def test_a_fallback_without_a_subscription_login_fails_and_reports(self):
+        self.set_api_key()
+        self.refuse_key(INVALID_KEY)
+        (self.base / "logged-out").touch()
+        self.failed_audit("Invalid API key.*HTTP 401.*claude auth login")
+        self.assertEqual(len(self.model_calls()), 1)
+        self.assertEqual(self.latest()["fallback"]["trigger"], "key-rejected")
+        [created] = self.gh("issue", "create")
+        self.assertIn("Invalid API key", created["body"])
+        self.assertNotIn(API_KEY, created["body"])
 
     def test_unchanged_inputs_skip_model_and_force_runs_again(self):
         self.run_audit()
