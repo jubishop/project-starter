@@ -32,14 +32,15 @@ audit section, and screenr's `.env.example` and scheduled audit section.
 
 ### Verified
 
-`bin/check` on macOS 27.0.1 with Python 3.15.1. Claude Code 2.1.312 with a
-bogus `ANTHROPIC_API_KEY` reported `authMethod: api_key` from
-`ANTHROPIC_API_KEY`, and its `-p` stream-json run exited 1 with a result
-event marked `is_error`, `api_error_status: 401`, and "Invalid API key · Fix
-external API key". The credit and spend-limit shapes come from Claude Code's
-error handling and are covered by tests with recorded events; no paid API
-call was made. QMD is unchanged since 2.12.0's strict real-QMD smoke (QMD
-2.8.3 with node-llama-cpp 3.22.2); this release does not rerun it.
+`bin/check` on macOS 27.0.1 with Python 3.15.1, and the starter checks on
+Ubuntu and macOS. Claude Code 2.1.312 with a bogus `ANTHROPIC_API_KEY`
+reported `authMethod: api_key` from `ANTHROPIC_API_KEY`, and its `-p`
+stream-json run exited 1 with a result event marked `is_error`,
+`api_error_status: 401`, and "Invalid API key · Fix external API key". The
+credit and spend-limit shapes come from Claude Code's error handling and are
+covered by tests with recorded events; no paid API call was made. QMD is
+unchanged since 2.12.0's strict real-QMD smoke (QMD 2.8.3 with node-llama-cpp
+3.22.2); this release does not rerun it.
 
 ## 3.2.0 — 2026-10-25
 
