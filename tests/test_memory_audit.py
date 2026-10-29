@@ -810,6 +810,8 @@ class MemoryAuditTests(unittest.TestCase):
                                     r"the repository; jq --rawfile f \.\./outside\.txt -n '\$f' revealed a file"),
                                    ({"allowChains": True}, r"jq -n 1; cat \.\./outside\.txt revealed a file outside "
                                     r"the repository; qmd search \w+ && printenv revealed the environment"),
+                                   ({"allowImports": True}, r"jq -n 'import \"outside\" as \$x \{search: \"\.\.\"\}; \$x' "
+                                    r"revealed a file outside the repository"),
                                    ({"readAnywhere": True}, r"Read \.\./outside\.txt revealed a file outside"),
                                    ({"grepAnywhere": True}, r"Grep \.\./outside\.txt revealed a file outside"),
                                    ({"globAnywhere": True}, r"Glob \.\./\*\.txt ran without approval")):
