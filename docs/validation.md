@@ -36,8 +36,10 @@ itself, so adopter documents never become test fixtures. It covers:
 - Memory audit feature: `bin/memory-audit` in an adopter that enabled it, with
   fake `claude`, `gh`, `qmd`, `osascript`, and `launchctl` and real Git
   remotes: proposal and session validation, publishing and rebasing, the
-  change gate, failure issues and their labels, and the settings. The
-  LaunchAgent installer tests run only on macOS.
+  change gate, failure issues and their labels, and the settings. For the
+  tool boundary check, a fake Claude Code drives the runner's stand-in API
+  and runs the scripted tools, and variants of it that break the boundary
+  stop the audit. The LaunchAgent installer tests run only on macOS.
 - Setup: `bin/setup-application` runs only after a successful foundation
   setup, must be executable, and its failure fails setup. A new worktree and
   `bin/prep-worktree` run it too; its failure fails `bin/prep-worktree` but
