@@ -395,6 +395,59 @@ No real audit ran for this release. The first ones on the API key are the
 scheduled runs on Saturday, 2026-10-31: screenr at 08:00, and podhaven at
 06:00 if its pull request has merged.
 
+## Release 3.4 and bash ShellCheck lint — 2026-10-28
+
+Version 3.4.0 has `bin/check` run ShellCheck on each `bin/` script whose
+shebang names `sh`, `bash`, `dash`, or `ksh`, in that dialect
+([pull request #14](https://github.com/jubishop/project-starter/pull/14),
+[issue #8](https://github.com/jubishop/project-starter/issues/8)). Before the
+change, the new shebang test failed 6 of its 7 cases, because only
+`#!/bin/sh` scripts were linted. After it, `bin/check` passed 118 tests on
+macOS 27.0.1 with Python 3.15.1. At `f6fdf8f`, the starter checks passed 119
+tests on Ubuntu with Python 3.14.4, skipping 5 macOS-only tests, and on macOS
+with Python 3.15.0, both with ShellCheck 0.11.0, along with the QMD
+compatibility job before the tag.
+
+All 22 adopters synced on their default branches. Their `bin/check` linted 15
+newly covered scripts with ShellCheck 0.11.0: 4 in health, 9 in podhaven, and
+1 each in steam-starter and trading. Two needed the release's follow-up before
+their sync commits:
+
+- health: seven SC2029 notes in `bin/deploy.sh` and
+  `bin/rollback-health-server.sh`. Each flagged expansion passes a path or
+  domain computed on the Mac to the server, so each gained a
+  `# shellcheck disable=SC2029` directive with a comment; nothing was escaped.
+- podhaven: SC1091 notes in `bin/check-sentry-feedback` and
+  `bin/check-sentry-issues`, cleared by a root `.shellcheckrc` containing
+  `external-sources=true`.
+
+The sync commits carried no `[skip ci]`. Hosted CI passed in the 11 public
+repositories with push workflows: jeeves, jubishop.github.io, news,
+offline-librarian, pantrydates, printing, radio, scoreboard, screenr,
+sourdough, and steam-starter. news and screenr skipped deployment through
+their trailers, and screenr's production is still `0c8a99d`. Two later recipe
+commits superseded sourdough's run; the run for `f73dbf8`, which contains the
+sync, passed.
+
+In the 10 private repositories, jobs did not start because of the Actions
+spending limit, so CI was unavailable, not passed. Each passed its workflow's
+commands locally on the pushed revision before the push:
+
+- health, home-infra, taxes, trading, vidservey, vps-infra, and will:
+  `bin/check --full` in their primary checkouts; taxes and will have no
+  application checks.
+- artisanalsoftware.com, kidsbank, and stories: `npm ci` and
+  `bin/check --full` in disposable clones. stories reran on its rebased
+  revision after another pull request merged first.
+- trading: its floor job's `bin/check-application` with Python 3.12.15, also
+  in a disposable clone.
+
+podhaven has no push workflow; `bin/check --full` passed its 336 tooling tests
+before the push. `bin/sync --status` reports all 22 adopters at 3.4.0 with
+drift 0. trading still has the `bin/` half of the bash lint test from
+[trading#378](https://github.com/jubishop/trading/pull/378), which the
+changelog lets it drop.
+
 ## Environment
 
 | Component | Executed version |
