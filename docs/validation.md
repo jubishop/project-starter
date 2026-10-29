@@ -365,6 +365,36 @@ application tests and every other check passed.
 [Issue #7](https://github.com/jubishop/project-starter/issues/7) tracks the
 rest of its sync, including its LaunchAgent and first shared audit.
 
+## Release 3.3 and API-key audits — 2026-10-28
+
+Version 3.3.0 moves the memory audit to `claude-sonnet-5-5` and lets each
+adopter bill its own Anthropic API key, falling back to the subscription when
+the API refuses the key
+([pull request #9](https://github.com/jubishop/project-starter/pull/9)). The
+new credential tests failed first: on the model name, the missing `credential`
+field, and the old login check that refused any API key. After the change,
+`bin/check` passed 117 tests in 104 seconds on macOS 27.0.1 with Python
+3.15.1. A free run of Claude Code 2.1.312 on a bogus key confirmed the
+recorded invalid-key events; no paid API call was made.
+
+At version 3.3.0, the starter checks passed on Ubuntu and macOS for `069e7d0`
+along with the QMD compatibility job before the tag. The 20 adopters without
+the feature synced on their default branches with `[skip ci]` commits that
+changed only `.project-starter.json`.
+
+screenr synced through
+[screenr#338](https://github.com/jubishop/screenr/pull/338), merged as
+`5366671` after `bin/check --full` passed locally (286 Python, 604
+application, and 140 browser tests) and in CI. The merge's deployment-skip
+trailers kept production at `0c8a99d`, and its primary checkout now runs the
+3.3.0 runner with its key. podhaven's sync waits for the owner's merge in
+[podhaven#803](https://github.com/jubishop/podhaven/pull/803), after
+`bin/check --full` passed 327 tests;
+[issue #10](https://github.com/jubishop/project-starter/issues/10) tracks it.
+No real audit ran for this release. The first ones on the API key are the
+scheduled runs on Saturday, 2026-10-31: screenr at 08:00, and podhaven at
+06:00 if its pull request has merged.
+
 ## Environment
 
 | Component | Executed version |
