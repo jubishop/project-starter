@@ -1,11 +1,11 @@
 """Stand in for Claude Code's print mode against the local API that the memory audit's boundary check serves.
 
 Like Claude Code 2.1.312, it runs a Bash command only when an allow rule matches, the command names no path
-outside the working directory, and nothing is chained after it, and it runs Read, Grep, and Glob only inside the
-working directory, denying the rest. Scrub mode withholds secret-named variables and XDG_CACHE_HOME from its
-tools. ~/claude-code.json can make it break one of those promises, as a later release might: ignoreScrub,
-withhold (variable names), allowCommands (first words), allowOutsidePaths, allowChains, readAnywhere,
-grepAnywhere, and globAnywhere.
+outside the working directory, nothing is chained after it, and no jq program imports or includes a module, and
+it runs Read, Grep, and Glob only inside the working directory, denying the rest. Scrub mode withholds
+secret-named variables and XDG_CACHE_HOME from its tools. ~/claude-code.json can make it break one of those
+promises, as a later release might: ignoreScrub, withhold (variable names), allowCommands (first words),
+allowOutsidePaths, allowChains, allowImports, readAnywhere, grepAnywhere, and globAnywhere.
 """
 
 import fnmatch
@@ -61,9 +61,11 @@ def run_tool(use, allow, tool_env, behavior):
         command = arguments["command"]
         words = list(shlex.shlex(command, posix=True, punctuation_chars=True))
         first = list(itertools.takewhile(lambda word: not (word and set(word) <= CONTROL), words))
+        imports = first[:1] == ["jq"] and any(re.search(r"\b(import|include)\b", word) for word in first[1:])
         allowed = any(fnmatch.fnmatchcase(command, rule[5:-1]) for rule in allow if rule.startswith("Bash(")) \
             and (len(first) == len(words) or behavior.get("allowChains")) \
-            and (all(inside(word) for word in first if "/" in word) or behavior.get("allowOutsidePaths"))
+            and (all(inside(word) for word in first if "/" in word) or behavior.get("allowOutsidePaths")) \
+            and (not imports or behavior.get("allowImports"))
         if allowed or command.split()[0] in behavior.get("allowCommands", []):
             result = subprocess.run(command, shell=True, env=tool_env, capture_output=True, text=True)
             output, error = result.stdout + result.stderr, bool(result.returncode)

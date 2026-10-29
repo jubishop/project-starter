@@ -3,6 +3,32 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 3.7.0 — 2026-10-29
+
+### Synced
+
+- The `memory-audit` feature's tool boundary check also requires that `jq`
+  cannot import a JSON file outside the repository as a module, as in
+  `jq -n 'import "outside" as $x {search: ".."}; $x'`. jq takes a module's
+  path from inside the program, not from a file argument, and reads it from
+  any directory, dotfiles included, so under the audit's `Bash(jq *)` allow
+  rule only Claude Code's refusal of the import keeps the model from reading
+  any JSON file on the machine. Claude Code 2.1.312 denies every form of the
+  import, so nothing was exposed; this is regression coverage.
+
+### Manual follow-up
+
+None. Adopters take the [sync-only](docs/releases.md#sync-only-releases)
+path; the next scheduled audit runs the extended check without a reinstall.
+
+### Verified
+
+`bin/check` passed 123 tests on macOS 27.0.1 with Python 3.15.1. Real
+Claude Code 2.1.312 and QMD 2.8.3 ran the check with no model request in a
+throwaway adopter, and it passed in about a second with the import probe
+denied for want of approval. A fake Claude Code that allows the import fails
+the check, because jq 1.8.2 prints the outside file's token.
+
 ## 3.6.0 — 2026-10-29
 
 ### Synced
