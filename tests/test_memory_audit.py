@@ -57,6 +57,12 @@ RATE_LIMITED = (
 # The model quoting a note is not an API refusal.
 QUOTED_CREDIT = ({"type": "assistant", "message": {"content": [
     {"type": "text", "text": "The note says the credit balance is too low; the key was rejected with 401."}]}},)
+# Each audit first checks its tool boundary through a local stand-in API, which every fake Claude hands to a
+# fake Claude Code; model calls reach the rest of the fake.
+BOUNDARY_CHECK = ("import os,runpy,sys\n"
+                  "if os.environ.get('ANTHROPIC_BASE_URL'):\n"
+                  f" runpy.run_path({str(ROOT / 'tests/fake_claude_code.py')!r}, run_name='__main__')\n"
+                  " sys.exit()\n")
 
 
 def clean_environment(home):
@@ -147,14 +153,22 @@ class MemoryAuditTests(unittest.TestCase):
             f"with open({str(self.notifications)!r}, 'a') as f: f.write(json.dumps(sys.argv[1:])+'\\n')\n"
         ))
         self.executable("qmd", (
-            "import os,pathlib,sys\n"
-            # Like QMD, an INDEX_PATH must be in an existing folder.
+            "import json,os,pathlib,sys\n"
+            # Like QMD, an INDEX_PATH must be in an existing folder, and without one the index is the user's own.
             "if 'INDEX_PATH' in os.environ and not pathlib.Path(os.environ['INDEX_PATH']).parent.is_dir():\n"
             " sys.exit('SQLiteError: unable to open database file')\n"
+            "index = pathlib.Path(os.environ.get('INDEX_PATH') or pathlib.Path.home() / '.cache/qmd/index.sqlite')\n"
             "if sys.argv[1:] == ['update']:\n"
-            f" pathlib.Path({str(self.qmd_config)!r}).write_text("
-            "(pathlib.Path(os.environ['QMD_CONFIG_DIR']) / 'index.yml').read_text())\n"
+            " config = (pathlib.Path(os.environ['QMD_CONFIG_DIR']) / 'index.yml').read_text()\n"
+            f" pathlib.Path({str(self.qmd_config)!r}).write_text(config)\n"
             f" pathlib.Path({str(self.qmd_index)!r}).write_text(os.environ.get('INDEX_PATH', ''))\n"
+            " collections = json.loads(config)['collections'].items()\n"
+            " index.write_text(json.dumps({f'qmd://{name}/{path.relative_to(c[\"path\"])}': path.read_text()\n"
+            "  for name, c in collections for path in pathlib.Path(c['path']).glob(c['pattern'])}))\n"
+            "elif sys.argv[1:2] == ['search']:\n"
+            " documents = json.loads(index.read_text()) if index.exists() else {}\n"
+            " print('\\n'.join(uri for uri, text in documents.items() if sys.argv[2] in text) or 'No results found')\n"
+            " sys.exit()\n"
             "print('Index ready')\n"
         ))
         self.executable("claude", (
@@ -193,7 +207,7 @@ class MemoryAuditTests(unittest.TestCase):
 
     def executable(self, name, body):
         path = self.fake / name
-        path.write_text(f"#!{sys.executable}\n" + body)
+        path.write_text(f"#!{sys.executable}\n" + (BOUNDARY_CHECK if name == "claude" else "") + body)
         path.chmod(0o755)
 
     def git(self, *args, root=None):
@@ -738,6 +752,31 @@ class MemoryAuditTests(unittest.TestCase):
     def test_too_few_source_checks_are_rejected(self):
         self.session = {"reads": ["memory/incident.md"], "lookups": 0}
         self.failed_audit("0 source or evidence lookups for 1 note")
+
+    # Tool boundary
+
+    def test_each_audit_first_checks_its_tool_boundary_with_its_own_flags(self):
+        self.run_audit()
+        [check] = [json.loads(line) for line in (self.base / "boundary-calls.jsonl").read_text().splitlines()]
+        [call] = self.model_calls()
+        self.assertEqual(check["args"], call["args"])
+        self.assertEqual(check["env"]["CLAUDE_CODE_SUBPROCESS_ENV_SCRUB"], "1")
+        # A local stand-in answers for the model, so the check makes no model request.
+        self.assertRegex(check["env"]["ANTHROPIC_BASE_URL"], r"^http://127\.0\.0\.1:\d+$")
+
+    def test_a_claude_code_that_breaks_the_tool_boundary_stops_the_audit_before_the_model(self):
+        # Each way a later Claude Code could open the boundary, and what the check reports.
+        for behavior, reported in (({"ignoreScrub": True}, r"jq -n 'env\.AUDIT_CANARY_API_KEY' revealed"),
+                                   ({"withhold": ["INDEX_PATH"]}, r"qmd search \w+ did not print qmd://memory/"),
+                                   ({"allowCommands": ["printenv"]}, r"printenv revealed the environment"),
+                                   ({"readAnywhere": True}, r"Read \.\./outside\.txt revealed a file outside")):
+            with self.subTest(behavior):
+                (self.base / "claude-code.json").write_text(json.dumps(behavior))
+                self.failed_audit(r"Claude Code 9\.9\.9 breaks the memory audit's tool boundary.*" + reported,
+                                  force=True)
+                self.assertEqual(self.model_calls(), [])
+        [created] = self.gh("issue", "create")
+        self.assertIn("tool boundary", created["body"])
 
     # Failure reporting
 

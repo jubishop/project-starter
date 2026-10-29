@@ -3,6 +3,38 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 3.5.0 — 2026-10-28
+
+### Synced
+
+- The `memory-audit` feature checks its tool boundary before every model run.
+  3.3.1 keeps the key from the model's tools through Claude Code behavior
+  that any release can change: scrub mode, the `jq` allow rule, and
+  `INDEX_PATH` reaching tools. The runner now runs the installed Claude Code
+  with its own model-run and search setup and the audit's flags against a
+  local stand-in for the Anthropic API, which scripts the tool calls, so the
+  check makes no model request and costs nothing. If `jq` reads
+  `ANTHROPIC_API_KEY` or a secret-named canary, if `jq` on the context or
+  `qmd search` on the clone's index stops working, or if an environment or
+  process listing or a read outside the repository runs, the audit fails
+  before the model starts and reports through its notification and
+  `Memory audit failing` issue.
+
+### Manual follow-up
+
+None. Adopters take the [sync-only](docs/releases.md#sync-only-releases)
+path; the next scheduled audit runs the check without a reinstall.
+
+### Verified
+
+`bin/check` passed 121 tests on macOS 27.0.1 with Python 3.15.1. Real Claude
+Code 2.1.312 and QMD 2.8.3 ran the check in a throwaway adopter, with no model
+request. With 3.3.0's model run and search setup, it failed because `jq`
+printed the canary key through `env` and `$ENV`, and printed
+`ANTHROPIC_API_KEY`. With 3.3.1's and this release's, it passed in about a
+second. 3.3.1's scrubbed model run with 3.3.0's search setup failed because
+`qmd search` missed the scratch note.
+
 ## 3.4.0 — 2026-10-28
 
 ### Synced
