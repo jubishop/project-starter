@@ -324,7 +324,7 @@ class MemoryAuditTests(unittest.TestCase):
         self.assertIn("## Active pages", index)
         self.assertNotIn("incident", index)
         run_dir = Path(output["directory"])
-        self.assertFalse((run_dir / "repository").exists())
+        self.assertFalse((self.repo / ".cache/memory-audit/repository").exists())
         self.assertIn("memory/archive/incident.md", (run_dir / "memory-audit.patch").read_text())
         # The user's edit is unstaged, so the index still matches the audited revision.
         self.git("apply", "--cached", "--check", str(run_dir / "memory-audit.patch"))
@@ -455,8 +455,8 @@ class MemoryAuditTests(unittest.TestCase):
         personal = self.base / "home-memory"
         personal.mkdir()
         self.git("config", "knowledge.homeMemoryPath", str(personal))
-        output = self.run_audit()
-        clone = Path(output["directory"]) / "repository"
+        self.run_audit()
+        clone = self.repo / ".cache/memory-audit/repository"
         collections = json.loads(self.qmd_config.read_text())["collections"]
         shared = json.loads((ROOT / "starter/.config/knowledge.json").read_text())["collections"]
         self.assertEqual(set(collections), set(shared))
@@ -683,6 +683,43 @@ class MemoryAuditTests(unittest.TestCase):
         self.assertFalse(old.exists())
         self.assertTrue(recent.exists())
 
+    def test_repeated_audits_leave_claude_code_one_project_record(self):
+        # Like Claude Code 2.1.312 in a project that tracks .claude/settings.local.json, the model run records its
+        # working folder as a project in ~/.claude.json and keeps large tool output under ~/.claude/projects/.
+        self.keep_working_model()
+        self.executable("claude", (
+            "import json,os,pathlib,re,sys,uuid\n"
+            "if '-p' in sys.argv:\n"
+            " config = pathlib.Path.home() / '.claude.json'\n"
+            " projects = json.loads(config.read_text())['projects'] if config.exists() else {}\n"
+            " projects[os.getcwd()] = {'localSettingsSeenGitTracked': True}\n"
+            " config.write_text(json.dumps({'projects': projects}))\n"
+            " output = pathlib.Path.home() / '.claude/projects' / re.sub('[^A-Za-z0-9]', '-', os.getcwd())\n"
+            " output = output / str(uuid.uuid4()) / 'tool-results'\n"
+            " output.mkdir(parents=True)\n"
+            " (output / 'output.txt').write_text('Large tool output\\n')\n"
+            f"os.execv(sys.executable, [sys.executable, {str(self.base / 'claude-working')!r}, *sys.argv[1:]])\n"
+        ))
+        self.run_audit()
+        self.run_audit(force=True)
+        self.assertEqual(len(self.model_calls()), 2)
+        clone = self.repo / ".cache/memory-audit/repository"
+        self.assertEqual(list(json.loads((self.base / ".claude.json").read_text())["projects"]), [str(clone)])
+        self.assertEqual(len(list((self.base / ".claude/projects").iterdir())), 1)
+        # The boundary check's scratch repository keeps one path too, should Claude Code ever record it.
+        checks = [json.loads(line)["cwd"] for line in (self.base / "boundary-calls.jsonl").read_text().splitlines()]
+        self.assertEqual(len(checks), 2)
+        self.assertEqual(len(set(checks)), 1)
+
+    def test_working_folders_left_by_an_interrupted_run_are_replaced(self):
+        state = self.repo / ".cache/memory-audit"
+        for folder in ("repository/memory", "boundary/repository/memory"):
+            (state / folder).mkdir(parents=True)
+            (state / folder / "stale.md").write_text("Left by a killed run.\n")
+        self.assertEqual(self.run_audit()["status"], "success")
+        for folder in ("repository", "boundary"):
+            self.assertFalse((state / folder).exists(), folder)
+
     # Validation
 
     def test_missing_note_coverage_rejects_result_and_keeps_failure_evidence(self):
@@ -715,7 +752,7 @@ class MemoryAuditTests(unittest.TestCase):
         state = self.repo / ".cache/memory-audit"
         meta = json.loads((state / "latest.json").read_text())
         self.assertFalse((Path(meta["directory"]) / "memory-audit.patch").exists())
-        self.assertFalse((Path(meta["directory"]) / "repository").exists())
+        self.assertFalse((state / "repository").exists())
         self.assertTrue((Path(meta["directory"]) / "claude.log").exists())
         self.assertFalse((state / "last-success.json").exists())
 

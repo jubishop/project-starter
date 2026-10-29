@@ -91,7 +91,7 @@ def main():
     settings = Path.home() / "claude-code.json"
     behavior = json.loads(settings.read_text()) if settings.exists() else {}
     with (Path.home() / "boundary-calls.jsonl").open("a") as calls:
-        calls.write(json.dumps({"args": args, "env": dict(os.environ)}) + "\n")
+        calls.write(json.dumps({"args": args, "env": dict(os.environ), "cwd": os.getcwd()}) + "\n")
     allow = json.loads(args[args.index("--settings") + 1])["permissions"]["allow"]
     schema = json.loads(args[args.index("--json-schema") + 1])
     env = dict(os.environ)
