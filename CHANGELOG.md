@@ -24,9 +24,10 @@ path; the next scheduled audit runs the extended check without a reinstall.
 
 ### Verified
 
-`bin/check` passed 121 tests on macOS 27.0.1 with Python 3.15.1. Real Claude
-Code 2.1.312 and QMD 2.8.3 ran the check in a throwaway adopter, with no model
-request, and it passed in about a second with every new probe denied. The
+`bin/check` passed 123 tests on macOS 27.0.1 with Python 3.15.1, on top of
+3.5.1. Real Claude Code 2.1.312 and QMD 2.8.3 ran the check with no model
+request, and it passed in about a second with every new probe denied, both
+in a throwaway adopter and again in 3.5.1's reused scratch folder. The
 same `jq -R`, Grep, and Glob calls aimed inside the repository printed the
 file, so those probes would catch a widened route. Claude Code 2.1.312 denies
 `jq --rawfile`, `--slurpfile`, and `--arg` even inside the repository, so the
