@@ -769,7 +769,13 @@ class MemoryAuditTests(unittest.TestCase):
         for behavior, reported in (({"ignoreScrub": True}, r"jq -n 'env\.AUDIT_CANARY_API_KEY' revealed"),
                                    ({"withhold": ["INDEX_PATH"]}, r"qmd search \w+ did not print qmd://memory/"),
                                    ({"allowCommands": ["printenv"]}, r"printenv revealed the environment"),
-                                   ({"readAnywhere": True}, r"Read \.\./outside\.txt revealed a file outside")):
+                                   ({"allowOutsidePaths": True}, r"jq -R \. \.\./outside\.txt revealed a file outside "
+                                    r"the repository; jq --rawfile f \.\./outside\.txt -n '\$f' revealed a file"),
+                                   ({"allowChains": True}, r"jq -n 1; cat \.\./outside\.txt revealed a file outside "
+                                    r"the repository; qmd search \w+ && printenv revealed the environment"),
+                                   ({"readAnywhere": True}, r"Read \.\./outside\.txt revealed a file outside"),
+                                   ({"grepAnywhere": True}, r"Grep \.\./outside\.txt revealed a file outside"),
+                                   ({"globAnywhere": True}, r"Glob \.\./\*\.txt ran without approval")):
             with self.subTest(behavior):
                 (self.base / "claude-code.json").write_text(json.dumps(behavior))
                 self.failed_audit(r"Claude Code 9\.9\.9 breaks the memory audit's tool boundary.*" + reported,
