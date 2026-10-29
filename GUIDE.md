@@ -30,7 +30,9 @@ only here, and the other `bin/` commands run in the target.
    `AGENTS.md` and `.gitignore`, and any project-owned pages that do not exist
    yet. It keeps and reports existing project-owned files, and it never
    commits. Add `--enable <feature>` to install an
-   [optional feature](#enable-or-disable-a-feature) too.
+   [optional feature](#enable-or-disable-a-feature) too. When it warns that a
+   public GitHub repository lacks secret scanning or push protection, enable
+   both as [secret scanning](docs/releases.md#secret-scanning) describes.
 3. **Merge project-owned pages.** Fold starter guidance into an existing
    README and knowledge indexes, keep useful existing content, and link
    `foundation/README.md` from `docs/README.md`. The copied
@@ -72,7 +74,9 @@ only here, and the other `bin/` commands run in the target.
 9. **Set up the remote for new hosted projects.** After the first commit and
     checks, follow [Git remote setup](starter/docs/git-remotes.md) to publish
     to the primary host. Adopting an existing repository does not authorize
-    adding a host or changing visibility.
+    adding a host or changing visibility. For a public GitHub repository, run
+    `bin/sync --dry-run /path/to/project` once the remote exists, and enable
+    [secret scanning](docs/releases.md#secret-scanning) if it warns.
 10. **Report** changes, checks actually run, skipped features, and overrides.
     Commit and push according to the user's request and the repository's rules.
 
@@ -83,7 +87,8 @@ On a clean checkout, run `bin/sync --dry-run /path/to/project`, then
 changes, or that a new file would replace one sync does not manage. Move the change into an extension point (`bin/check-application`,
 `bin/setup-application`, project pages, or the project section of `AGENTS.md`), record an override with
 its reason in `.project-starter.json`, or discard it with `--force`. Apply the
-release's manual follow-up from the [changelog](CHANGELOG.md), run
+release's manual follow-up from the [changelog](CHANGELOG.md), enable
+[secret scanning](docs/releases.md#secret-scanning) if sync warns, run
 `bin/check --full`, and commit. An adopter skips the check and deployment
 when the release has no manual follow-up, or when the release's follow-up
 applies only to overrides or features the adopter lacks; see [sync-only releases](docs/releases.md#sync-only-releases). `bin/sync --status` reports each adopter's

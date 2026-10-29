@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -36,6 +37,24 @@ class SyncTests(unittest.TestCase):
         self.env.update(GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=os.devnull, PYTHONDONTWRITEBYTECODE="1",
                         GIT_AUTHOR_NAME="Sync test", GIT_AUTHOR_EMAIL="test@example.invalid",
                         GIT_COMMITTER_NAME="Sync test", GIT_COMMITTER_EMAIL="test@example.invalid")
+        # A fake GitHub CLI keeps every test off the network: it answers `gh api repos/<owner>/<name>` from
+        # self.repositories and fails any other call, as gh does for a repository it cannot read.
+        fake = self.base / "fake bin"
+        fake.mkdir()
+        self.repositories = self.base / "repositories.json"
+        self.repositories.write_text("{}")
+        self.gh_calls = self.base / "gh-calls.jsonl"
+        gh = fake / "gh"
+        gh.write_text(f"#!{sys.executable}\n"
+                      "import json,sys\n"
+                      f"with open({str(self.gh_calls)!r}, 'a') as f: f.write(json.dumps(sys.argv[1:])+'\\n')\n"
+                      f"repositories = json.load(open({str(self.repositories)!r}))\n"
+                      "path = sys.argv[2] if sys.argv[1:2] == ['api'] and len(sys.argv) == 3 else None\n"
+                      "if path not in repositories:\n"
+                      " sys.exit('gh: Not Found (HTTP 404)')\n"
+                      "print(json.dumps(repositories[path]))\n")
+        gh.chmod(0o755)
+        self.env["PATH"] = str(fake) + os.pathsep + self.env["PATH"]
 
     def run_command(self, *args, cwd, check=True):
         result = subprocess.run(args, cwd=cwd, env=self.env, text=True, capture_output=True, timeout=60)
@@ -380,6 +399,54 @@ class SyncTests(unittest.TestCase):
         self.assertIn("upstream changed since v2.1.0", result.stdout)
         self.assertIn("-- features/memory-audit/bin/_memory_audit.py", result.stdout)
         self.assertTrue((featured / "bin/_memory_audit.py").read_text().endswith("# local change\n"))
+
+    def test_sync_warns_when_a_public_github_adopter_lacks_secret_scanning(self):
+        def repository(visibility, scanning, protection):
+            return {"visibility": visibility, "security_and_analysis": {
+                "secret_scanning": {"status": scanning}, "secret_scanning_push_protection": {"status": protection}}}
+        self.repositories.write_text(json.dumps({
+            "repos/example-owner/exposed": repository("public", "disabled", "disabled"),
+            "repos/example-owner/partial": repository("public", "enabled", "disabled"),
+            "repos/example-owner/protected": repository("public", "enabled", "enabled"),
+            "repos/example-owner/private": repository("private", "disabled", "disabled"),
+            # GitHub omits the settings for a viewer without admin access.
+            "repos/example-owner/unreadable": {"visibility": "public"},
+        }))
+        remotes = {
+            "exposed": "git@github.com:example-owner/exposed.git",
+            "partial": "https://github.com/example-owner/partial",
+            "protected": "ssh://git@github.com/example-owner/protected.git",
+            "private": "git@github.com:example-owner/private.git",
+            "unreadable": "git@github.com:example-owner/unreadable.git",
+            "missing": "git@github.com:example-owner/missing.git",
+            "elsewhere": "git@gitlab.com:example-owner/elsewhere.git",
+            "local": None,
+        }
+        outputs = {}
+        for name, remote in remotes.items():
+            repo = self.target(name)
+            if remote:
+                self.run_command("git", "remote", "add", "origin", remote, cwd=repo)
+            outputs[name] = self.sync("--init", "--dry-run", "--ref", "WORKTREE", str(repo)).stdout
+        enable = ("gh api -X PATCH repos/example-owner/exposed"
+                  " -f 'security_and_analysis[secret_scanning][status]=enabled'"
+                  " -f 'security_and_analysis[secret_scanning_push_protection][status]=enabled'")
+        self.assertIn("warning: example-owner/exposed is a public GitHub repository with secret scanning and push"
+                      " protection disabled; enable them with: " + enable + "\n", outputs["exposed"])
+        self.assertIn("warning: example-owner/partial is a public GitHub repository with push protection disabled;",
+                      outputs["partial"])
+        self.assertIn("note: could not check secret scanning on example-owner/unreadable: ", outputs["unreadable"])
+        self.assertIn("note: could not check secret scanning on example-owner/missing: gh: Not Found (HTTP 404)\n",
+                      outputs["missing"])
+        for name in ("protected", "private", "elsewhere", "local"):
+            self.assertNotIn("secret scanning", outputs[name], name)
+        calls = [json.loads(line) for line in self.gh_calls.read_text().splitlines()]
+        self.assertEqual(sorted(calls), sorted(["api", "repos/example-owner/" + name] for name in
+                                               ("exposed", "partial", "protected", "private", "unreadable", "missing")))
+        # A sync that writes warns too, and the warning never fails it.
+        result = self.sync("--init", "--ref", "WORKTREE", str(self.base / "exposed"))
+        self.assertIn("enable them with: " + enable + "\n", result.stdout)
+        self.assertTrue((self.base / "exposed/.project-starter.json").is_file())
 
     def test_status_reports_versions_overrides_drift_and_legacy(self):
         fleet = self.base / "projects"

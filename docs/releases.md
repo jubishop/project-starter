@@ -33,6 +33,21 @@ a file as unchanged when it matches the content at any recorded revision
 removes unchanged files the release no longer ships, and inserts the managed
 blocks, placing the `AGENTS.md` block after the page title.
 
+## Secret scanning
+
+Every public GitHub adopter keeps GitHub secret scanning and push protection
+enabled. Push protection blocks supported provider keys, such as Anthropic
+API keys, before they reach the repository, and secret scanning alerts on any
+already in its history; both are free for public repositories. Each
+`bin/sync` run, including `--init` and `--dry-run`, reads the settings of an
+adopter whose `origin` is a public GitHub repository. When either is off, it
+prints a warning with the `gh api` command that enables both. Run that
+command, which needs admin access, and rerun `bin/sync --dry-run` to confirm
+the warning is gone. The warning never fails a sync. Sync skips private
+repositories, where these settings need a paid GitHub Secret Protection
+license, and other hosts, and it prints a note when it cannot read the
+settings.
+
 ## Sync-only releases
 
 When a release needs no manual follow-up, or its follow-up applies only to
@@ -43,7 +58,8 @@ records:
 
 1. Set the version, add the changelog entry, commit, tag `vX.Y.Z`, and run
    `git push origin main vX.Y.Z`.
-2. Fetch every adopter listed by `bin/sync --status`, then sync each one.
+2. Fetch every adopter listed by `bin/sync --status`, then sync each one,
+   enabling [secret scanning](#secret-scanning) where sync warns about it.
    Where no follow-up applies, commit only the synced files, with `[skip ci]`
    in the message so GitHub Actions starts no push workflows, and push.
 3. Give each adopter with an override or feature that the follow-up applies
@@ -88,8 +104,9 @@ bin/sync --dry-run /path/to/project
 bin/sync /path/to/project
 ```
 
-Apply the changelog's manual follow-up, run the checks it needs there (none
-when it changes only text), commit
+Enable [secret scanning](#secret-scanning) where sync warns about it. Apply
+the changelog's manual follow-up, run the checks it needs there (none when it
+changes only text), commit
 on its default branch, push, and confirm CI for the pushed
 commit. When the Actions quota blocks CI, follow
 [hosted CI](../starter/docs/foundation/engineering-policy.md#hosted-ci). Rerun `bin/sync --status` to confirm that no adopter reports drift.

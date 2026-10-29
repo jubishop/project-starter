@@ -6,6 +6,7 @@ import io
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 import tarfile
@@ -28,6 +29,8 @@ FEATURE_METADATA = "feature.json"
 FOUNDATION_INDEX = "docs/foundation/README.md"
 LEGACY_REFS = ("source_ref", "knowledge_source_ref", "task_tracking_source_ref")
 WORKTREE = "WORKTREE"
+GITHUB_REMOTE = re.compile(r"(?:https://(?:[^@/]+@)?|(?:ssh://)?git@)github\.com[:/]([^/]+)/([^/]+?)(?:\.git)?/?", re.I)
+SECRET_SCANNING = {"secret_scanning": "secret scanning", "secret_scanning_push_protection": "push protection"}
 
 
 def git(*args, cwd=ROOT, check=True):
@@ -269,6 +272,36 @@ def plan(target, label, files, manifest, init, features=(), origins=None):
     return template["version"], result
 
 
+def secret_scanning(target):
+    """Return a warning when the target's origin is a public GitHub repository without secret scanning or push protection.
+
+    Both are free for public repositories; private ones need a paid license, so they and other hosts are skipped.
+    """
+    remote = git("remote", "get-url", "origin", cwd=target, check=False).stdout.decode().strip()
+    match = GITHUB_REMOTE.fullmatch(remote)
+    if not match:
+        return None
+    repository = "/".join(match.groups())
+    try:
+        result = subprocess.run(["gh", "api", "repos/" + repository], capture_output=True, text=True, timeout=60)
+        if result.returncode:
+            raise RuntimeError((result.stderr.strip().splitlines() or ["gh api failed"])[-1])
+        details = json.loads(result.stdout)
+        if details.get("visibility") != "public":
+            return None
+        if not details.get("security_and_analysis"):
+            raise RuntimeError("GitHub returned no security settings; reading them needs admin access")
+    except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as error:
+        return "note: could not check secret scanning on " + repository + ": " + str(error)
+    settings = details["security_and_analysis"]
+    disabled = [label for key, label in SECRET_SCANNING.items() if (settings.get(key) or {}).get("status") != "enabled"]
+    if not disabled:
+        return None
+    enable = " ".join("-f 'security_and_analysis[" + key + "][status]=enabled'" for key in SECRET_SCANNING)
+    return ("warning: " + repository + " is a public GitHub repository with " + " and ".join(disabled)
+            + " disabled; enable them with: gh api -X PATCH repos/" + repository + " " + enable)
+
+
 def apply(target, result):
     for relative, (data, executable) in result.writes.items():
         path = target / relative
@@ -308,6 +341,9 @@ def sync(target, ref, init, dry_run, force, enable=(), disable=()):
             print("  " + kind + ": " + ", ".join(paths))
     for note in result.notes:
         print("  note: " + note)
+    scanning = secret_scanning(target)
+    if scanning:
+        print("  " + scanning)
     sys.stdout.flush()
     if result.conflicts and not force:
         print("Conflicts; nothing was written. Review them, record overrides, or rerun with --force:", file=sys.stderr)
