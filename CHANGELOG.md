@@ -3,6 +3,37 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 3.3.1 — 2026-10-28
+
+### Synced
+
+- The `memory-audit` feature keeps the project's API key away from the
+  model's tools. In 3.3.0, Claude Code passed `ANTHROPIC_API_KEY` to Bash, and
+  the allowed `jq -n 'env.ANTHROPIC_API_KEY'` printed it without approval, so
+  a prompt-injected issue could steer the key into a published note or the
+  failure issue. Every model attempt now runs with
+  `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB=1`, which bills the key but withholds it
+  and other secret-named variables from tool processes.
+- Scrub mode also withholds `XDG_CACHE_HOME`, so the runner sets `INDEX_PATH`
+  to the clone's search index, keeping `qmd search` off the user's own index.
+
+### Manual follow-up
+
+None. Adopters take the [sync-only](docs/releases.md#sync-only-releases)
+path; the next scheduled audit runs the new runner without a reinstall.
+
+### Verified
+
+`bin/check` on macOS 27.0.1 with Python 3.15.1. Claude Code 2.1.312 ran the
+runner's own `run_model` and flags on Haiku through the subscription with two
+canary variables. On 3.3.0, `jq -n 'env.AUDIT_CANARY_API_KEY'` and `$ENV`
+printed the secret-named canary; after the fix both printed `null`, while
+`jq` on the context file, `qmd search` on the clone's index, `git show`, Read,
+and Grep still worked. With a bogus `ANTHROPIC_API_KEY`, a SessionStart hook
+saw the key in its environment without scrub mode and not with it, and the
+API still answered 401 for that key. QMD is unchanged since 2.12.0's strict
+real-QMD smoke; this release does not rerun it.
+
 ## 3.3.0 — 2026-10-28
 
 ### Synced

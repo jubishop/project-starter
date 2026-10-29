@@ -122,6 +122,7 @@ class MemoryAuditTests(unittest.TestCase):
         self.notifications = self.base / "notifications.jsonl"
         self.launchd_calls = self.base / "launchctl.jsonl"
         self.qmd_config = self.base / "qmd-index.yml"
+        self.qmd_index = self.base / "qmd-index-path"
         # The GitHub CLI keeps the open failure issues in a file, so a create is seen by later lists.
         self.executable("gh", (
             "import json,pathlib,sys\n"
@@ -147,9 +148,13 @@ class MemoryAuditTests(unittest.TestCase):
         ))
         self.executable("qmd", (
             "import os,pathlib,sys\n"
+            # Like QMD, an INDEX_PATH must be in an existing folder.
+            "if 'INDEX_PATH' in os.environ and not pathlib.Path(os.environ['INDEX_PATH']).parent.is_dir():\n"
+            " sys.exit('SQLiteError: unable to open database file')\n"
             "if sys.argv[1:] == ['update']:\n"
             f" pathlib.Path({str(self.qmd_config)!r}).write_text("
             "(pathlib.Path(os.environ['QMD_CONFIG_DIR']) / 'index.yml').read_text())\n"
+            f" pathlib.Path({str(self.qmd_index)!r}).write_text(os.environ.get('INDEX_PATH', ''))\n"
             "print('Index ready')\n"
         ))
         self.executable("claude", (
@@ -443,6 +448,10 @@ class MemoryAuditTests(unittest.TestCase):
         self.assertEqual(set(collections), set(shared))
         for collection in collections.values():
             self.assertTrue(Path(collection["path"]).is_relative_to(clone), collection["path"])
+        # Claude Code withholds XDG_CACHE_HOME from the model's tools, so qmd search finds the index by INDEX_PATH.
+        index = self.model_calls()[0]["env"].get("INDEX_PATH", "")
+        self.assertTrue(Path(index).is_relative_to(clone), index)
+        self.assertEqual(self.qmd_index.read_text(), index)
 
     def test_api_key_login_stops_before_model_request(self):
         self.executable("claude", "import json\nprint(json.dumps({'loggedIn': True, 'authMethod': 'api_key', "
@@ -488,6 +497,18 @@ class MemoryAuditTests(unittest.TestCase):
         for key in ("MEMORY_AUDIT_ANTHROPIC_API_KEY", "DATABASE_URL", "OTHER"):
             self.assertNotIn(key, call["env"])
         self.assertEqual(json.loads((Path(output["directory"]) / "run-meta.json").read_text())["credential"], "api-key")
+
+    def test_claude_withholds_the_key_from_the_models_tools(self):
+        # Claude Code passes its environment to Bash, where jq's env builtin reads it without approval. Scrub
+        # mode still bills the key but withholds it from tool processes, on every attempt and whatever the shell sets.
+        self.env["CLAUDE_CODE_SUBPROCESS_ENV_SCRUB"] = "0"
+        self.set_api_key()
+        self.refuse_key(LOW_CREDIT)
+        self.run_audit()
+        key_attempt, subscription_attempt = self.model_calls()
+        self.assertEqual(key_attempt["env"]["ANTHROPIC_API_KEY"], API_KEY)
+        for call in (key_attempt, subscription_attempt):
+            self.assertEqual(call["env"].get("CLAUDE_CODE_SUBPROCESS_ENV_SCRUB"), "1")
 
     def test_a_key_claude_would_not_use_stops_before_the_model(self):
         self.set_api_key()
