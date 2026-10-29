@@ -39,7 +39,9 @@ itself, so adopter documents never become test fixtures. It covers:
   change gate, failure issues and their labels, and the settings. For the
   tool boundary check, a fake Claude Code drives the runner's stand-in API
   and runs the scripted tools, and variants of it that break the boundary
-  stop the audit. The LaunchAgent installer tests run only on macOS.
+  stop the audit. Repeated audits leave one Claude Code project record, and
+  a run replaces working folders that an interrupted run left. The
+  LaunchAgent installer tests run only on macOS.
 - Setup: `bin/setup-application` runs only after a successful foundation
   setup, must be executable, and its failure fails setup. A new worktree and
   `bin/prep-worktree` run it too; its failure fails `bin/prep-worktree` but
