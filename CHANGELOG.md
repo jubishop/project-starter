@@ -3,6 +3,47 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 3.4.0 — 2026-10-28
+
+### Synced
+
+- `bin/check` runs ShellCheck on each `bin/` script whose shebang names `sh`,
+  `bash`, `dash`, or `ksh`, in that dialect, directly or through `env` and
+  with or without flags, such as `#!/usr/bin/env bash` or `#!/bin/bash -e`.
+  Before, it linted only scripts starting with `#!/bin/sh`, so bash scripts
+  such as deploy tooling went unlinted. `.envrc` is still linted as bash, and
+  scripts outside `bin/` still are not. The engineering policy names the
+  linted files and notes that a project's `.shellcheckrc` configures
+  ShellCheck.
+
+### Manual follow-up
+
+Every adopter runs `bin/check` after syncing and fixes any finding in a newly
+linted script before committing the sync. At release time, ShellCheck 0.11.0
+passed every adopter's newly linted scripts except these:
+
+- health: SC2029 notes in `bin/deploy.sh` and
+  `bin/rollback-health-server.sh`, where `ssh` commands expand variables on
+  the client. Escape any expansion meant for the server, and add
+  `# shellcheck disable=SC2029` above each intended one, as trading's
+  `bin/deploy.sh` does.
+- podhaven: SC1091 notes in `bin/check-sentry-feedback` and
+  `bin/check-sentry-issues`, whose `# shellcheck source=` directives need
+  ShellCheck to follow sourced files. Add a root `.shellcheckrc` containing
+  `external-sources=true`.
+
+trading may then drop the `bin/` half of the bash lint test it added in
+jubishop/trading#378.
+
+### Verified
+
+`bin/check` on macOS 27.0.1 with Python 3.15.1, and the starter checks on
+Ubuntu and macOS. The new `bin/check` run with ShellCheck 0.11.0 in clones of
+health, podhaven, and trading failed on the findings above and passed
+trading; a `.shellcheckrc` with `external-sources=true` cleared podhaven's.
+QMD is unchanged since 2.12.0's strict real-QMD smoke (QMD 2.8.3 with
+node-llama-cpp 3.22.2); this release does not rerun it.
+
 ## 3.3.0 — 2026-10-28
 
 ### Synced

@@ -874,6 +874,33 @@ fcntl.flock = flock
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("shell lint failed", result.stderr)
 
+    def test_fast_check_lints_shell_scripts_in_bin_by_their_shebang(self):
+        # The fake reports each file that holds "finding", with the dialect it was linted as.
+        self.tool("shellcheck", '''
+import os, sys
+shell = sys.argv[1].removeprefix("--shell=")
+found = [path for path in sys.argv[2:] if "finding" in open(path).read()]
+for path in found:
+    print(os.path.basename(path) + " has a " + shell + " finding", file=sys.stderr)
+sys.exit(1 if found else 0)
+''')
+        script = self.repo / "bin/deploy"
+        for shebang, shell in (("#!/usr/bin/env bash", "bash"), ("#!/bin/bash -e", "bash"),
+                               ("#!/usr/bin/env -S bash -e", "bash"), ("#!/bin/sh", "sh"),
+                               ("#!/usr/bin/env sh", "sh"), ("#!/bin/dash", "dash"), ("#!/bin/ksh", "ksh")):
+            with self.subTest(shebang=shebang):
+                script.write_text(shebang + "\necho $1  # finding\n")
+                result = self.run_command("bin/check", check=False)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("deploy has a " + shell + " finding", result.stderr)
+        # ShellCheck cannot lint these, so bin/check leaves them alone.
+        for shebang in ("#!/usr/bin/env zsh", "#!/bin/bashful", "#!/usr/bin/env python3"):
+            with self.subTest(shebang=shebang):
+                script.write_text(shebang + "\n# finding\n")
+                self.run_command("bin/check")
+        script.write_text("#!/usr/bin/env bash\necho \"$1\"\n")
+        self.run_command("bin/check")
+
     def test_fast_check_still_rejects_staged_whitespace(self):
         self.tool("shellcheck", "import sys\nsys.exit(0)\n")
         (self.repo / "whitespace.txt").write_text("trailing space \n")
