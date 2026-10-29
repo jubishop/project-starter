@@ -7,22 +7,24 @@ ignoreScrub, withhold (variable names), allowCommands (first words), and readAny
 """
 
 import fnmatch
+import http.client
 import json
 import os
 from pathlib import Path
 import subprocess
 import sys
-import urllib.request
+from urllib.parse import urlsplit
 
 
 def ask(env, messages, tools):
     """Send one streaming Messages API request and return the response's content blocks."""
-    request = urllib.request.Request(
-        env["ANTHROPIC_BASE_URL"] + "/v1/messages?beta=true",
-        json.dumps({"model": "fake", "stream": True, "messages": messages, "tools": tools}).encode(),
-        {"content-type": "application/json", "x-api-key": env["ANTHROPIC_API_KEY"]})
+    # http.client skips urllib's system proxy lookup.
+    connection = http.client.HTTPConnection(urlsplit(env["ANTHROPIC_BASE_URL"]).netloc, timeout=30)
+    connection.request("POST", "/v1/messages?beta=true",
+                       json.dumps({"model": "fake", "stream": True, "messages": messages, "tools": tools}),
+                       {"content-type": "application/json", "x-api-key": env["ANTHROPIC_API_KEY"]})
     blocks = []
-    with urllib.request.urlopen(request, timeout=30) as response:
+    with connection.getresponse() as response:
         for line in response.read().decode().splitlines():
             event = json.loads(line[6:]) if line.startswith("data: ") else {}
             if event.get("type") == "content_block_start":

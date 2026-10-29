@@ -9,7 +9,7 @@ import argparse
 from contextlib import contextmanager
 import fcntl
 import hashlib
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler
 import json
 import os
 from pathlib import Path
@@ -18,6 +18,7 @@ import re
 import secrets
 import shutil
 import signal
+import socketserver
 import subprocess
 import sys
 import tempfile
@@ -585,7 +586,9 @@ def stand_in_api(probes):
             self.end_headers()
             self.wfile.write(text.encode())
 
-    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    # A plain TCP server skips HTTPServer's reverse lookup of its address, which can stall for seconds on macOS.
+    server = socketserver.ThreadingTCPServer(("127.0.0.1", 0), Handler)
+    server.daemon_threads = True
     # A short poll lets the check end as soon as Claude Code does.
     threading.Thread(target=server.serve_forever, args=(0.05,), daemon=True).start()
     try:
