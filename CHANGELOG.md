@@ -3,6 +3,44 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 3.5.1 — 2026-10-29
+
+### Synced
+
+- The `memory-audit` feature clones every run to the same path,
+  `.cache/memory-audit/repository`, instead of a new folder under
+  `.cache/memory-audit/runs/`. Claude Code records the folder it works in as a
+  project in `~/.claude.json` when the project tracks
+  `.claude/settings.local.json`, and nothing prunes those entries, so each
+  audit left one more behind: podhaven had six by 2026-10-28. Its large tool
+  output under `~/.claude/projects/` now lands in one folder per project too,
+  which Claude Code's `cleanupPeriodDays` sweep prunes. The tool boundary
+  check's scratch repository moves to `.cache/memory-audit/boundary/` for the
+  same reason. Run folders keep the same logs, context, report, and patch, and
+  a run replaces a clone that an interrupted run left.
+
+### Manual follow-up
+
+None. Adopters take the [sync-only](docs/releases.md#sync-only-releases)
+path; the next scheduled audit uses the new paths without a reinstall. The
+entries that earlier runs left in `~/.claude.json` stay, about 285 bytes each,
+since removing them means editing a file Claude Code rewrites. Claude Code's
+own sweep removes their `~/.claude/projects/` folders once their files age
+past `cleanupPeriodDays`.
+
+### Verified
+
+`bin/check` passed 123 tests on macOS 27.0.1 with Python 3.15.1. Real Claude
+Code 2.1.312 ran the runner's `run_model` against its local stand-in API, so
+with no model request, in an isolated `CLAUDE_CONFIG_DIR`, three times in
+repositories that track `.claude/settings.local.json` and print a large `jq`
+output. New paths per run left three `~/.claude.json` entries and three
+`~/.claude/projects/` folders; one reused path left one of each. Without the
+tracked file it wrote no entry but still one folder per path. Claude Code
+2.1.312's retention sweep deletes `tool-results` files older than
+`cleanupPeriodDays`, then empty session and project folders. QMD is unchanged
+since 2.12.0's strict real-QMD smoke; this release does not rerun it.
+
 ## 3.5.0 — 2026-10-28
 
 ### Synced
