@@ -3,6 +3,36 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 3.6.0 — 2026-10-29
+
+### Synced
+
+- The `memory-audit` feature's tool boundary check also probes the audit's
+  own allow rules, `jq` and `qmd search`, and its Grep and Glob tools, the
+  routes most likely to widen in a later Claude Code release. It now requires
+  that `jq` cannot read a file outside the repository, as in
+  `jq -R . ../outside.txt` and `jq --rawfile f ../outside.txt -n '$f'`; that
+  neither allow rule covers a command chained after it, as in
+  `jq -n 1; cat ../outside.txt` and `qmd search … && printenv`; and that Grep
+  and Glob stay inside the repository. Claude Code 2.1.312 denies all of
+  these, so nothing was exposed; this is regression coverage.
+
+### Manual follow-up
+
+None. Adopters take the [sync-only](docs/releases.md#sync-only-releases)
+path; the next scheduled audit runs the extended check without a reinstall.
+
+### Verified
+
+`bin/check` passed 123 tests on macOS 27.0.1 with Python 3.15.1, on top of
+3.5.1. Real Claude Code 2.1.312 and QMD 2.8.3 ran the check with no model
+request, and it passed in about a second with every new probe denied, both
+in a throwaway adopter and again in 3.5.1's reused scratch folder. The
+same `jq -R`, Grep, and Glob calls aimed inside the repository printed the
+file, so those probes would catch a widened route. Claude Code 2.1.312 denies
+`jq --rawfile`, `--slurpfile`, and `--arg` even inside the repository, so the
+`--rawfile` probe guards that refusal as well as the working-directory check.
+
 ## 3.5.1 — 2026-10-29
 
 ### Synced
