@@ -38,7 +38,9 @@ synced files.
 actionlint accepts the starter's QMD compatibility workflow, which now uses
 the same two steps. Under `bash -e`, the resolver step read 26.13.0 from
 nodejs.org's live index, chose 26.13.0 over 9.0.0 in an unsorted index, and
-failed for a missing index and for one with no LTS release.
+failed for a missing index and for one with no LTS release. On GitHub's
+`ubuntu-latest` runner, the workflow's two steps installed Node 26.13.0, and
+its strict real-QMD smoke check passed with QMD 2.8.3.
 
 ## 3.7.0 — 2026-10-29
 
