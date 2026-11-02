@@ -3,6 +3,43 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 3.7.1 — 2026-11-01
+
+### Synced
+
+- The engineering policy no longer suggests `node-version: lts/*` with
+  `check-latest: true` for CI. `actions/setup-node` resolves `lts/*` from the
+  `actions/node-versions` manifest, which can mark a new LTS major days after
+  nodejs.org does, and `check-latest` reads the same manifest. On 2026-11-01,
+  four days after nodejs.org marked v26.13.0 LTS, screenr's CI still
+  installed Node 24.22.2 while its machines and server ran 26.13.0. CI now
+  resolves the newest LTS from nodejs.org's release index and passes that
+  exact version to `setup-node`, and the policy shows the two steps.
+
+### Manual follow-up
+
+In each adopter whose CI gives `actions/setup-node` `lts/*`, as
+`node-version` or through `node-version-file`, add the policy's
+[resolver step](starter/docs/foundation/engineering-policy.md#runtime-and-toolchain-versions)
+before `setup-node`, then replace that input and `check-latest` with
+`node-version: ${{ steps.node.outputs.version }}`. Keep the step's other
+inputs, such as `cache`, and give the resolver any `if:` condition the
+`setup-node` step has. Version files keep `lts/*` for developer machines. At
+release, these are artisanalsoftware.com, kidsbank, podhaven
+(`sentry-intake.yml`), sourdough, steam-starter (both jobs in `build.yml`,
+including its `windows-latest` build), stories, and vidservey; screenr already
+resolves the version from nodejs.org. Run the checks the workflow change needs,
+push, and confirm that CI installs the newest LTS. Other adopters take only the
+synced files.
+
+### Verified
+
+`bin/check` passed 124 tests on macOS 27.0.1 with Python 3.15.2, and
+actionlint accepts the starter's QMD compatibility workflow, which now uses
+the same two steps. Under `bash -e`, the resolver step read 26.13.0 from
+nodejs.org's live index, chose 26.13.0 over 9.0.0 in an unsorted index, and
+failed for a missing index and for one with no LTS release.
+
 ## 3.7.0 — 2026-10-29
 
 ### Synced
