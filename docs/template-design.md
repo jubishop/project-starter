@@ -649,6 +649,46 @@ checks, for every Markdown change. That would spend Actions minutes in
 private repositories, which hit the account's spending limit in October.
 Leaving the gap open was also rejected.
 
+### Pre-push document checks — 2026-11-06
+
+A rule that depends on someone remembering it fails the first time they
+don't, so a managed `pre-push` hook now runs the document checks for text.
+Every adopter already uses the bundled `bin/hooks`, so the hook arrives by
+sync with no setup once the two adopters with their own `pre-push` move it.
+Its choices:
+
+- **Event.** `pre-push`, not `pre-commit`. It sees every commit that reaches
+  the remote, including merges, rebases, and cherry-picks that `pre-commit`
+  never sees, and it matches the rule's "before it is pushed". Work-in-progress
+  commits stay free.
+- **Revision.** The hook checks each pushed revision in a disposable shared
+  clone, never the working tree. The document checks read files on disk, so
+  checking the working tree would pass an index that links a page left out of
+  the commit, and would refuse a clean push because of an uncommitted draft.
+  On 2026-11-06 the clone and checkout took 0.04 to 0.27 seconds across the
+  22 adopters, and the checks themselves 0.06 to 0.65 seconds.
+- **Scope.** Only pushes that change a Markdown file, with renames counted as
+  removals. A new branch counts when one of its commits that no
+  remote-tracking branch holds changes one. Other kinds of change already
+  run `bin/check`, which includes the document checks.
+- **Failures.** The hook refuses the push when the checks fail or cannot run,
+  so a broken hook cannot silently reopen the gap. `--no-verify` stays Git's
+  bypass, for a broken hook only.
+- **Automated pushes.** Sync commits pass through the hook like any other
+  push. The memory audit keeps hooks off in its clone because it already runs
+  the same checks on its proposed tree.
+- **Other hook managers.** The hook forwards to `bin/knowledge-hook` like the
+  four refresh events, so setup, `bin/doctor`, and the existing-hooks
+  integration cover it without a second mechanism.
+- **Project hooks.** Health and screenr already kept their own
+  `bin/hooks/pre-push`, which runs Xcode checks before a push, and two
+  adopters needing the same override is when the guide adds an extension
+  point. The managed hook runs an executable `bin/pre-push-application` once
+  the document checks pass, with Git's arguments, standard input, and
+  environment, as `bin/check-application` and `bin/setup-application` extend
+  their commands. The document checks go first because they take under a
+  second and the Xcode checks take minutes.
+
 ### Unchanged choices — 2026-10-09
 
 Keep the [search reliability decision](#search-reliability-decision--2026-09-13)

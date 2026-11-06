@@ -3,6 +3,72 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 3.8.0 — 2026-11-06
+
+### Synced
+
+- A managed `pre-push` hook runs `bin/check --documents-only` whenever a
+  push changes Markdown, and Git refuses the push when it fails. Since
+  3.7.2, text has waited for that check, but only the policy asked for it,
+  so a skipped check could still let a broken link or missing index entry
+  reach the default branch and fail the next unrelated change's
+  `bin/check`, as it did twice in screenr. The hook checks each pushed
+  revision in a disposable clone, so it catches a page left out of the
+  commit, and an uncommitted draft doesn't block a clean push. Pushes that
+  change no Markdown skip it, and a new branch is checked when its unpushed
+  commits change Markdown. `bin/setup` and `bin/doctor` treat it like the
+  other bundled hooks.
+- An executable, project-owned `bin/pre-push-application` holds a project's
+  own pre-push checks. The managed hook runs it after the document checks
+  pass, with Git's arguments, standard input, and environment, and its
+  failure refuses the push.
+- The engineering policy's new
+  [pre-push hook](starter/docs/foundation/engineering-policy.md#pre-push-hook)
+  section allows `git push --no-verify` only for a broken hook. Another hook
+  manager now forwards `pre-push` too, with its stdin, as
+  [existing hooks](starter/docs/foundation/knowledge-search.md#existing-hooks)
+  describes. The memory audit's page notes that its push skips the hook
+  because the audit already runs the same checks.
+
+### Manual follow-up
+
+Health and screenr keep their own `bin/hooks/pre-push`, which runs Xcode
+checks before a push, so sync reports a conflict there and writes nothing.
+In each, move that hook to `bin/pre-push-application` and update the tests,
+docs, and memory that name its old path. Commit the move, then sync, commit
+the synced files, and push both commits.
+
+- **health:** the hook works unchanged at its new path. Update
+  `tests/test_pre_push.py` and the hook's link in
+  `docs/development-workflow.md`.
+- **screenr:** the hook imports `bin/_ios_check_records.py` through
+  `HOOK.parents[1]`, which becomes `HOOK.parent`. Its `dispatch()` handed a
+  push from a worktree to that worktree's own copy, because
+  `core.hooksPath` names the primary checkout's `bin/hooks`; the managed
+  hook now does that, since it runs the pushing checkout's
+  `bin/pre-push-application`. Drop or adapt `dispatch()` and the `GATE`
+  paths, and update `tests/test_pre_push.py`,
+  `docs/development-workflow.md`, and `memory/parallel-agent-gotchas.md`.
+  Run `bin/check --full`. A worktree whose branch predates the move runs
+  no pre-push checks until it merges the default branch.
+
+Every other adopter takes only the synced files. An adopter whose hooks come
+from another manager (`knowledge.hooks external`) would forward `pre-push`;
+none does at release.
+
+### Verified
+
+`bin/check` passed 126 tests on macOS 27.0.1 with Python 3.15.2 and Git
+2.56.0. In throwaway clones synced with this release and pushing to a local
+bare remote, will refused a push that added a page with a broken link, with
+`docs/hook-probe.md: missing link destination missing-page.md`, and let the
+sync and a clean Markdown edit through in about 0.24 seconds each. In
+health, with its hook moved unchanged to `bin/pre-push-application`, the
+managed hook passed it Git's input, and it refused a push whose macOS-only
+inputs differed from the checkout. Across all 22 adopters on 2026-11-06,
+the disposable clone took 0.04 to 0.27 seconds and the document checks 0.06
+to 0.65 seconds.
+
 ## 3.7.2 — 2026-11-05
 
 ### Synced

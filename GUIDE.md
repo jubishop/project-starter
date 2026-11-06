@@ -57,7 +57,10 @@ only here, and the other `bin/` commands run in the target.
 6. **Integrate hooks.** Setup activates `bin/hooks` when nothing would be
    displaced. Otherwise follow
    [existing hooks](starter/docs/foundation/knowledge-search.md#existing-hooks)
-   and verify each event in a disposable checkout.
+   and verify each event in a disposable checkout. Move a project's own
+   `pre-push` checks into an executable `bin/pre-push-application`, which
+   the managed [pre-push hook](starter/docs/foundation/engineering-policy.md#pre-push-hook)
+   runs after the document checks pass.
 7. **Configure knowledge.** Adjust collections and deliberate exclusions in
    `.config/knowledge.json`, keeping personal paths in local Git
    configuration. Keep or add the `readme` collection, which indexes only the
@@ -85,7 +88,7 @@ only here, and the other `bin/` commands run in the target.
 On a clean checkout, run `bin/sync --dry-run /path/to/project`, then
 `bin/sync /path/to/project`. A conflict means a managed file has local
 changes, or that a new file would replace one sync does not manage. Move the change into an extension point (`bin/check-application`,
-`bin/setup-application`, project pages, or the project section of `AGENTS.md`), record an override with
+`bin/setup-application`, `bin/pre-push-application`, project pages, or the project section of `AGENTS.md`), record an override with
 its reason in `.project-starter.json`, or discard it with `--force`. Apply the
 release's manual follow-up from the [changelog](CHANGELOG.md), enable
 [secret scanning](docs/releases.md#secret-scanning) if sync warns, run
