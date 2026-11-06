@@ -3,6 +3,53 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 3.7.2 — 2026-11-05
+
+### Synced
+
+- Text, such as Markdown and AI skill prose, still goes directly to the
+  default branch with no tests, pull request, or hosted CI run, but only once
+  `bin/check --documents-only` passes. Since 2.6.0 the policy had said text
+  needs no checks, and hosted CI skips Markdown-only changes, so nothing
+  checked them. The document checks read every tracked Markdown file, so a
+  page with a broken link or a missing index entry reached the default branch
+  and failed the next unrelated change's `bin/check`, as it did twice in
+  screenr. The engineering policy's kinds of change, check schedule, and
+  hosted CI section, and the managed `AGENTS.md` block, now require the
+  check. Hosted CI still skips Markdown-only changes.
+
+### Manual follow-up
+
+Project rules take precedence, so a project page that still says text needs
+no checks keeps the old rule. In each adopter below, reword it to require
+`bin/check --documents-only`, run that check, and commit the edit with the
+sync:
+
+- news: `AGENTS.md`, "Text-only changes need no checks."
+- podhaven: `AGENTS.md`, "Documentation needs no checks", and in
+  `docs/development-workflow.md` the check decision's note and the
+  "Documentation-only delivery" row.
+- screenr: `docs/testing.md`, "Markdown edits need no checks."
+- stories: `AGENTS.md`, "text-only changes need no checks"; the Markdown-only
+  bullet in `docs/development-workflow.md`; and `memory/change-delivery.md`.
+- trading: the "Pull requests" paragraph in `AGENTS.md`, and the sentence in
+  `docs/development-workflow.md` that sends other Markdown to `main` without
+  checks. Its rules send any change to `AGENTS.md` outside the managed block
+  through a pull request, so deliver both pages that way after the sync.
+
+Sourdough's rule that no check runs before a push is the owner's deliberate
+choice of 2026-10-15; leave it. Other adopters take only the synced files.
+
+### Verified
+
+`bin/check` passed 124 tests on macOS 27.0.1 with Python 3.15.2. In
+adopters, `bin/check --documents-only` took 0.05 seconds in will and 0.7
+seconds in screenr. In a throwaway clone of will, it passed, then failed on
+`missing link destination missing-page.md` after a Markdown-only change added
+a page with a broken link. The starter checks passed on Ubuntu and macOS, and
+on GitHub's `ubuntu-latest` runner the strict real-QMD smoke check passed
+with QMD 2.8.3 and node-llama-cpp 3.22.3.
+
 ## 3.7.1 — 2026-11-01
 
 ### Synced

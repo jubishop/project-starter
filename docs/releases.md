@@ -105,8 +105,8 @@ bin/sync /path/to/project
 ```
 
 Enable [secret scanning](#secret-scanning) where sync warns about it. Apply
-the changelog's manual follow-up, run the checks it needs there (none when it
-changes only text), commit
+the changelog's manual follow-up, run the checks it needs there (only
+`bin/check --documents-only` when it changes only text), commit
 on its default branch, push, and confirm CI for the pushed
 commit. When the Actions quota blocks CI, follow
 [hosted CI](../starter/docs/foundation/engineering-policy.md#hosted-ci). Rerun `bin/sync --status` to confirm that no adopter reports drift.
