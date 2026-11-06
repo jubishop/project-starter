@@ -585,11 +585,31 @@ sys.exit(int(os.environ.get("OLD_HOOK_EXIT", "0")))
         self.run_command("git", "commit", "--message", "Add notes")
         self.run_command("git", "push")
 
+        # Git passes the local ref as typed, so a refspec naming a commit by its message holds spaces.
+        (self.repo / "notes.txt").write_text("More notes.\n")
+        self.run_command("git", "commit", "--all", "--message", "Add more notes")
+        self.run_command("git", "push", "origin", ":/Add more notes:refs/heads/main")
+        self.assertEqual(remote_main(), self.run_command("git", "rev-parse", "HEAD").stdout.strip())
+
         # A new branch is checked when a commit no remote-tracking branch holds changes Markdown.
         self.run_command("git", "push", "origin", "HEAD:refs/heads/same")
         (self.repo / "docs/README.md").write_text((self.repo / "docs/README.md").read_text() + "\nMore.\n")
         self.run_command("git", "commit", "--all", "--message", "Edit the index")
         self.assertIn("docs/README.md: missing link destination probe.md", refused("origin", "HEAD:refs/heads/edited"))
+        self.assertIn("docs/README.md: missing link destination probe.md",
+                      refused("origin", ":/Edit the index:refs/heads/by-message"))
+
+        # Input the hook can't read still refuses the push.
+        head = self.run_command("git", "rev-parse", "HEAD").stdout.strip()
+        for line in ("refs/heads/main " + head + " refs/heads/main",
+                     "refs/heads/main " + head + " refs/heads/main not-an-object",
+                     "refs/heads/main not-an-object refs/heads/main " + head,
+                     "refs/heads/main " + head + " " + "0" * 40):
+            with self.subTest(line=line):
+                result = self.run_command("bin/knowledge-hook", "pre-push", "origin", str(remote),
+                                          input=line + "\n", check=False)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("Unexpected pre-push input: " + line, result.stderr)
 
     def test_pre_push_hook_runs_the_project_pre_push_application_after_the_document_checks(self):
         remote = self.base / "remote.git"

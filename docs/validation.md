@@ -28,7 +28,9 @@ itself, so adopter documents never become test fixtures. It covers:
   check's error when the pushed revision fails, even if the working tree
   passes, and go through despite an uncommitted broken draft. Renaming a page
   away counts as a Markdown change, pushes that change no Markdown skip the
-  check, and new branches are checked by their unpushed commits. External
+  check, and new branches are checked by their unpushed commits. A local
+  refspec with spaces, such as `:/<commit message>`, is checked like a
+  branch name, and input the hook cannot read refuses the push. External
   forwarding passes `pre-push` its stdin and its refusal. A project's
   `bin/pre-push-application` runs only after the document checks pass, gets
   Git's arguments and stdin, refuses the push when it fails, and must be

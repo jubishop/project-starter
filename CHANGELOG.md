@@ -3,6 +3,34 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 3.8.1 — 2026-11-06
+
+### Synced
+
+- The managed `pre-push` hook no longer refuses a push whose local refspec
+  contains spaces, such as `git push origin ':/Add a probe file:main'`. Git
+  passes the local ref to the hook as typed, and the hook split each input
+  line on whitespace, so it failed closed on every such push, even one that
+  changed no Markdown. It now reads the other three fields from the right,
+  since only the local ref can hold spaces, and checks the push like one
+  naming a branch. Input it still can't read, such as a line without two
+  object names, refuses the push as before.
+
+### Manual follow-up
+
+None. Adopters take the [sync-only](docs/releases.md#sync-only-releases)
+path.
+
+### Verified
+
+`bin/check` passed 126 tests on macOS 27.0.1 with Python 3.15.2 and Git
+2.56.0. In a throwaway clone of will synced with this release and pushing to
+a local bare remote, a non-Markdown commit went through when pushed as
+`:/Add a probe file:refs/heads/by-message`, and a page with a broken link
+pushed through a `:/<message>` refspec was refused with
+`docs/hook-probe.md: missing link destination missing-page.md`, as it was
+when pushed by branch name.
+
 ## 3.8.0 — 2026-11-06
 
 ### Synced
