@@ -29,6 +29,7 @@ sync:
 - podhaven: `AGENTS.md`, "Documentation needs no checks", and in
   `docs/development-workflow.md` the check decision's note and the
   "Documentation-only delivery" row.
+- screenr: `docs/testing.md`, "Markdown edits need no checks."
 - stories: `AGENTS.md`, "text-only changes need no checks"; the Markdown-only
   bullet in `docs/development-workflow.md`; and `memory/change-delivery.md`.
 - trading: the "Pull requests" paragraph in `AGENTS.md`, and the sentence in
@@ -45,7 +46,9 @@ choice of 2026-10-15; leave it. Other adopters take only the synced files.
 adopters, `bin/check --documents-only` took 0.05 seconds in will and 0.7
 seconds in screenr. In a throwaway clone of will, it passed, then failed on
 `missing link destination missing-page.md` after a Markdown-only change added
-a page with a broken link.
+a page with a broken link. The starter checks passed on Ubuntu and macOS, and
+on GitHub's `ubuntu-latest` runner the strict real-QMD smoke check passed
+with QMD 2.8.3 and node-llama-cpp 3.22.3.
 
 ## 3.7.1 — 2026-11-01
 
