@@ -634,6 +634,21 @@ cloning, so a new worktree now runs it too, from the post-checkout hook that
 already prepares new worktrees. A failure there must not leave Git without a
 usable worktree, so the hook reports it and continues.
 
+### Document checks for text — 2026-11-05
+
+Text goes directly to the default branch with no tests, pull request, or
+hosted CI run, but only once `bin/check --documents-only` passes. Version
+2.6.0 had dropped that check along with the rest, and hosted CI already
+skipped Markdown-only changes, so nothing checked them. The document checks
+read every tracked Markdown file, so a page with a broken link or a missing
+index entry reached the default branch and failed the next unrelated change's
+`bin/check`. Screenr hit this twice and then gave up its Markdown skip. The
+check finishes in under a second in adopters and starts no application tools.
+The user chose this over running hosted CI, and with it the application
+checks, for every Markdown change. That would spend Actions minutes in
+private repositories, which hit the account's spending limit in October.
+Leaving the gap open was also rejected.
+
 ### Unchanged choices — 2026-10-09
 
 Keep the [search reliability decision](#search-reliability-decision--2026-09-13)
