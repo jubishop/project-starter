@@ -67,7 +67,9 @@ health, with its hook moved unchanged to `bin/pre-push-application`, the
 managed hook passed it Git's input, and it refused a push whose macOS-only
 inputs differed from the checkout. Across all 22 adopters on 2026-11-06,
 the disposable clone took 0.04 to 0.27 seconds and the document checks 0.06
-to 0.65 seconds.
+to 0.65 seconds. The starter checks passed on Ubuntu and macOS, and on
+GitHub's `ubuntu-latest` runner the strict real-QMD smoke check passed with
+QMD 2.8.3 and node-llama-cpp 3.22.3.
 
 ## 3.7.2 — 2026-11-05
 
