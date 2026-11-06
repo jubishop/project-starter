@@ -24,6 +24,15 @@ itself, so adopter documents never become test fixtures. It covers:
 - Check modes: `bin/check-application` runs only under `--full`, only after
   the foundation checks pass, and its failures propagate, while syntax, lint,
   and whitespace errors still fail the routine modes.
+- Pre-push hook: real pushes to a bare remote are refused with the document
+  check's error when the pushed revision fails, even if the working tree
+  passes, and go through despite an uncommitted broken draft. Renaming a page
+  away counts as a Markdown change, pushes that change no Markdown skip the
+  check, and new branches are checked by their unpushed commits. External
+  forwarding passes `pre-push` its stdin and its refusal. A project's
+  `bin/pre-push-application` runs only after the document checks pass, gets
+  Git's arguments and stdin, refuses the push when it fails, and must be
+  executable.
 - `bin/sync`: initial adoption, hash and block enforcement with overrides,
   updates between tagged releases with conflict refusal and `--force`, 1.x
   migration through recorded source revisions, and fleet `--status`. The

@@ -489,16 +489,16 @@ else:
     def test_external_hook_integration_preserves_behavior_arguments_and_stdin(self):
         hooks = self.repo / "custom hooks"
         hooks.mkdir()
-        for event in ("post-checkout", "post-commit", "post-merge", "post-rewrite"):
+        for event in ("post-checkout", "post-commit", "post-merge", "post-rewrite", "pre-push"):
             path = hooks / event
             path.write_text("#!" + sys.executable + '''
 import json, os, subprocess, sys
 from pathlib import Path
 event = Path(__file__).name
-payload = sys.stdin.read() if event == "post-rewrite" else ""
+payload = sys.stdin.read() if event in ("post-rewrite", "pre-push") else ""
 with open(os.environ["OLD_HOOKS"], "a") as log:
     log.write(json.dumps({"event": event, "args": sys.argv[1:], "stdin": payload}) + "\\n")
-subprocess.run([str(Path.cwd() / "bin/knowledge-hook"), event, *sys.argv[1:]], check=True)
+subprocess.run([str(Path.cwd() / "bin/knowledge-hook"), event, *sys.argv[1:]], input=payload, text=True, check=True)
 sys.exit(int(os.environ.get("OLD_HOOK_EXIT", "0")))
 ''')
             path.chmod(0o755)
@@ -507,20 +507,132 @@ sys.exit(int(os.environ.get("OLD_HOOK_EXIT", "0")))
         self.assert_document_references(self.run_command("bin/setup").stdout)
         report = json.loads(self.run_command("bin/doctor", "--json", check=False).stdout)
         self.assert_document_references("\n".join(report["issues"]))
-        stdin_file = self.base / "rewritten commits"
-        stdin_file.write_text("old new\n")
-        for event, args in (("post-checkout", ["1" * 40, "2" * 40, "1"]), ("post-commit", []),
-                            ("post-merge", ["0"]), ("post-rewrite", ["amend"])):
+        self.commit()
+        head = self.run_command("git", "rev-parse", "HEAD").stdout.strip()
+        stdin_file = self.base / "hook input"
+        inputs = {"post-rewrite": "old new\n", "pre-push": "refs/heads/main " + head + " refs/heads/main " + "0" * 40 + "\n"}
+        for event, args in (("post-checkout", ["1" * 40, "2" * 40, "1"]), ("post-commit", []), ("post-merge", ["0"]),
+                            ("post-rewrite", ["amend"]), ("pre-push", ["origin", "/remote"])):
+            stdin_file.write_text(inputs.get(event, ""))
             self.run_command("git", "hook", "run", "--to-stdin=" + str(stdin_file), event, "--", *args)
         self.drain()
-        originals = [json.loads(line) for line in (self.base / "old-hooks.jsonl").read_text().splitlines()]
-        self.assertEqual(originals[-1]["args"], ["amend"])
-        self.assertEqual(originals[-1]["stdin"], "old new\n")
+        originals = {entry["event"]: entry for entry in map(json.loads, (self.base / "old-hooks.jsonl").read_text().splitlines())}
+        self.assertEqual(originals["post-rewrite"]["args"], ["amend"])
+        self.assertEqual(originals["post-rewrite"]["stdin"], "old new\n")
+        self.assertEqual(originals["pre-push"]["stdin"], inputs["pre-push"])
         self.run_command("bin/doctor")
+        # The forwarded pre-push refuses a push whose pages fail the document checks.
+        (self.repo / "docs/broken.md").write_text("# Missing status\n")
+        self.commit()
+        stdin_file.write_text("refs/heads/main " + self.run_command("git", "rev-parse", "HEAD").stdout.strip() +
+                              " refs/heads/main " + head + "\n")
+        result = self.run_command("git", "hook", "run", "--to-stdin=" + str(stdin_file), "pre-push", "--",
+                                  "origin", "/remote", check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("docs/broken.md: missing frontmatter", result.stderr)
         result = self.run_command("git", "hook", "run", "post-commit", extra={"OLD_HOOK_EXIT": "7"}, check=False)
         self.assertEqual(result.returncode, 7)
         self.drain()
         self.assertEqual(self.run_command("git", "config", "--get", "core.hooksPath").stdout.strip(), "custom hooks")
+
+    def test_pre_push_hook_checks_the_pushed_revision_when_the_push_changes_markdown(self):
+        remote = self.base / "remote.git"
+        self.run_command("git", "init", "--bare", "-b", "main", str(remote))
+        self.run_command("git", "remote", "add", "origin", str(remote))
+        self.addCleanup(self.drain)
+        self.run_command("bin/setup")
+        self.commit()
+        self.run_command("git", "push", "--set-upstream", "origin", "main")
+
+        def remote_main():
+            return self.run_command("git", "rev-parse", "main", root=remote).stdout.strip()
+
+        def refused(*args):
+            before = remote_main()
+            result = self.run_command("git", "push", *args, check=False)
+            self.assertNotEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(remote_main(), before)
+            return result.stderr
+
+        # The index links a page left out of the commit: the working tree passes, the pushed revision fails.
+        page = self.repo / "docs/probe.md"
+        page.write_text("---\nstatus: current\n---\n\n# Probe\n")
+        with (self.repo / "docs/README.md").open("a") as stream:
+            stream.write("\n- [Probe](probe.md)\n")
+        self.run_command("bin/check", "--documents-only")
+        self.run_command("git", "commit", "--all", "--message", "Link a page left out of the commit")
+        self.assertIn("docs/README.md: missing link destination probe.md", refused())
+
+        # Committing the page lets the push through, even with a broken draft left uncommitted.
+        self.run_command("git", "add", "docs/probe.md")
+        self.run_command("git", "commit", "--message", "Add the page")
+        draft = self.repo / "docs/draft.md"
+        draft.write_text("# A draft without metadata\n")
+        self.assertNotEqual(self.run_command("bin/check", "--documents-only", check=False).returncode, 0)
+        self.run_command("git", "push")
+        self.assertEqual(remote_main(), self.run_command("git", "rev-parse", "HEAD").stdout.strip())
+        draft.unlink()
+
+        # Renaming a page away from Markdown changes Markdown.
+        self.run_command("git", "mv", "docs/probe.md", "docs/probe.txt")
+        self.run_command("git", "commit", "--message", "Rename the page")
+        self.assertIn("docs/README.md: missing link destination probe.md", refused())
+
+        # A push that changes no Markdown isn't checked, even on top of failing pages it didn't touch.
+        self.run_command("git", "push", "--no-verify")
+        (self.repo / "notes.txt").write_text("Not Markdown.\n")
+        self.run_command("git", "add", "notes.txt")
+        self.run_command("git", "commit", "--message", "Add notes")
+        self.run_command("git", "push")
+
+        # A new branch is checked when a commit no remote-tracking branch holds changes Markdown.
+        self.run_command("git", "push", "origin", "HEAD:refs/heads/same")
+        (self.repo / "docs/README.md").write_text((self.repo / "docs/README.md").read_text() + "\nMore.\n")
+        self.run_command("git", "commit", "--all", "--message", "Edit the index")
+        self.assertIn("docs/README.md: missing link destination probe.md", refused("origin", "HEAD:refs/heads/edited"))
+
+    def test_pre_push_hook_runs_the_project_pre_push_application_after_the_document_checks(self):
+        remote = self.base / "remote.git"
+        self.run_command("git", "init", "--bare", "-b", "main", str(remote))
+        self.run_command("git", "remote", "add", "origin", str(remote))
+        self.addCleanup(self.drain)
+        calls = self.base / "pre-push calls"
+        application = self.repo / "bin/pre-push-application"
+        application.write_text("#!" + sys.executable + "\nimport json, os, sys\n"
+                               "open(os.environ['PUSH_CALLS'], 'a').write(json.dumps({'args': sys.argv[1:], "
+                               "'stdin': sys.stdin.read(), 'cwd': os.getcwd()}) + '\\n')\n"
+                               "sys.exit(int(os.environ.get('PUSH_EXIT', '0')))\n")
+        application.chmod(0o755)
+        self.env["PUSH_CALLS"] = str(calls)
+        self.run_command("bin/setup")
+        self.commit()
+        head = self.run_command("git", "rev-parse", "HEAD").stdout.strip()
+        self.run_command("git", "push", "origin", "main")
+        call = json.loads(calls.read_text())
+        self.assertEqual(call["args"], ["origin", str(remote)])
+        self.assertEqual(call["stdin"], "refs/heads/main " + head + " refs/heads/main " + "0" * 40 + "\n")
+        self.assertEqual(Path(call["cwd"]).resolve(), self.repo.resolve())
+
+        # Its failure refuses the push.
+        (self.repo / "notes.txt").write_text("Not Markdown.\n")
+        self.commit()
+        result = self.run_command("git", "push", "origin", "main", extra={"PUSH_EXIT": "5"}, check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(self.run_command("git", "rev-parse", "main", root=remote).stdout.strip(), head)
+
+        # It runs only after the document checks pass, and must be executable.
+        calls.unlink()
+        (self.repo / "docs/broken.md").write_text("# Missing status\n")
+        self.commit()
+        self.assertIn("docs/broken.md", self.run_command("git", "push", "origin", "main", check=False).stderr)
+        self.assertFalse(calls.exists())
+        self.run_command("git", "rm", "--quiet", "docs/broken.md")
+        self.commit()
+        application.chmod(0o644)
+        result = self.run_command("git", "push", "origin", "main", check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("bin/pre-push-application must be executable", result.stderr)
+        self.assertFalse(calls.exists())
 
     def test_worktree_with_separate_git_directory_shares_only_models(self):
         (self.repo / ".envrc").write_text("export APPLICATION_MODE=development\n")
