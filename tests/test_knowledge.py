@@ -1041,6 +1041,40 @@ sys.exit(1 if found else 0)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("trailing whitespace", result.stdout)
 
+    def test_fast_check_rejects_whitespace_committed_since_the_default_branch(self):
+        self.tool("shellcheck", "import sys\nsys.exit(0)\n")
+        (self.repo / "fixture.txt").write_text("published trailing space \n")
+        self.run_command("git", "add", ".")
+        self.run_command("git", "commit", "-m", "Fixture")
+        # Before anything is fetched or pushed, every commit is the project's own change.
+        result = self.run_command("bin/check", check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("fixture.txt:1: trailing whitespace", result.stdout)
+        remote = self.base / "remote.git"
+        self.run_command("git", "init", "--bare", "-b", "main", str(remote))
+        self.run_command("git", "push", str(remote), "main")
+        clone = self.base / "clone"
+        self.run_command("git", "clone", str(remote), str(clone))
+        for key, value in (("user.name", "Starter test"), ("user.email", "test@example.invalid")):
+            self.run_command("git", "config", key, value, root=clone)
+        # Content already on the default branch, such as a fixture, isn't the branch's change.
+        self.run_command("bin/check", root=clone)
+        self.run_command("git", "switch", "--create", "feature", root=clone)
+        (clone / "change.txt").write_text("new trailing space \n")
+        self.run_command("git", "add", "change.txt", root=clone)
+        self.run_command("git", "commit", "-m", "Change", root=clone)
+        result = self.run_command("bin/check", root=clone, check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("change.txt:1: trailing whitespace", result.stdout)
+        self.assertNotIn("fixture.txt", result.stdout)
+        # A fix counts once it is in the working tree, as the other checks read it.
+        (clone / "change.txt").write_text("fixed\n")
+        self.run_command("bin/check", root=clone)
+        # Without origin's default branch, as in CI's shallow checkout, only uncommitted changes are checked.
+        self.run_command("git", "checkout", "--", "change.txt", root=clone)
+        self.run_command("git", "remote", "set-head", "origin", "--delete", root=clone)
+        self.run_command("bin/check", root=clone)
+
     def test_check_rejects_unknown_or_combined_modes(self):
         for args in (("--unknown",), ("--full", "--documents-only"), ("--no-reuse",), ("--no-reuse", "--full")):
             with self.subTest(args=args):

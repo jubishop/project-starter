@@ -9,7 +9,7 @@ import sys
 sys.dont_write_bytecode = True
 root = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(root / "starter/bin"))
-from _checks import validate
+from _checks import check_whitespace, validate
 
 
 def main():
@@ -34,8 +34,7 @@ def main():
     workflows += sorted((root / "extras/github/.github/workflows").glob("*.yml"))
     subprocess.run(["actionlint", *map(str, workflows)], cwd=root, check=True)
     subprocess.run([sys.executable, "-B", "-m", "unittest", "discover", "-s", "tests", "-v"], cwd=root, check=True)
-    subprocess.run(["git", "diff", "--check"], cwd=root, check=True)
-    subprocess.run(["git", "diff", "--cached", "--check"], cwd=root, check=True)
+    check_whitespace(root)
     print("Guide and copied-bundle checks passed on " + sys.platform + ".")
     return 0
 
@@ -43,6 +42,6 @@ def main():
 if __name__ == "__main__":
     try:
         sys.exit(main())
-    except (OSError, ValueError, SyntaxError, subprocess.SubprocessError) as error:
+    except (OSError, ValueError, RuntimeError, SyntaxError, subprocess.SubprocessError) as error:
         print(error, file=sys.stderr)
         sys.exit(1)
