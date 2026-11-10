@@ -215,6 +215,47 @@ class PartialCloneTests(unittest.TestCase):
         self.assertNotIn(".env", result.stdout)
         self.assert_missing(pushed, before + ":.env", "HEAD:.env")
 
+    def test_check_leaves_out_an_excluded_path_that_a_step_writes(self):
+        """Git clears the skip-worktree bit of a path the sparse checkout left out once a file exists there, so each
+        run writes .env before the check, as a step that creates one for tests would."""
+        self.commit({".env": "SECRET=1\n", "notes.txt": "old\n"})
+        self.git("push", "--quiet", str(self.remote), "main")
+        # Pull request 1 edits .env and 2 leaves it alone; both add whitespace to notes.txt.
+        for number, files in ((1, {".env": "SECRET=2\n", "notes.txt": "old\nnew trailing space \n"}),
+                              (2, {"notes.txt": "old\nnew trailing space \n"})):
+            self.git("switch", "--quiet", "--create", "branch-%d" % number, "main")
+            self.commit(files)
+            self.git("switch", "--quiet", "--detach", "main")
+            self.git("merge", "--quiet", "--no-ff", "-m", "Merge", "branch-%d" % number)
+            self.git("push", "--quiet", str(self.remote), "HEAD:refs/pull/%d/merge" % number)
+        pull_request = self.github("pull_request", number=1)
+        for number in (1, 2):
+            ci = self.checkout("pull %d" % number, "refs/pull/%d/merge" % number)
+            (ci / ".env").write_text("LOCAL=1 \n")
+            if number == 2:
+                # A step that writes the index, as git status does, saves the cleared bit.
+                self.git("status", "--porcelain", root=ci)
+            self.run_command("bin/check", "--fetch-base", root=ci, extra=pull_request | {"GH_TOKEN": TOKEN})
+            result = self.run_command("bin/check", root=ci, extra=pull_request, check=False)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("notes.txt:2: trailing whitespace", result.stdout)
+            self.assertNotIn(".env", result.stdout)
+            self.assert_missing(ci, "origin/main:.env", "HEAD:.env")
+
+        # A push that creates its branch has no change base, so the check reads only uncommitted changes.
+        self.git("update-ref", "refs/heads/topic", "refs/pull/2/merge", root=self.remote)
+        created = self.checkout("new branch", "refs/heads/topic")
+        (created / ".env").write_text("LOCAL=1 \n")
+        (created / "notes.txt").write_text("old\nedited trailing space \n")
+        push = self.github("push", before="0" * 40)
+        self.run_command("bin/check", "--fetch-base", root=created, extra=push | {"GH_TOKEN": TOKEN})
+        result = self.run_command("bin/check", root=created, extra=push, check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("notes.txt:2: trailing whitespace", result.stdout)
+        self.assertNotIn(".env", result.stdout)
+        self.assertNotIn("fatal:", result.stderr)
+        self.assert_missing(created, "HEAD:.env")
+
     def test_fetch_base_does_nothing_outside_a_hosted_partial_clone(self):
         self.commit({"notes.txt": "old\n"})
         self.commit({"notes.txt": "new trailing space \n"})

@@ -3,6 +3,35 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 3.9.2 — 2026-11-09
+
+### Synced
+
+- In a GitHub Actions partial clone, the whitespace check and
+  `bin/check --fetch-base` keep leaving out a path the sparse checkout
+  excludes after an earlier step writes a file there, such as a `.env` for
+  tests. 3.9.1 found such paths by their skip-worktree bit, which Git clears
+  once a file exists at the path, so `--fetch-base` fetched `.env`'s base
+  version, the check then reported the written file's whitespace, and a push
+  that created its branch failed with Git's missing-object error. A changed
+  path whose index blob the checkout never fetched now counts as excluded
+  too.
+
+### Manual follow-up
+
+None. Adopters take the [sync-only](docs/releases.md#sync-only-releases)
+path. No adopter's CI writes a sparse-excluded path before `bin/check`, so
+trading's sparse `test` job behaves as before.
+
+### Verified
+
+`bin/check` passed 131 tests on macOS 27.0.1 with Python 3.15.2 and Git
+2.56.0. The partial-clone test writes a `.env` with whitespace errors in the
+CI checkout before the check, in pull requests that do and don't change
+`.env`, one after `git status` saves the index, and in a push that created
+its branch. The check and `--fetch-base` leave it out, fetch neither of
+`.env`'s blobs, and still fail on the run's own errors.
+
 ## 3.9.1 — 2026-11-09
 
 ### Synced
