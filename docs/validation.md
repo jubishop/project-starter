@@ -39,13 +39,16 @@ itself, so adopter documents never become test fixtures. It covers:
   check fetches nothing and fails with the `bin/check --fetch-base` fix, as
   that command does without the token. After it fetches with the token, pull
   request and push runs are checked as above, and `.env`'s blobs stay on the
-  server even when the run changes `.env`. When an earlier step writes a
-  `.env` with whitespace errors, the check and `--fetch-base` leave it out
-  and fetch neither of its blobs, while the run's own errors still fail.
-  That holds in pull requests that do and don't change `.env`, including one
-  where `git status` then saves the index, and in a push that created its
-  branch, which reports its uncommitted errors without a Git error. Outside
-  such a checkout, `bin/check --fetch-base` fetches nothing.
+  server even when the run changes `.env`. A deleted file's base stays there
+  too when the run adds no file, and a file that a run moves and edits passes
+  on whitespace it already had. When an earlier step writes a `.env` with
+  whitespace errors, the check and `--fetch-base` leave it out and fetch none
+  of its blobs, while the run's own errors still fail. That holds in pull
+  requests that empty `.env`, so that its content matches a checked-out
+  file's, that leave it alone, including one where `git status` then saves
+  the index, and that delete it, and in a push that created its branch,
+  which reports its uncommitted errors without a Git error. Outside such a
+  checkout, `bin/check --fetch-base` fetches nothing.
 - Pre-push hook: real pushes to a bare remote are refused with the document
   check's error when the pushed revision fails, even if the working tree
   passes, and go through despite an uncommitted broken draft. Renaming a page
