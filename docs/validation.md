@@ -28,7 +28,11 @@ itself, so adopter documents never become test fixtures. It covers:
   branch's commits since it left `origin`'s default branch in a clone, while
   content already on that branch passes. A fix in the working tree passes
   before it is committed, and a clone without `origin/HEAD` checks only
-  uncommitted changes.
+  uncommitted changes. In an emulated GitHub Actions checkout, a pull
+  request's merge fails on whitespace its branch adds and passes on the base
+  branch's own, a push fails on whitespace since the commit it replaced, a
+  shallow checkout fails with the `fetch-depth: 0` fix, and a push that
+  created its branch or rewrote history checks only uncommitted changes.
 - Pre-push hook: real pushes to a bare remote are refused with the document
   check's error when the pushed revision fails, even if the working tree
   passes, and go through despite an uncommitted broken draft. Renaming a page

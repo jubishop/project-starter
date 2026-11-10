@@ -3,6 +3,47 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 3.9.0 — 2026-11-09
+
+### Synced
+
+- In a GitHub Actions pull request or push run, `bin/check` and
+  `bin/check --full` fail on whitespace errors in the commits the run adds.
+  CI's checkout has no `origin/HEAD`, so since 3.8.2 the check there read
+  only uncommitted changes, which CI never has. A pull request's commits now
+  count from where it left its base branch, and a push's from the commit it
+  replaced, both read from GitHub's event. Content already on the default
+  branch still passes, and a push that creates its branch, or that rewrote
+  history past the commit it replaced, still checks only uncommitted changes.
+  A checkout too shallow to reach the base fails with the fix instead of
+  passing without reading the commits. The engineering policy's
+  [hosted CI](starter/docs/foundation/engineering-policy.md#hosted-ci)
+  section asks for full history in each job that runs `bin/check`.
+
+### Manual follow-up
+
+Every adopter whose CI runs `bin/check` or `bin/check --full` for pull
+requests or pushes adds `fetch-depth: 0` to that job's `actions/checkout`
+step, beside `persist-credentials: false`, in the same commit as the sync;
+without it, the job's next pull request or push run fails. At release, these
+are the `check` job in `.github/workflows/check.yml` of artisanalsoftware.com,
+health, home-infra, jeeves, jubishop.github.io, kidsbank, news,
+offline-librarian, pantrydates, printing, radio, scoreboard, sourdough,
+stories, taxes, vidservey, vps-infra, and will; screenr's `static` job in
+`check.yml`; steam-starter's `linux` job in `build.yml`; and trading's `test`
+job in `ci.yml`. Commit without `[skip ci]`, push, and confirm that CI passes
+on the pushed commit. Podhaven runs no `bin/check` in CI and takes only the
+synced files. New adoptions' workflow already fetches full history.
+
+### Verified
+
+`bin/check` passed 128 tests on macOS 27.0.1 with Python 3.15.2 and Git
+2.56.0. A test that emulates `actions/checkout` against a local remote, with
+GitHub's event variables, covers a pull request's merge commit, a push, and
+a shallow checkout. Full history costs little: on 2026-11-09, a full bare
+clone of artisanalsoftware.com, at 81 MB the largest adopter, took the same 4.0
+seconds as a depth-1 clone, and screenr's took 2.3 seconds against 1.9.
+
 ## 3.8.2 — 2026-11-09
 
 ### Synced

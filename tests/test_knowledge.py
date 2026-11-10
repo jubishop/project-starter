@@ -27,7 +27,8 @@ class KnowledgeTests(unittest.TestCase):
         for name, target in (("python3", sys.executable), ("git", shutil.which("git"))):
             (self.tools / name).symlink_to(target)
         self.events = self.base / "events.jsonl"
-        self.env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+        # CI's own GitHub Actions variables would describe this repository's run, not the fixture's.
+        self.env = {k: v for k, v in os.environ.items() if not k.startswith(("GIT_", "GITHUB_"))}
         self.env.update(PATH=str(self.tools), GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=os.devnull,
                         HOME=str(self.base / "home"),
                         PYTHONDONTWRITEBYTECODE="1", EVENTS=str(self.events), APPROVALS=str(self.base / "approvals.jsonl"),
@@ -1074,6 +1075,65 @@ sys.exit(1 if found else 0)
         self.run_command("git", "checkout", "--", "change.txt", root=clone)
         self.run_command("git", "remote", "set-head", "origin", "--delete", root=clone)
         self.run_command("bin/check", root=clone)
+
+    def test_fast_check_reads_whitespace_since_a_github_actions_events_base(self):
+        self.tool("shellcheck", "import sys\nsys.exit(0)\n")
+        (self.repo / "fixture.txt").write_text("published trailing space \n")
+        self.run_command("git", "add", ".")
+        self.run_command("git", "commit", "-m", "Fixture")
+        before = self.run_command("git", "rev-parse", "HEAD").stdout.strip()
+        remote = self.base / "remote.git"
+        self.run_command("git", "init", "--bare", "-b", "main", str(remote))
+        self.run_command("git", "push", str(remote), "main")
+        # GitHub checks out a pull request's merge into its base branch.
+        for number, name, text in ((1, "change.txt", "new trailing space \n"), (2, "clean.txt", "clean\n")):
+            self.run_command("git", "switch", "--create", "branch-" + name, "main")
+            (self.repo / name).write_text(text)
+            self.run_command("git", "add", name)
+            self.run_command("git", "commit", "-m", "Change")
+            self.run_command("git", "switch", "--detach", "main")
+            self.run_command("git", "merge", "--no-ff", "-m", "Merge", "branch-" + name)
+            self.run_command("git", "push", str(remote), "HEAD:refs/pull/%d/merge" % number)
+        event = self.base / "event.json"
+
+        def checkout(name, ref, *depth):
+            """Check out ref as actions/checkout does, with remote-tracking branches only for full history and no origin/HEAD."""
+            ci = self.base / name
+            self.run_command("git", "init", "--quiet", str(ci))
+            self.run_command("git", "remote", "add", "origin", str(remote), root=ci)
+            branches = () if depth else ("+refs/heads/*:refs/remotes/origin/*",)
+            self.run_command("git", "fetch", "--quiet", "--no-tags", *depth, "origin", *branches, "+" + ref + ":refs/remotes/checkout", root=ci)
+            self.run_command("git", "checkout", "--quiet", "--detach", "refs/remotes/checkout", root=ci)
+            return ci
+
+        def github(name, **payload):
+            event.write_text(json.dumps(payload))
+            return {"GITHUB_ACTIONS": "true", "GITHUB_EVENT_NAME": name, "GITHUB_EVENT_PATH": str(event),
+                    "GITHUB_BASE_REF": "main" if name == "pull_request" else ""}
+
+        pull_request = github("pull_request", number=1)
+        result = self.run_command("bin/check", root=checkout("pull 1", "refs/pull/1/merge"), extra=pull_request, check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("change.txt:1: trailing whitespace", result.stdout)
+        self.assertNotIn("fixture.txt", result.stdout)
+        # Whitespace already on the base branch passes.
+        self.run_command("bin/check", root=checkout("pull 2", "refs/pull/2/merge"), extra=pull_request)
+        shallow = checkout("shallow", "refs/pull/1/merge", "--depth=1")
+        self.assertEqual(self.run_command("git", "rev-parse", "--is-shallow-repository", root=shallow).stdout.strip(), "true")
+        result = self.run_command("bin/check", root=shallow, extra=pull_request, check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("fetch-depth: 0", result.stderr)
+        self.assert_document_references(result.stderr)
+        # A push to the default branch is checked from the commit it replaced.
+        self.run_command("git", "update-ref", "refs/heads/main", "refs/pull/1/merge", root=remote)
+        pushed = checkout("push", "refs/heads/main")
+        result = self.run_command("bin/check", root=pushed, extra=github("push", before=before), check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("change.txt:1: trailing whitespace", result.stdout)
+        self.assertNotIn("fixture.txt", result.stdout)
+        # A push that created the branch, or rewrote history past what it replaced, checks only uncommitted changes.
+        for replaced in ("0" * 40, "1" * 40):
+            self.run_command("bin/check", root=pushed, extra=github("push", before=replaced))
 
     def test_check_rejects_unknown_or_combined_modes(self):
         for args in (("--unknown",), ("--full", "--documents-only"), ("--no-reuse",), ("--no-reuse", "--full")):
