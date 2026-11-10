@@ -362,28 +362,41 @@ def hosted_partial_clone(root):
 
 
 def base_blobs(root, base):
-    """Return the paths left out of the sparse checkout that differ from base, and base's blobs of the other
-    changed paths that this clone lacks, without fetching anything."""
+    """Return the changed paths that the sparse checkout left out, and base's blobs of the other changed paths that
+    this clone lacks, without fetching anything. With no base, the changes are the working tree's against the index.
+
+    A path is left out when its skip-worktree bit is set or its index blob is missing, since a blob:none checkout
+    fetches the blob of each path it writes. Git clears the bit once a file exists there, as when a step writes one.
+    """
     environment = git_environment() | {"GIT_NO_LAZY_FETCH": "1"}
 
     def fields(*args, **options):
         result = subprocess.run(["git", *args], cwd=root, env=environment, check=True, capture_output=True, **options)
         return [os.fsdecode(field) for field in result.stdout.split(b"\0")[:-1]]
 
+    def changes(*args):
+        # Unlike git diff, the diff-* commands read no blob to rule out a file whose stat information alone is stale.
+        listed = fields(*args, "-z", "--no-renames", "--no-abbrev")
+        # Each change is ":<old mode> <new mode> <old object> <new object> <status>", then its path.
+        return [(*header[1:].split()[:4], path) for header, path in zip(listed[0::2], listed[1::2])]
+
+    def blob(mode, name):
+        return None if mode in ("000000", "160000") else name
+
     skipped = {entry[2:] for entry in fields("ls-files", "-t", "-z") if entry.startswith("S ")}
-    # Unlike git diff, diff-index reads no blob to rule out a file whose stat information alone is stale.
-    changed = fields("diff-index", "-z", "--no-renames", "--no-abbrev", base)
-    excluded, wanted = [], set()
-    # Each change is ":<base mode> <mode> <base object> <object> <status>", then its path.
-    for header, path in zip(changed[0::2], changed[1::2]):
-        mode, _, blob = header[1:].split()[:3]
-        if path in skipped:
-            excluded.append(path)
-        elif mode not in ("000000", "160000"):
-            wanted.add(blob)
+    unstaged = changes("diff-files")
+    changed = changes("diff-index", base) if base else unstaged
+    # Each changed path's base blob and index blob. diff-index names the index's blob of each file that the working
+    # tree matches, and diff-files that of each other file, except an intent-to-add file, which has none.
+    bases = {path: blob(mode, name) for mode, _, name, _, path in changed}
+    index = {path: blob(mode, name) for _, mode, _, name, path in changed if name.strip("0")}
+    index |= {path: blob(mode, name) for mode, _, name, _, path in unstaged}
+    names = sorted({*bases.values(), *index.values()} - {None})
     probe = subprocess.run(["git", "cat-file", "--batch-check=%(objectname)"], cwd=root, env=environment, check=True,
-                           capture_output=True, text=True, input="".join(blob + "\n" for blob in sorted(wanted)))
-    return excluded, sorted(line.split()[0] for line in probe.stdout.splitlines() if line.endswith(" missing"))
+                           capture_output=True, text=True, input="".join(name + "\n" for name in names))
+    absent = {line.split()[0] for line in probe.stdout.splitlines() if line.endswith(" missing")}
+    excluded = {path for path in bases if path in skipped or index.get(path) in absent}
+    return sorted(excluded), sorted({bases[path] for path in bases.keys() - excluded} & absent)
 
 
 def check_whitespace(root):
@@ -393,7 +406,7 @@ def check_whitespace(root):
     if hosted_partial_clone(root):
         # The check's step holds no credentials, so it reads only what the checkout has, and skips what it left out.
         environment |= {"GIT_NO_LAZY_FETCH": "1"}
-        excluded, missing = base_blobs(root, base) if base else ([], [])
+        excluded, missing = base_blobs(root, base)
         if missing:
             files = "1 changed file" if len(missing) == 1 else str(len(missing)) + " changed files"
             raise RuntimeError("This partial clone lacks the base version of " + files + " that the whitespace check "
