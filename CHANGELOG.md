@@ -3,6 +3,50 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 3.9.1 — 2026-11-09
+
+### Synced
+
+- In a GitHub Actions job whose checkout is a partial clone, which any
+  `sparse-checkout` makes, the whitespace check no longer fails with Git's
+  credential error. Such a clone leaves the base's version of the files a run
+  changes on GitHub, and 3.9.0's check reads them, so Git tried to fetch them
+  without the token that `persist-credentials: false` removes. There the
+  check now fetches nothing, leaves out paths the sparse checkout excludes,
+  and fails with its own fix when a file it reads is missing. The new
+  `bin/check --fetch-base`, run with the job's token in a step before
+  `bin/check`, fetches just those files, handing the token to that one fetch
+  without writing it to the checkout's config. The engineering policy's
+  [hosted CI](starter/docs/foundation/engineering-policy.md#hosted-ci)
+  section shows the step. Full clones, local runs, and other hosts behave as
+  before.
+
+### Manual follow-up
+
+Trading's `test` job in `.github/workflows/ci.yml`, the only adopter job that
+runs `bin/check` in a sparse checkout, needs two changes in the same pull
+request as the sync, since trading's rules send workflow changes through one.
+Its `actions/checkout` step gets `fetch-depth: 0`, 3.9.0's follow-up, which
+trading hasn't taken yet. Before `Check repository and application`, under
+the same `if:` condition, a new step runs `bin/check --fetch-base` with
+`GH_TOKEN: ${{ github.token }}`, and the workflow test that emulates the
+checkout runs it too and still finds `.env`'s blob unfetched. Confirm that CI
+passes on the pull request and on the `main` push after merge. Every other
+adopter takes only the synced files, committed with `[skip ci]` as in a
+[sync-only release](docs/releases.md#sync-only-releases).
+
+### Verified
+
+`bin/check` passed 130 tests on macOS 27.0.1 with Python 3.15.2 and Git
+2.56.0. A new test serves a bare repository over HTTP only to requests with a
+token, as GitHub serves a private repository, and checks it out as trading
+does: a `blob:none` fetch with full history and a sparse checkout without
+`.env`. It covers the check's fix without `--fetch-base`, pull request and
+push runs after it, and `.env`'s blobs staying on the server. Against GitHub
+itself, in such a checkout of trading's pull request 527 with no Git
+configuration, `bin/check --fetch-base` fetched the base version of 4 changed
+files with a token, the check then passed, and `.env` stayed unfetched.
+
 ## 3.9.0 — 2026-11-09
 
 ### Synced
