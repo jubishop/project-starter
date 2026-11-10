@@ -118,6 +118,8 @@ class PartialCloneTests(unittest.TestCase):
         for name, text in files.items():
             (self.repo / name).write_text(text)
         self.git("add", ".")
+        # The starter's .gitignore lists .env, which a project such as trading commits anyway.
+        self.git("add", "--force", *files)
         self.git("commit", "--quiet", "-m", "Change")
         return self.git("rev-parse", "HEAD").stdout.strip()
 
@@ -143,9 +145,12 @@ class PartialCloneTests(unittest.TestCase):
                 "GITHUB_BASE_REF": "main" if name == "pull_request" else ""}
 
     def assert_missing(self, root, *objects):
-        """Each object is still only on the server; GIT_NO_LAZY_FETCH keeps the probe from fetching it."""
+        """Each object is in the history but still only on the server; GIT_NO_LAZY_FETCH keeps the probe from
+        fetching it. A path that the history lacks fails the test, since its object can't be missing."""
+        offline = {"GIT_NO_LAZY_FETCH": "1"}
         for name in objects:
-            result = self.git("cat-file", "-e", name, root=root, extra={"GIT_NO_LAZY_FETCH": "1"}, check=False)
+            blob = self.git("rev-parse", "--verify", "--quiet", name, root=root, extra=offline).stdout.strip()
+            result = self.git("cat-file", "-e", blob, root=root, extra=offline, check=False)
             self.assertNotEqual(result.returncode, 0, name)
 
     def test_check_reads_a_sparse_partial_clone_only_after_fetch_base(self):
