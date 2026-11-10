@@ -23,7 +23,12 @@ itself, so adopter documents never become test fixtures. It covers:
   hooks, worktrees, model caches, diagnostics, and refresh-log timestamps.
 - Check modes: `bin/check-application` runs only under `--full`, only after
   the foundation checks pass, and its failures propagate, while syntax, lint,
-  and whitespace errors still fail the routine modes.
+  and whitespace errors still fail the routine modes. Whitespace errors fail
+  them once committed, too: every commit before anything is published, and a
+  branch's commits since it left `origin`'s default branch in a clone, while
+  content already on that branch passes. A fix in the working tree passes
+  before it is committed, and a clone without `origin/HEAD` checks only
+  uncommitted changes.
 - Pre-push hook: real pushes to a bare remote are refused with the document
   check's error when the pushed revision fails, even if the working tree
   passes, and go through despite an uncommitted broken draft. Renaming a page

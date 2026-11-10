@@ -3,6 +3,39 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 3.8.2 — 2026-11-09
+
+### Synced
+
+- `bin/check` and `bin/check --full` fail on whitespace errors a branch has
+  already committed. They ran `git diff --check` only on staged and
+  unstaged changes, so after a commit the whitespace check passed whatever
+  it held. The check now compares the working tree with where the branch
+  left `origin`'s default branch, or with the empty tree before anything is
+  fetched or pushed. Content already on the default branch, such as a
+  fixture, still passes, and a fix counts once it's in the working tree. A
+  clone without `origin/HEAD`, such as CI's shallow checkout, still checks
+  only uncommitted changes. The
+  [engineering policy](starter/docs/foundation/engineering-policy.md#checks)
+  describes the check and how `.gitattributes` exempts a file.
+
+### Manual follow-up
+
+None. Adopters take the [sync-only](docs/releases.md#sync-only-releases)
+path. Twelve adopters have whitespace errors on their default branch, mostly
+in data files such as RSS fixtures, CAD exports, and Xcode project files.
+The check leaves them alone, and it gave the same result as before in every
+adopter's primary checkout and in all 29 of their linked worktrees.
+
+### Verified
+
+`bin/check` passed 127 tests on macOS 27.0.1 with Python 3.15.2 and Git
+2.56.0. In every adopter on 2026-11-09, the whitespace check took 0.08 to
+0.21 seconds, found the base at `HEAD` in each primary checkout, and gave
+the same result as the old check in each linked worktree, including
+branches up to 10 commits ahead. In a simulated CI checkout, shallow and
+detached, a default branch with trailing whitespace still passed.
+
 ## 3.8.1 — 2026-11-06
 
 ### Synced
