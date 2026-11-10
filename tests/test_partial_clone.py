@@ -165,6 +165,10 @@ class PartialCloneTests(unittest.TestCase):
         pull_request = self.github("pull_request", number=1)
         ci = self.checkout("pull 1", "refs/pull/1/merge")
         self.assert_missing(ci, *secrets, "origin/main:notes.txt", "origin/main:fixture.txt")
+        # An earlier step rewrites notes.txt unchanged, so the index's stat information no longer matches it.
+        notes = ci / "notes.txt"
+        notes.write_text(notes.read_text())
+        os.utime(notes, (notes.stat().st_atime, notes.stat().st_mtime + 5))
 
         # The check step holds no token, so it fails with its own guidance instead of asking for credentials.
         result = self.run_command("bin/check", root=ci, extra=pull_request, check=False)

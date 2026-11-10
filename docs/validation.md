@@ -34,11 +34,12 @@ itself, so adopter documents never become test fixtures. It covers:
   shallow checkout fails with the `fetch-depth: 0` fix, and a push that
   created its branch or rewrote history checks only uncommitted changes. A
   local HTTP server that answers only with a token stands in for a private
-  repository, cloned as a sparse, `blob:none` checkout without `.env`. There
-  the check fetches nothing and fails with the `bin/check --fetch-base` fix,
-  as that command does without the token. After it fetches with the token,
-  pull request and push runs are checked as above, and `.env`'s blobs stay on
-  the server even when the run changes `.env`. Outside such a checkout,
+  repository, cloned as a sparse, `blob:none` checkout without `.env`. There,
+  even after an earlier step rewrites a changed file with the same text, the
+  check fetches nothing and fails with the `bin/check --fetch-base` fix, as
+  that command does without the token. After it fetches with the token, pull
+  request and push runs are checked as above, and `.env`'s blobs stay on the
+  server even when the run changes `.env`. Outside such a checkout,
   `bin/check --fetch-base` fetches nothing.
 - Pre-push hook: real pushes to a bare remote are refused with the document
   check's error when the pushed revision fails, even if the working tree

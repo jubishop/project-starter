@@ -371,7 +371,8 @@ def base_blobs(root, base):
         return [os.fsdecode(field) for field in result.stdout.split(b"\0")[:-1]]
 
     skipped = {entry[2:] for entry in fields("ls-files", "-t", "-z") if entry.startswith("S ")}
-    changed = fields("diff", "--raw", "-z", "--no-renames", "--no-abbrev", base)
+    # Unlike git diff, diff-index reads no blob to rule out a file whose stat information alone is stale.
+    changed = fields("diff-index", "-z", "--no-renames", "--no-abbrev", base)
     excluded, wanted = [], set()
     # Each change is ":<base mode> <mode> <base object> <object> <status>", then its path.
     for header, path in zip(changed[0::2], changed[1::2]):
