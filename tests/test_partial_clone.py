@@ -10,6 +10,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import socketserver
 import subprocess
 import sys
 import tempfile
@@ -95,12 +96,13 @@ class PartialCloneTests(unittest.TestCase):
         self.remote = served / "project.git"
         self.git("init", "--quiet", "--bare", "-b", "main", str(self.remote))
         self.git("config", "uploadpack.allowFilter", "true", root=self.remote)
-        server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), PrivateGitServer)
-        server.root = served
+        # http.server's own server looks up its address's host name when it binds, which can stall on macOS runners.
+        server = socketserver.ThreadingTCPServer(("127.0.0.1", 0), PrivateGitServer)
+        server.daemon_threads, server.root = True, served
         threading.Thread(target=server.serve_forever, daemon=True).start()
         self.addCleanup(server.server_close)
         self.addCleanup(server.shutdown)
-        self.url = "http://127.0.0.1:%d/project.git" % server.server_port
+        self.url = "http://127.0.0.1:%d/project.git" % server.server_address[1]
 
     def git(self, *args, root=None, extra=None, check=True):
         return self.run_command("git", *args, root=root, extra=extra, check=check)
