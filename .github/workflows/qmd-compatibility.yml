@@ -30,7 +30,9 @@ concurrency:
 jobs:
   real-qmd:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # A download without a cache may use its step's 30 minutes, which leaves the
+    # smoke check at least the 20 it had before.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v7
         with:
@@ -48,18 +50,49 @@ jobs:
         with:
           node-version: ${{ steps.node.outputs.version }}
       - name: Install the latest QMD and backend in isolation
+        id: qmd
+        shell: bash
         run: |
           mkdir -p "$RUNNER_TEMP/qmd-runtime"
           cp tools/qmd/package.json "$RUNNER_TEMP/qmd-runtime/"
           npm --prefix "$RUNNER_TEMP/qmd-runtime" install --no-audit --no-fund
           npm --prefix "$RUNNER_TEMP/qmd-runtime" ls @tobilu/qmd node-llama-cpp
+          version=$(jq -er .version "$RUNNER_TEMP/qmd-runtime/node_modules/@tobilu/qmd/package.json")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      # qmd pull and bin/smoke-qmd share ~/.cache/qmd/models. Saved keys end in
+      # a hash of the models' ETags. A run restores the newest cache from its QMD
+      # release, or else the newest from any release, and qmd pull downloads
+      # only the models whose ETags changed. See docs/qmd-maintenance.md.
+      - name: Restore models that an earlier run downloaded
+        id: models-cache
+        uses: actions/cache/restore@v6
+        with:
+          path: ~/.cache/qmd/models
+          key: qmd-models-${{ runner.os }}-qmd-${{ steps.qmd.outputs.version }}-
+          restore-keys: qmd-models-${{ runner.os }}-
+      # The timeout bounds a stalled download while letting a slow host finish
+      # all 2.2 GB. qmd pull deletes an interrupted model's partial file and
+      # starts it over, so a retry would not resume it.
       - name: Download models before timing indexing and search
-        timeout-minutes: 10
+        id: models
+        timeout-minutes: 30
+        shell: bash
         env:
           QMD_CONFIG_DIR: ${{ runner.temp }}/qmd-model-config
+          QMD_VERSION: ${{ steps.qmd.outputs.version }}
         run: |
           mkdir -p "$QMD_CONFIG_DIR" .cache/validation
           "$RUNNER_TEMP/qmd-runtime/node_modules/.bin/qmd" pull --progress 2>&1 | tee .cache/validation/model-download.log
+          etags=$(cd ~/.cache/qmd/models && find . -maxdepth 1 -name '*.etag' -exec sha256sum -- {} + | sort | sha256sum | cut -c1-16)
+          echo "key=qmd-models-$RUNNER_OS-qmd-$QMD_VERSION-$etags" >> "$GITHUB_OUTPUT"
+      # Only default-branch runs save, and only when their QMD release or models
+      # differ from the restored cache's, so pull requests restore one shared copy.
+      - name: Save the models for later runs
+        if: github.ref == 'refs/heads/main' && steps.models.outputs.key != steps.models-cache.outputs.cache-matched-key
+        uses: actions/cache/save@v6
+        with:
+          path: ~/.cache/qmd/models
+          key: ${{ steps.models.outputs.key }}
       - name: Verify actual indexing, search, models, and worktrees
         run: env -u CI bin/smoke-qmd --qmd "$RUNNER_TEMP/qmd-runtime/node_modules/.bin/qmd" --download-models --strict-diagnostics --command-timeout 600 --cpu-only
       - name: Retain compatibility evidence
