@@ -3,6 +3,43 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 3.9.4 — 2026-11-10
+
+### Synced
+
+- `bin/doctor` and `bin/setup` accept a `core.hooksPath` that names another
+  checkout's `bin/hooks` in the same clone, such as the primary checkout's by
+  absolute path, while its hook files match the checkout's own. Before, a
+  linked worktree's `bin/doctor` reported "Bundled hooks are not active" and
+  its `bin/setup` stopped with advice to set `knowledge.hooks external`,
+  while `bin/setup` in the checkout that the path named reset the clone-wide
+  setting to the relative `bin/hooks`. Setup now leaves a path that already
+  names the bundled hooks unchanged. When a shared hook differs or is
+  missing, both name the event and link the new
+  [shared hooks](starter/docs/foundation/knowledge-search.md#shared-hooks)
+  section, which says to bring the checkout that is behind up to date
+  rather than repoint the path.
+
+### Manual follow-up
+
+None. Adopters take the [sync-only](docs/releases.md#sync-only-releases)
+path. Screenr, whose clone names its primary checkout's `bin/hooks`, needs
+no step beyond the sync.
+
+### Verified
+
+`bin/check` passed 132 tests on macOS 27.0.1 with Python 3.15.2 and Git
+2.56.0. In a fixture whose `core.hooksPath` names the main checkout's
+`bin/hooks` by absolute path, `bin/doctor` passes and `bin/setup` leaves the
+path unchanged in that checkout and a linked worktree. The new test failed
+before the fix: the worktree's doctor reported "Bundled hooks are not
+active", and setup in the main checkout reset the path to `bin/hooks`. A
+changed shared `pre-push` fails both in the worktree, naming the event, and a
+copy of the bundled hooks outside the clone still counts as existing hooks.
+In a linked worktree of Screenr, whose clone names its primary checkout's
+`bin/hooks`, this bundle synced with `--ref WORKTREE` made `bin/doctor` exit
+0, and `bin/setup` left `core.hooksPath` unchanged.
+
 ## 3.9.3 — 2026-11-09
 
 ### Synced

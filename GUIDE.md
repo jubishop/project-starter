@@ -55,7 +55,9 @@ only here, and the other `bin/` commands run in the target.
    `bin/setup-application`, which `bin/setup` runs after the foundation setup
    and each new worktree runs when Git creates it.
 6. **Integrate hooks.** Setup activates `bin/hooks` when nothing would be
-   displaced. Otherwise follow
+   displaced, and keeps a `core.hooksPath` that names another checkout's
+   [shared hooks](starter/docs/foundation/knowledge-search.md#shared-hooks)
+   in the same clone. Otherwise follow
    [existing hooks](starter/docs/foundation/knowledge-search.md#existing-hooks)
    and verify each event in a disposable checkout. Move a project's own
    `pre-push` checks into an executable `bin/pre-push-application`, which
