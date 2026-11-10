@@ -42,6 +42,21 @@ changes and every Monday, so a breaking release appears as a failed Actions
 run. Hosted runners cannot exercise Metal, which is why the Mac verifies
 each update itself.
 
+The workflow caches QMD's default models, about 2.2 GB, so a slow model host
+cannot fail a run the cache serves. On 2026-11-09 a pull request's download,
+at about 2 MB/s, hit the step's old 10-minute limit at 98.75% of the 1.28 GB
+query-expansion model. Each run restores the newest cache from its QMD
+release, or the newest from any release when its own has none, and
+`qmd pull` then downloads only the models whose ETags changed. Only runs on
+`main` save, under a key naming the QMD release and a hash of the models'
+ETags, and only when that key differs from the restored cache's; pull
+requests share that copy. GitHub evicts a cache that goes unused for 7 days
+and the least recently used ones beyond the repository's storage limit. A
+cache restored from another release keeps any model QMD no longer uses.
+Without a cache, the download step allows 30 minutes, which bounds a stalled
+download and lets a host averaging 1.3 MB/s finish. It does not retry, since
+`qmd pull` deletes an interrupted model's partial file and starts it over.
+
 ## Automatic updates on the Mac
 
 The home repository's `~/bin/auto-update` runs weekly from a
@@ -68,9 +83,10 @@ QMD release version.
    On Apple M5 Macs, `ggml_metal_library_init_from_source: error compiling
    source` means the backend disabled Metal tensor acceleration. Treat it as a
    failed candidate rather than noise. Failure reports retain worker logs,
-   including setup timeouts. CI downloads models in a separate bounded step
-   and allows 600 seconds per smoke command. The real-model step unsets `CI`
-   because QMD disables inference whenever that variable is nonempty.
+   including setup timeouts. CI restores and downloads models before the
+   smoke check and allows 600 seconds per smoke command. The real-model step
+   unsets `CI` because QMD disables inference whenever that variable is
+   nonempty.
 4. Do not use direct `qmd update` against managed indexes or share databases
    between worktrees. Index logs keep entries from replaced runtimes until
    they rotate at about 1 MB; each refresh section starts with a timestamp and
