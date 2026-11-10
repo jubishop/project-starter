@@ -23,6 +23,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          # bin/check reads whitespace in every commit since the pull request's base or the push's previous head.
+          fetch-depth: 0
           persist-credentials: false
       - name: Install ShellCheck
         run: sudo apt-get update && sudo apt-get install --yes shellcheck
