@@ -487,6 +487,45 @@ else:
                 self.assertEqual(setting, "existing-hooks" if configured else "")
                 self.assertEqual(hook.read_text(), "#!/bin/sh\nexit 0\n")
 
+    def test_another_checkouts_bundled_hooks_stay_active_in_every_checkout(self):
+        # Checkouts share the clone's configuration, so one checkout's bin/hooks can serve them all.
+        self.run_command("bin/setup")
+        self.commit()
+        shared = self.repo / "bin/hooks"
+        self.run_command("git", "config", "core.hooksPath", str(shared))
+        worktree = self.base / "linked checkout"
+        self.run_command("git", "worktree", "add", "-b", "feature", str(worktree))
+        self.drain(root=worktree)
+
+        def setting():
+            return self.run_command("git", "config", "--get", "core.hooksPath").stdout.strip()
+
+        for root in (worktree, self.repo):
+            with self.subTest(root=root.name):
+                report = json.loads(self.run_command("bin/doctor", "--json", root=root).stdout)
+                self.assertEqual((report["hooks_path"], report["issues"]), (str(shared), []))
+                self.run_command("bin/setup", root=root)
+                self.assertEqual(setting(), str(shared))
+        # A hook there that differs from the checkout's own is not its bundled hook.
+        (shared / "pre-push").write_text("#!/bin/sh\nexit 0\n")
+        for command in ("bin/doctor", "bin/setup"):
+            with self.subTest(command=command):
+                result = self.run_command(command, root=worktree, check=False)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(str(shared) + ", another checkout's bin/hooks, differs from this checkout's for: pre-push",
+                              result.stdout + result.stderr)
+                self.assert_document_references(result.stdout + result.stderr)
+                self.assertEqual(setting(), str(shared))
+        # The same files outside the clone's checkouts are another project's hooks.
+        other = self.base / "other clone/bin/hooks"
+        shutil.copytree(SOURCE / "bin/hooks", other)
+        self.run_command("git", "config", "core.hooksPath", str(other))
+        self.assertIn("Bundled hooks are not active",
+                      self.run_command("bin/doctor", root=worktree, check=False).stdout)
+        result = self.run_command("bin/setup", root=worktree, check=False)
+        self.assertIn("Existing hooks preserved", result.stderr)
+        self.assertEqual(setting(), str(other))
+
     def test_external_hook_integration_preserves_behavior_arguments_and_stdin(self):
         hooks = self.repo / "custom hooks"
         hooks.mkdir()

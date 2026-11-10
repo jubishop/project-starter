@@ -21,6 +21,11 @@ itself, so adopter documents never become test fixtures. It covers:
 
 - Knowledge tooling: setup, search routing, freshness, refresh coordination,
   hooks, worktrees, model caches, diagnostics, and refresh-log timestamps.
+  When `core.hooksPath` names one checkout's `bin/hooks` by absolute path,
+  `bin/doctor` passes and `bin/setup` leaves the path unchanged in that
+  checkout and a linked worktree. A hook there that differs from the
+  worktree's own fails both, naming the event, and a copy of the bundled
+  hooks outside the clone still counts as existing hooks.
 - Check modes: `bin/check-application` runs only under `--full`, only after
   the foundation checks pass, and its failures propagate, while syntax, lint,
   and whitespace errors still fail the routine modes. Whitespace errors fail
