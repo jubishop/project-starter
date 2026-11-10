@@ -154,14 +154,15 @@ class PartialCloneTests(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0, name)
 
     def test_check_reads_a_sparse_partial_clone_only_after_fetch_base(self):
-        before = self.commit({".env": "SECRET=1\n", "notes.txt": "old\n", "fixture.txt": "published trailing space \n"})
+        fixture = "published trailing space \nsecond\nthird\nfourth\n"
+        before = self.commit({".env": "SECRET=1\n", "notes.txt": "old\n", "fixture.txt": fixture})
         self.git("push", "--quiet", str(self.remote), "main")
-        # Pull request 1 edits .env, adds whitespace to notes.txt, and deletes fixture.txt; 2 changes notes.txt cleanly.
+        # Pull request 1 edits .env, adds whitespace to notes.txt, and deletes fixture.txt; 2 changes notes.txt cleanly
+        # and moves fixture.txt to moved.txt with a new line, which Git's rename detection pairs by their content.
         for number, files in ((1, {".env": "SECRET=2 \n", "notes.txt": "old\nnew trailing space \n"}),
-                              (2, {"notes.txt": "old\nclean\n"})):
+                              (2, {"notes.txt": "old\nclean\n", "moved.txt": fixture + "fifth\n"})):
             self.git("switch", "--quiet", "--create", "branch-%d" % number, "main")
-            if number == 1:
-                self.git("rm", "--quiet", "fixture.txt")
+            self.git("rm", "--quiet", "fixture.txt")
             self.commit(files)
             self.git("switch", "--quiet", "--detach", "main")
             self.git("merge", "--quiet", "--no-ff", "-m", "Merge", "branch-%d" % number)
@@ -196,9 +197,10 @@ class PartialCloneTests(unittest.TestCase):
         self.assertIn("notes.txt:2: trailing whitespace", result.stdout)
         self.assertNotIn(".env", result.stdout)
         self.assertNotIn("fixture.txt", result.stdout)
-        self.assert_missing(ci, *secrets)
+        # A deletion adds no lines, and with no file added to pair it with, its base is never read.
+        self.assert_missing(ci, *secrets, "origin/main:fixture.txt")
 
-        # Whitespace already on the base branch passes.
+        # Whitespace already on the base branch passes, even in a file the run moves and edits.
         clean = self.checkout("pull 2", "refs/pull/2/merge")
         self.run_command("bin/check", "--fetch-base", root=clean, extra=pull_request | {"GH_TOKEN": TOKEN})
         self.run_command("bin/check", root=clean, extra=pull_request)
@@ -213,23 +215,29 @@ class PartialCloneTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("notes.txt:2: trailing whitespace", result.stdout)
         self.assertNotIn(".env", result.stdout)
-        self.assert_missing(pushed, before + ":.env", "HEAD:.env")
+        self.assert_missing(pushed, before + ":.env", "HEAD:.env", before + ":fixture.txt")
 
     def test_check_leaves_out_an_excluded_path_that_a_step_writes(self):
         """Git clears the skip-worktree bit of a path the sparse checkout left out once a file exists there, so each
         run writes .env before the check, as a step that creates one for tests would."""
-        self.commit({".env": "SECRET=1\n", "notes.txt": "old\n"})
+        self.commit({".env": "SECRET=1\n", "notes.txt": "old\n", "keep.txt": ""})
         self.git("push", "--quiet", str(self.remote), "main")
-        # Pull request 1 edits .env and 2 leaves it alone; both add whitespace to notes.txt.
-        for number, files in ((1, {".env": "SECRET=2\n", "notes.txt": "old\nnew trailing space \n"}),
-                              (2, {"notes.txt": "old\nnew trailing space \n"})):
+        # Pull request 1 empties .env, so its blob is keep.txt's, which the checkout has; 2 leaves .env alone; 3 deletes
+        # it. All three add whitespace to notes.txt.
+        for number, files in ((1, {".env": "", "notes.txt": "old\nnew trailing space \n"}),
+                              (2, {"notes.txt": "old\nnew trailing space \n"}),
+                              (3, {"notes.txt": "old\nnew trailing space \n"})):
             self.git("switch", "--quiet", "--create", "branch-%d" % number, "main")
+            if number == 3:
+                self.git("rm", "--quiet", ".env")
             self.commit(files)
             self.git("switch", "--quiet", "--detach", "main")
             self.git("merge", "--quiet", "--no-ff", "-m", "Merge", "branch-%d" % number)
             self.git("push", "--quiet", str(self.remote), "HEAD:refs/pull/%d/merge" % number)
         pull_request = self.github("pull_request", number=1)
-        for number in (1, 2):
+        # The versions of .env that only the server has: pull request 1's own is keep.txt's blob, and 3 has none.
+        secrets = {1: ("origin/main:.env",), 2: ("origin/main:.env", "HEAD:.env"), 3: ("origin/main:.env",)}
+        for number in (1, 2, 3):
             ci = self.checkout("pull %d" % number, "refs/pull/%d/merge" % number)
             (ci / ".env").write_text("LOCAL=1 \n")
             if number == 2:
@@ -240,7 +248,7 @@ class PartialCloneTests(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("notes.txt:2: trailing whitespace", result.stdout)
             self.assertNotIn(".env", result.stdout)
-            self.assert_missing(ci, "origin/main:.env", "HEAD:.env")
+            self.assert_missing(ci, *secrets[number])
 
         # A push that creates its branch has no change base, so the check reads only uncommitted changes.
         self.git("update-ref", "refs/heads/topic", "refs/pull/2/merge", root=self.remote)

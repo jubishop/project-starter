@@ -273,9 +273,11 @@ conditions:
 ```
 
 It fetches from `origin` only the base's version of each file the run
-changes, leaving out paths the sparse checkout excludes, even one where an
-earlier step writes a file, such as a `.env` for tests. It hands the token to
-that one fetch without writing it to the checkout's config. The whitespace
+changes, leaving out paths the sparse checkout's patterns exclude, even one
+where an earlier step writes a file, such as a `.env` for tests. A file the
+run deletes adds no lines, so it fetches that file's base only when the run
+also adds a file, for Git's rename detection to compare. It hands the token
+to that one fetch without writing it to the checkout's config. The whitespace
 checks then skip the excluded paths. Without the step, they fail with this
 fix instead of asking for credentials. Outside such a checkout,
 `bin/check --fetch-base` fetches nothing.

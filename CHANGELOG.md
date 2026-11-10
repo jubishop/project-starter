@@ -3,6 +3,41 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 3.9.3 — 2026-11-09
+
+### Synced
+
+- In a GitHub Actions partial clone, the whitespace check and
+  `bin/check --fetch-base` find the paths the sparse checkout leaves out from
+  its own patterns, cone or not, through `git sparse-checkout check-rules`.
+  3.9.2 found them by a skip-worktree bit or a missing blob. Git stores blobs
+  by content, so a `.env` whose committed content matched a checked-out
+  file, such as an emptied `.env` beside an empty file, counted as checked
+  out once an earlier step wrote it: `--fetch-base` fetched its base
+  version, and the check reported the written file's whitespace. A deleted
+  `.env` leaves neither signal, so `--fetch-base` fetched its base version
+  too.
+- In such a clone, the whitespace check and `--fetch-base` also skip the
+  base version of a file the run deletes, which adds no lines, unless the run
+  adds a file too, for Git's rename detection to compare. So a file that a
+  run moves and edits still passes on whitespace it already had.
+
+### Manual follow-up
+
+None. Adopters take the [sync-only](docs/releases.md#sync-only-releases)
+path. Trading's sparse jobs, the only ones in the fleet, need no change.
+
+### Verified
+
+`bin/check` passed 131 tests on macOS 27.0.1 with Python 3.15.2 and Git
+2.56.0. In the partial-clone test, `.env`'s base version stays on the server
+in pull requests that empty `.env` to match a checked-out file and that
+delete it, with a step writing `.env` before the check, and the run's own
+errors still fail. A deleted file's base stays there too when the run adds
+no file, and a file the run moves and edits passes on whitespace it already
+had. A cone-mode sparse checkout set by `git sparse-checkout set`, checked
+by hand, left out a step-written path the same way.
+
 ## 3.9.2 — 2026-11-09
 
 ### Synced
