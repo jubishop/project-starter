@@ -124,27 +124,47 @@ class MemoryAuditTests(unittest.TestCase):
         self.during = self.base / "during.json"
         self.gh_calls = self.base / "gh-calls.jsonl"
         self.open_issues = self.base / "open-issues.json"
+        self.pulls = self.base / "pulls.json"
+        self.refuse_pulls = self.base / "refuse-pulls"
         self.missing_labels = self.base / "missing-labels"
         self.notifications = self.base / "notifications.jsonl"
         self.launchd_calls = self.base / "launchctl.jsonl"
         self.qmd_config = self.base / "qmd-index.yml"
         self.qmd_index = self.base / "qmd-index-path"
-        # The GitHub CLI keeps the open failure issues in a file, so a create is seen by later lists.
+        # The GitHub CLI keeps the open issues and every pull request in files, so a create is seen by later lists.
+        # Issues are numbered from 999 in the order they are created.
         self.executable("gh", (
             "import json,pathlib,sys\n"
             "args = sys.argv[1:]\n"
             "body = sys.stdin.read() if '--body-file' in args else None\n"
             f"with open({str(self.gh_calls)!r}, 'a') as f: f.write(json.dumps({{'args': args, 'body': body}})+'\\n')\n"
             f"issues = pathlib.Path({str(self.open_issues)!r})\n"
+            f"pulls = pathlib.Path({str(self.pulls)!r})\n"
+            "def value(flag): return args[args.index(flag) + 1]\n"
             "if args[:2] == ['issue', 'list'] and '--search' in args:\n"
             " print(issues.read_text() if issues.exists() else '[]')\n"
             "elif args[:2] == ['issue', 'create']:\n"
             f" if '--label' in args and pathlib.Path({str(self.missing_labels)!r}).exists():\n"
             "  sys.exit(\"could not add label: 'area: tooling' not found\")\n"
-            " issues.write_text(json.dumps([{'number': 999, 'title': args[args.index('--title') + 1]}]))\n"
-            " print('https://github.com/example-owner/example/issues/999')\n"
+            f" created = pathlib.Path({str(self.base / 'issues-created')!r})\n"
+            " number = 999 + (int(created.read_text()) if created.exists() else 0)\n"
+            " created.write_text(str(number - 998))\n"
+            " issues.write_text(json.dumps((json.loads(issues.read_text()) if issues.exists() else [])\n"
+            "                              + [{'number': number, 'title': value('--title')}]))\n"
+            " print(f'https://github.com/example-owner/example/issues/{number}')\n"
             "elif args[:2] == ['issue', 'close']:\n"
             " issues.write_text(json.dumps([i for i in json.loads(issues.read_text()) if str(i['number']) != args[2]]))\n"
+            "elif args[:2] == ['pr', 'create']:\n"
+            f" if pathlib.Path({str(self.refuse_pulls)!r}).exists():\n"
+            "  sys.exit('GraphQL: Something went wrong while executing your query. (createPullRequest)')\n"
+            " known = json.loads(pulls.read_text()) if pulls.exists() else []\n"
+            " url = f'https://github.com/example-owner/example/pull/{len(known) + 1}'\n"
+            " pulls.write_text(json.dumps(known + [{'number': len(known) + 1, 'url': url, 'state': 'OPEN',\n"
+            "                                       'title': value('--title'), 'headRefName': value('--head')}]))\n"
+            " print(url)\n"
+            "elif args[:2] == ['pr', 'list']:\n"
+            " known = json.loads(pulls.read_text()) if pulls.exists() else []\n"
+            " print(json.dumps([p for p in known if value('--state') == 'all' or p['state'] == value('--state').upper()]))\n"
             "elif args[1:2] == ['list']:\n"
             " print('[]')\n"
         ))
@@ -298,9 +318,17 @@ class MemoryAuditTests(unittest.TestCase):
         return sorted(self.git("show", "--no-renames", "--name-only", "--format=", commit,
                                root=self.origin).splitlines())
 
+    def branches(self, root=None):
+        return self.git("for-each-ref", "--format=%(refname:short)", "refs/heads", root=root or self.origin).splitlines()
+
+    def assert_nothing_published(self):
+        self.assertEqual(self.branches(), ["main"])
+        self.assertEqual(self.gh("pr", "create"), [])
+        self.assertFalse([call for call in self.gh("issue", "create") if "Memory audit failing" not in call["args"]])
+
     # Publishing
 
-    def test_archive_is_committed_to_main_without_touching_user_checkout(self):
+    def test_changes_open_an_unassigned_issue_and_a_pull_request_that_closes_it(self):
         self.archive()
         self.note.write_text(CONTENT + "\nUncommitted user edit.\n")
         before = self.note.read_bytes()
@@ -309,9 +337,38 @@ class MemoryAuditTests(unittest.TestCase):
         self.assertEqual(self.note.read_bytes(), before)
         self.assertEqual(self.readme.read_text(), README)
         self.assertEqual(self.git("rev-parse", "HEAD"), self.head)
+        # Nothing reaches main; the changes wait on their own branch for the user to merge.
+        self.assertEqual(self.remote_head(), self.head)
+        branch = output["branch"]
+        self.assertEqual(branch, "memory-audit/" + Path(output["directory"]).name)
+        self.assertEqual(self.branches(), sorted(["main", branch]))
         published = output["publishedCommit"]
-        self.assertEqual(self.remote_head(), published)
+        self.assertEqual(self.git("rev-parse", branch, root=self.origin), published)
         self.assertEqual(self.git("rev-parse", published + "^", root=self.origin), self.head)
+        [issue] = self.gh("issue", "create")
+        args = issue["args"]
+        self.assertEqual(args[args.index("--repo") + 1], REPOSITORY)
+        self.assertEqual(args[args.index("--title") + 1], "Apply the memory audit's changes to 1 note")
+        for flag in ("--assignee", "--label", "--project", "--milestone"):
+            self.assertNotIn(flag, args)
+        self.assertIn("- Archive `memory/incident.md`: Current source keeps the rule.", issue["body"])
+        self.assertIn(branch, issue["body"])
+        self.assertIn("Incident checked.", issue["body"])
+        # An issue left open after its pull request closes unmerged must not read as work to apply another way.
+        self.assertRegex(issue["body"], r"closed without merging is a rejection: close this issue as not planned")
+        self.assertEqual(output["issue"], "https://github.com/example-owner/example/issues/999")
+        [pull] = self.gh("pr", "create")
+        args = pull["args"]
+        self.assertEqual([args[args.index(flag) + 1] for flag in ("--repo", "--base", "--head", "--title")],
+                         [REPOSITORY, "main", branch, "📝 docs(memory): Apply the weekly memory audit"])
+        self.assertIn("--body-file", args)
+        self.assertNotIn("--draft", args)
+        self.assertRegex(pull["body"], r"(?m)^Closes #999\.$")
+        self.assertEqual(output["pullRequest"], "https://github.com/example-owner/example/pull/1")
+        self.assertEqual(self.latest()["pullRequest"], output["pullRequest"])
+        # The audit never merges, assigns, or closes its own work.
+        self.assertEqual([call["args"][:2] for call in self.gh() if call["args"][:2] not in (
+            ["issue", "list"], ["pr", "list"], ["issue", "create"], ["pr", "create"])], [])
         self.assertEqual(self.published_files(published),
                          ["memory/README.md", "memory/archive/incident.md", "memory/incident.md"])
         self.assertIn("memory audit", self.git("log", "-1", "--format=%s", published, root=self.origin))
@@ -339,16 +396,17 @@ class MemoryAuditTests(unittest.TestCase):
         self.assertEqual(trailers.splitlines(), ["Example-Deploy: skip",
                                                  "Example-Deploy-Reason: Memory notes do not run in production."])
 
-    def test_the_commit_reaches_every_push_url(self):
+    def test_the_branch_reaches_every_push_url(self):
         mirror = self.base / "mirror.git"
         self.git("init", "--quiet", "--bare", "-b", "main", str(mirror), root=self.base)
         self.git("push", "--quiet", str(mirror), "main")
         self.git("remote", "set-url", "--add", "--push", "origin", str(self.origin))
         self.git("remote", "set-url", "--add", "--push", "origin", str(mirror))
         self.archive()
-        published = self.run_audit()["publishedCommit"]
-        self.assertEqual(self.remote_head(), published)
-        self.assertEqual(self.git("rev-parse", "main", root=mirror), published)
+        output = self.run_audit()
+        for remote in (self.origin, mirror):
+            self.assertEqual(self.git("rev-parse", output["branch"], root=remote), output["publishedCommit"])
+            self.assertEqual(self.git("rev-parse", "main", root=remote), self.head)
 
     def test_archive_removes_only_that_notes_index_entry(self):
         self.add_notes(
@@ -396,26 +454,127 @@ class MemoryAuditTests(unittest.TestCase):
         self.result = [self.result, self.result]
         self.failed_audit("memory/README.md: missing link destination incident.md")
         self.assertEqual(self.remote_head(), self.git("rev-parse", "HEAD"))
+        self.assert_nothing_published()
 
     def test_a_run_without_changes_publishes_nothing(self):
         output = self.run_audit()
         self.assertEqual(output["status"], "success")
-        self.assertNotIn("publishedCommit", output)
+        for key in ("publishedCommit", "branch", "issue", "pullRequest"):
+            self.assertNotIn(key, output)
         self.assertEqual(self.remote_head(), self.head)
+        self.assert_nothing_published()
 
-    def test_changes_land_on_a_main_that_moved_elsewhere_during_the_audit(self):
+    def test_the_issue_lists_each_change_with_its_evidence(self):
+        self.add_notes(README + "- [Alpha](alpha.md): the first lesson.\n- [Omega](omega.md): the last lesson.\n",
+                       "alpha", "omega")
+        self.result["findings"] = [
+            {"path": "memory/alpha.md", "verdict": "keep", "evidence": "The lesson was\nconfirmed in source."},
+            {"path": "memory/incident.md", "verdict": "archive", "evidence": "The incident closed in #12."},
+            {"path": "memory/omega.md", "verdict": "keep", "evidence": "Still current."}]
+        self.result["changes"] = [
+            {"path": "memory/alpha.md", "archive": False,
+             "content": (self.repo / "memory/alpha.md").read_text() + "\nConfirmed.\n"},
+            {"path": "memory/incident.md", "archive": True,
+             "content": CONTENT.replace("status: active", "status: resolved")}]
+        output = self.run_audit()
+        [issue] = self.gh("issue", "create")
+        self.assertEqual(issue["args"][issue["args"].index("--title") + 1],
+                         "Apply the memory audit's changes to 2 notes")
+        self.assertIn("- Update `memory/alpha.md`: The lesson was confirmed in source.\n"
+                      "- Archive `memory/incident.md`: The incident closed in #12.\n", issue["body"])
+        self.assertNotIn("omega", issue["body"].split("<details>")[0])
+        [pull] = self.gh("pr", "create")
+        self.assertIn("archived 1 and updated 1 notes", pull["body"])
+        self.assertEqual(self.published_files(output["publishedCommit"]),
+                         ["memory/README.md", "memory/alpha.md", "memory/archive/incident.md", "memory/incident.md"])
+
+    def test_a_long_report_is_cut_to_fit_the_issue(self):
+        self.archive()
+        self.result["report"] += "A long finding.\n" * 10000
+        self.run_audit()
+        [issue] = self.gh("issue", "create")
+        self.assertLess(len(issue["body"]), 65536)
+        self.assertIn("memory-audit-report.md", issue["body"])
+        self.assertTrue(issue["body"].rstrip().endswith("</details>"))
+
+    def test_the_issue_mentions_no_one(self):
+        # GitHub notifies anyone an issue @mentions, and Swift attributes such as @MainActor read as mentions.
+        self.archive()
+        self.result["findings"][0]["evidence"] = "The view model became @MainActor, as (@jubishop) asked."
+        self.result["report"] += ("@Observable views keep `@State` and\n```swift\n@Published var x\n```\n"
+                                  "Mail ops@example.com; see https://example.com/@scope/pkg.\n")
+        self.run_audit()
+        [issue] = self.gh("issue", "create")
+        body = issue["body"]
+        for name in ("MainActor", "jubishop", "Observable"):
+            self.assertIn("@\u200b" + name, body)
+        # Code, email addresses, and links never mention anyone, so they stay as written.
+        for text in ("`@State`", "\n@Published var x\n", "ops@example.com", "https://example.com/@scope/pkg."):
+            self.assertIn(text, body)
+
+    def test_an_open_audit_pull_request_skips_later_runs_until_it_closes(self):
+        self.archive()
+        first = self.run_audit()
+        self.assertEqual(first["status"], "success")
+        # Even a forced run neither audits nor opens a second pull request while the first is open.
+        skipped = self.run_audit(force=True)
+        self.assertEqual(skipped["status"], "skipped")
+        self.assertEqual(skipped["pullRequest"], first["pullRequest"])
+        self.assertIn(first["pullRequest"], skipped["reason"])
+        self.assertEqual(len(self.model_calls()), 1)
+        self.assertEqual(len(self.gh("pr", "create")), 1)
+        self.assertEqual(len(self.gh("issue", "create")), 1)
+        self.assertEqual(len(self.branches()), 2)
+        # Another branch's open pull request does not count, and the merge lets the next run audit.
+        pulls = json.loads(self.pulls.read_text())
+        pulls[0]["state"] = "MERGED"
+        pulls.append({"number": 2, "url": "https://github.com/example-owner/example/pull/2", "state": "OPEN",
+                      "title": "Other work", "headRefName": "feature/memory-audit"})
+        self.pulls.write_text(json.dumps(pulls))
+        latest = self.run_audit()
+        self.assertEqual(latest["status"], "success")
+        self.assertEqual(len(self.model_calls()), 2)
+        self.assertEqual(len(self.gh("pr", "create")), 2)
+        # The merged pull request's branch is stale once the next audit publishes.
+        self.assertEqual(self.branches(), sorted(["main", latest["branch"]]))
+
+    def test_a_pull_request_that_cannot_open_closes_its_issue_and_deletes_its_branch(self):
+        self.archive()
+        self.refuse_pulls.touch()
+        self.failed_audit("createPullRequest")
+        self.assertEqual(self.branches(), ["main"])
+        audit_issue, failure = self.gh("issue", "create")
+        self.assertIn("Archive `memory/incident.md`", audit_issue["body"])
+        self.assertIn("createPullRequest", failure["body"])
+        [closed] = self.gh("issue", "close")
+        self.assertEqual(closed["args"][2:5], ["999", "--repo", REPOSITORY])
+        self.assertEqual(closed["args"][closed["args"].index("--reason") + 1], "not planned")
+        self.assertEqual([issue["title"] for issue in json.loads(self.open_issues.read_text())],
+                         ["Memory audit failing"])
+        self.assertFalse(self.latest().get("pullRequest"))
+        # The next run audits again and opens the pull request.
+        self.refuse_pulls.unlink()
+        output = self.run_audit()
+        self.assertEqual(output["status"], "success")
+        self.assertEqual(self.branches(), sorted(["main", output["branch"]]))
+
+    def test_changes_are_rebased_onto_a_main_that_moved_elsewhere_during_the_audit(self):
         self.archive()
         self.during.write_text(json.dumps({"path": "docs/README.md", "text": "# Docs\n\nNewer.\n"}))
-        published = self.run_audit()["publishedCommit"]
-        self.assertEqual(self.remote_head(), published)
-        self.assertEqual(self.git("log", "-1", "--format=%s", published + "^", root=self.origin), "Other work")
+        output = self.run_audit()
+        published = output["publishedCommit"]
+        self.assertEqual(self.git("log", "-1", "--format=%s", "main", root=self.origin), "Other work")
+        self.assertEqual(self.git("rev-parse", published + "^", root=self.origin), self.remote_head())
+        self.assertEqual(self.git("rev-parse", output["branch"], root=self.origin), published)
 
     def test_memory_changed_on_main_during_the_audit_fails_without_pushing(self):
         self.archive()
         self.during.write_text(json.dumps({"path": "memory/incident.md", "text": CONTENT + "\nNewer fact.\n"}))
         self.failed_audit("main changed memory/")
         self.assertEqual(self.git("log", "-1", "--format=%s", "main", root=self.origin), "Other work")
-        self.assertEqual(len(self.gh("issue", "create")), 1)
+        [failure] = self.gh("issue", "create")
+        self.assertIn("main changed memory/", failure["body"])
+        self.assert_nothing_published()
 
     # Model, evidence, and change gate
 

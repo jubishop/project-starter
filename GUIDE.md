@@ -110,7 +110,7 @@ receive its files.
 
 | Feature | What it adds |
 | --- | --- |
-| `memory-audit` | A weekly local Claude audit of memory notes that commits validated changes and reports failures in a GitHub issue; macOS and GitHub only. See [its page](features/memory-audit/docs/foundation/memory-audit.md). |
+| `memory-audit` | A weekly local Claude audit of memory notes that proposes validated changes in a pull request with a matching issue and reports failures in a GitHub issue; macOS and GitHub only. See [its page](features/memory-audit/docs/foundation/memory-audit.md). |
 
 On a clean checkout:
 
