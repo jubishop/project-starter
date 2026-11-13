@@ -38,7 +38,9 @@ or say the audit bills the project's own key:
   `memory/README.md`.
 - screenr: the scheduled memory audit section of
   `docs/development-workflow.md`, including its billing bullet, and the
-  memory audit lines of `.env.example`.
+  memory audit lines of `.env.example`. Nothing in this sync runs in
+  production, so its commit ends with screenr's `Screenr-Deploy: skip`
+  trailers; its CI otherwise deploys every push.
 
 ### Verified
 
