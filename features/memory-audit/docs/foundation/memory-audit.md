@@ -133,9 +133,11 @@ without `export`, from the checkout's `.env` and then `~/.env`, at the start
 of each run, so adding, changing, or removing the key needs no reinstall. It
 reads the files itself, since launchd gives the job none of the shell's
 variables. The checkout's line wins even when its value is empty, which keeps
-that project on the subscription. With no line in either file, or an empty
-one in `~/.env`, the audit uses the subscription. Nothing else sets the key:
-the variable in the shell, and any `ANTHROPIC_API_KEY`, are ignored. The
+that project on the subscription. So leave the line out of a template that
+setup copies to `.env`, such as `.env.example`, or an empty placeholder there
+opts the project out of the shared key. With no line in either file, or an
+empty one in `~/.env`, the audit uses the subscription. Nothing else sets the
+key: the variable in the shell, and any `ANTHROPIC_API_KEY`, are ignored. The
 distinct name keeps other Anthropic clients from picking up the key. The
 runner passes it to Claude as `ANTHROPIC_API_KEY` for the API-key attempt
 only, after `claude auth status` confirms that Claude Code will bill it as a

@@ -38,9 +38,13 @@ or say the audit bills the project's own key:
   `memory/README.md`.
 - screenr: the scheduled memory audit section of
   `docs/development-workflow.md`, including its billing bullet, and the
-  memory audit lines of `.env.example`. Nothing in this sync runs in
-  production, so its commit ends with screenr's `Screenr-Deploy: skip`
-  trailers; its CI otherwise deploys every push.
+  memory audit lines of `.env.example`. Delete that file's empty
+  `MEMORY_AUDIT_ANTHROPIC_API_KEY=` placeholder instead of renaming it, and
+  say in its comment that the audit bills the shared key in `~/.env`:
+  screenr's setup copies `.env.example` to `.env`, where an empty
+  `ANTHROPIC_MEMORY_AUDIT_API_KEY=` would keep screenr on the subscription.
+  Nothing in this sync runs in production, so its commit ends with screenr's
+  `Screenr-Deploy: skip` trailers; its CI otherwise deploys every push.
 
 ### Verified
 
