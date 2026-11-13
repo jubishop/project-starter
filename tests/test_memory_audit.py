@@ -495,6 +495,21 @@ class MemoryAuditTests(unittest.TestCase):
         self.assertIn("memory-audit-report.md", issue["body"])
         self.assertTrue(issue["body"].rstrip().endswith("</details>"))
 
+    def test_the_issue_mentions_no_one(self):
+        # GitHub notifies anyone an issue @mentions, and Swift attributes such as @MainActor read as mentions.
+        self.archive()
+        self.result["findings"][0]["evidence"] = "The view model became @MainActor, as (@jubishop) asked."
+        self.result["report"] += ("@Observable views keep `@State` and\n```swift\n@Published var x\n```\n"
+                                  "Mail ops@example.com; see https://example.com/@scope/pkg.\n")
+        self.run_audit()
+        [issue] = self.gh("issue", "create")
+        body = issue["body"]
+        for name in ("MainActor", "jubishop", "Observable"):
+            self.assertIn("@\u200b" + name, body)
+        # Code, email addresses, and links never mention anyone, so they stay as written.
+        for text in ("`@State`", "\n@Published var x\n", "ops@example.com", "https://example.com/@scope/pkg."):
+            self.assertIn(text, body)
+
     def test_an_open_audit_pull_request_skips_later_runs_until_it_closes(self):
         self.archive()
         first = self.run_audit()

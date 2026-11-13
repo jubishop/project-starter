@@ -82,7 +82,8 @@ itself, so adopter documents never become test fixtures. It covers:
   remotes: proposal and session validation, the change gate, failure issues
   and their labels, and the settings. Publishing pushes a rebased branch to
   every push URL and opens an unassigned issue listing each change and a pull
-  request that closes it, never touching `main`; a failed pull request closes
+  request that closes it, never touching `main`; the issue's model-written
+  text mentions no one outside code and links; a failed pull request closes
   the issue and deletes the branch, and runs skip while an audit pull request
   is open. For the tool boundary check, a fake Claude Code drives the
   runner's stand-in API and runs the scripted tools, and variants of it that

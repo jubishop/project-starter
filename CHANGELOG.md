@@ -23,7 +23,12 @@ follow-up it cannot apply. See [releases](docs/releases.md).
   audits left.
 - `latest.json` records a publishing run's `branch`, `issue`, and
   `pullRequest` beside its `publishedCommit`. The prompt tells the model that
-  its report goes into the issue.
+  its report goes into the issue, and that an audit pull request closed
+  without merging is a rejected change, to propose again only on newer
+  evidence.
+- The issue mentions no one: the runner puts a zero-width space after each
+  bare `@` in the model's evidence and report, outside code and links, so a
+  Swift attribute such as `@MainActor` notifies no GitHub user.
 
 ### Manual follow-up
 
@@ -43,10 +48,12 @@ Update their pages that say the audit commits to `main`:
 
 ### Verified
 
-`bin/check` passed 136 tests on macOS 27.0.1 with Python 3.15.2 and Git
+`bin/check` passed 137 tests on macOS 27.0.1 with Python 3.15.2 and Git
 2.56.0. Against real Git remotes and a fake `gh`, an audit with changes
 leaves `main` alone, pushes its branch to every push URL, and opens an issue
-with no assignee or labels and a pull request whose body closes it. A forced
+with no assignee or labels and a pull request whose body closes it. The
+issue's evidence and report quiet bare mentions such as `@MainActor` but
+leave code, email addresses, and links as written. A forced
 run then skips while that pull request is open, another branch's open pull
 request does not count, and the run after the merge audits again and deletes
 the merged branch. A refused pull request closes the issue as not planned,

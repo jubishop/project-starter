@@ -712,6 +712,11 @@ roll out to 20 more repositories.
   meanwhile. The user may override this routine detail. With none open,
   earlier audits' branches are stale, merged or rejected, so a run that
   publishes deletes them instead of letting them pile up.
+- **Rejections stick:** a pull request closed without merging rejects its
+  changes, and the prompt tells later audits to propose such a change again
+  only on evidence newer than the rejection. Otherwise it would return as a
+  new unassigned issue each week, which an agent might merge over the
+  rejection.
 - **Unchanged:** the read-only model, the session and document checks before
   publishing, the tool boundary, key isolation, failure issue, and schedule.
 

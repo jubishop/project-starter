@@ -50,6 +50,9 @@ BRANCH_PREFIX = "memory-audit/"
 COMMIT_SUBJECT = "📝 docs(memory): Apply the weekly memory audit"
 # GitHub refuses an issue body over 65,536 characters; the audit report is cut to fit within this.
 ISSUE_BODY_LIMIT = 60000
+# GitHub notifies anyone an issue @mentions, and Swift attributes such as @MainActor read as mentions. Code spans and
+# links mention no one, so only a bare @ elsewhere gets a zero-width space after it.
+MENTION = re.compile(r"(`+).*?\1|https?://\S+|(?<!\w)@(?=[A-Za-z0-9])", re.DOTALL)
 # The tool boundary check's bogus key, which only its local stand-in API receives.
 BOUNDARY_KEY = "sk-ant-api03-memory-audit-boundary-check"
 RETENTION_DAYS = 60
@@ -366,9 +369,14 @@ def plural(count, noun):
     return f"{count} {noun}{'' if count == 1 else 's'}"
 
 
+def quiet_mentions(text):
+    """Return the model's Markdown with no bare @name that would notify a GitHub user."""
+    return MENTION.sub(lambda match: "@\u200b" if match[0] == "@" else match[0], text)
+
+
 def issue_body(base, branch, run_name, result):
     """Describe the proposed changes, each with its evidence, and include the audit report cut to fit."""
-    evidence = {item["path"]: " ".join(item["evidence"].split()) for item in result["findings"]}
+    evidence = {item["path"]: quiet_mentions(" ".join(item["evidence"].split())) for item in result["findings"]}
     changes = "".join(f"- {'Archive' if change['archive'] else 'Update'} `{change['path']}`: {evidence[change['path']]}\n"
                       for change in result["changes"])
     head = (f"The weekly memory audit of `{base}` proposes these memory note changes. The pull request from the "
@@ -379,7 +387,7 @@ def issue_body(base, branch, run_name, result):
             f"changed meanwhile. The run folder `.cache/memory-audit/runs/{run_name}/` on the Mac keeps the report, "
             "patch, and logs.\n\n<details>\n<summary>Audit report</summary>\n\n")
     tail = "\n\n</details>\n"
-    report = result["report"].strip()
+    report = quiet_mentions(result["report"].strip())
     note = "\n\n[The report is cut here; `memory-audit-report.md` in the run folder has all of it.]"
     room = ISSUE_BODY_LIMIT - len(head) - len(tail)
     if len(report) > room:

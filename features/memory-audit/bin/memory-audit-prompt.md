@@ -74,6 +74,11 @@ still needs verification. Verify every cited issue and PR available in the
 snapshot. Cite concrete source paths, symbols, tests, and issue states in each
 finding.
 
+Pull requests from `memory-audit/` branches hold earlier audits' proposals,
+and the issue each one closes lists its changes. One closed without merging
+is a change the user rejected: propose it again only when evidence newer than
+that closing supports it, and cite that pull request in the finding.
+
 Consolidate substantially overlapping notes into the best existing survivor.
 Preserve unique facts, constraints, evidence, and relative links. Archive the
 superseded note. Do not invent new notes or leave consolidation as a
