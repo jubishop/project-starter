@@ -689,6 +689,32 @@ Its choices:
   their commands. The document checks go first because they take under a
   second and the Xcode checks take minutes.
 
+### Memory audit pull requests — 2026-11-13
+
+The [memory audit](../features/memory-audit/docs/foundation/memory-audit.md)
+pushed its validated note changes straight to `main`. On 2026-11-13 the user
+decided that every scheduled reviewer files an unassigned issue with a pull
+request instead, which the user merges or an agent that works unassigned
+issues reviews
+([issue #53](https://github.com/jubishop/project-starter/issues/53)). The
+audit was the only reviewer that already landed changes, and it was about to
+roll out to 20 more repositories.
+
+- **Publishing:** an audit with changes pushes them to its own
+  `memory-audit/<run folder>` branch and opens an issue listing each change
+  with the model's evidence, then a pull request that closes it. The issue
+  stays unassigned, since an assignee marks work in progress, and the audit
+  never merges, assigns, or closes its own work.
+- **One open pull request:** while a pull request from a `memory-audit/`
+  branch is open, a run skips before it gathers evidence, even with
+  `--force`, so no model time goes to a proposal it could not publish. The
+  next audit after the pull request closes covers whatever changed
+  meanwhile. The user may override this routine detail. With none open,
+  earlier audits' branches are stale, merged or rejected, so a run that
+  publishes deletes them instead of letting them pile up.
+- **Unchanged:** the read-only model, the session and document checks before
+  publishing, the tool boundary, key isolation, failure issue, and schedule.
+
 ### Unchanged choices — 2026-10-09
 
 Keep the [search reliability decision](#search-reliability-decision--2026-09-13)

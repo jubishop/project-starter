@@ -3,8 +3,9 @@
 Review every active memory note against this repository snapshot and the
 captured GitHub evidence. Run to completion without questions. This is a
 read-only audit: return proposed changes as structured JSON. The local runner
-validates your response and commits accepted changes directly to `main`, so
-propose only what the evidence supports. Do not edit files, create tasks,
+validates your response and opens a pull request with accepted changes for
+the user to review, with your report in its issue, so propose only what the
+evidence supports. Do not edit files, create tasks,
 commit, push, open issues or PRs, contact anyone, or use other agents.
 
 {{projectContext}}

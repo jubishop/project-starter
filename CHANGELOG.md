@@ -3,6 +3,58 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 3.10.0 — 2026-11-13
+
+### Synced
+
+- The `memory-audit` feature proposes its changes for the user to merge
+  instead of pushing them to `main`. An audit with changes pushes its commit
+  to a new `memory-audit/<run folder>` branch, opens an unassigned issue
+  listing each change with the model's evidence and holding the audit report,
+  and opens a pull request from the branch that closes the issue. The user
+  merges it, or an agent that works unassigned issues reviews it; the audit
+  never merges, assigns, or closes its own work. If the issue or pull request
+  cannot be opened, the runner deletes the branch, closes any issue it opened
+  as not planned, and fails the run.
+- While a pull request from a `memory-audit/` branch is open, each run skips
+  before it gathers evidence, even with `--force`, and `latest.json` records
+  the pull request. The next audit after it merges or closes covers whatever
+  changed meanwhile, and a run that publishes deletes the branches earlier
+  audits left.
+- `latest.json` records a publishing run's `branch`, `issue`, and
+  `pullRequest` beside its `publishedCommit`. The prompt tells the model that
+  its report goes into the issue.
+
+### Manual follow-up
+
+Adopters without the `memory-audit` feature need none and take the
+[sync-only](docs/releases.md#sync-only-releases) path. Podhaven and screenr,
+which enable it, need no reinstall; their next audit publishes the new way.
+Update their pages that say the audit commits to `main`:
+
+- podhaven: the scheduled memory audit section of
+  `docs/development-workflow.md`.
+- screenr: the scheduled memory audit section of
+  `docs/development-workflow.md`, including its deployment bullet, since CI
+  now runs on the audit's pull request and its merge, and the memory audit
+  paragraph in `memory/README.md`. The `Screenr-Deploy` trailers stay on the
+  audit's commit, which a squash or rebase merge keeps; a merge commit does
+  not carry them.
+
+### Verified
+
+`bin/check` passed 136 tests on macOS 27.0.1 with Python 3.15.2 and Git
+2.56.0. Against real Git remotes and a fake `gh`, an audit with changes
+leaves `main` alone, pushes its branch to every push URL, and opens an issue
+with no assignee or labels and a pull request whose body closes it. A forced
+run then skips while that pull request is open, another branch's open pull
+request does not count, and the run after the merge audits again and deletes
+the merged branch. A refused pull request closes the issue as not planned,
+deletes the branch, and opens the failure issue. The new publishing tests
+failed before the change, which pushed to `main` and opened nothing. The
+`gh` 2.103.3 flags the runner uses match its help. No real audit ran
+before the release.
+
 ## 3.9.4 — 2026-11-10
 
 ### Synced
