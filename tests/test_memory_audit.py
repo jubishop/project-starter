@@ -354,6 +354,8 @@ class MemoryAuditTests(unittest.TestCase):
         self.assertIn("- Archive `memory/incident.md`: Current source keeps the rule.", issue["body"])
         self.assertIn(branch, issue["body"])
         self.assertIn("Incident checked.", issue["body"])
+        # An issue left open after its pull request closes unmerged must not read as work to apply another way.
+        self.assertRegex(issue["body"], r"closed without merging is a rejection: close this issue as not planned")
         self.assertEqual(output["issue"], "https://github.com/example-owner/example/issues/999")
         [pull] = self.gh("pr", "create")
         args = pull["args"]

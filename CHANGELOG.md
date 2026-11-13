@@ -25,7 +25,9 @@ follow-up it cannot apply. See [releases](docs/releases.md).
   `pullRequest` beside its `publishedCommit`. The prompt tells the model that
   its report goes into the issue, and that an audit pull request closed
   without merging is a rejected change, to propose again only on newer
-  evidence.
+  evidence. The issue says the same, so an agent that finds it open after
+  its pull request closed unmerged closes it as not planned instead of
+  applying the changes.
 - The issue mentions no one: the runner puts a zero-width space after each
   bare `@` in the model's evidence and report, outside code and links, so a
   Swift attribute such as `@MainActor` notifies no GitHub user.

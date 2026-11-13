@@ -382,7 +382,9 @@ def issue_body(base, branch, run_name, result):
     head = (f"The weekly memory audit of `{base}` proposes these memory note changes. The pull request from the "
             f"`{branch}` branch applies them and closes this issue when merged. The audit read every active note, and "
             f"its proposal passed the memory checks.\n\n## Changes\n\n{changes}\n## Review\n\nMerge the pull request "
-            "to apply the changes, or close it and this issue to reject them. The audit never merges anything itself. "
+            "to apply the changes, or close it and this issue to reject them. A pull request closed without merging is "
+            "a rejection: close this issue as not planned instead of applying its changes another way. The audit never "
+            "merges anything itself. "
             "While its pull request is open, later audits open no other; the next audit after it closes covers whatever "
             f"changed meanwhile. The run folder `.cache/memory-audit/runs/{run_name}/` on the Mac keeps the report, "
             "patch, and logs.\n\n<details>\n<summary>Audit report</summary>\n\n")

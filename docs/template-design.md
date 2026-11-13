@@ -716,7 +716,9 @@ roll out to 20 more repositories.
   changes, and the prompt tells later audits to propose such a change again
   only on evidence newer than the rejection. Otherwise it would return as a
   new unassigned issue each week, which an agent might merge over the
-  rejection.
+  rejection. For the same reason, the issue says that a pull request closed
+  without merging is a rejection, so an agent that finds the issue still open
+  closes it as not planned instead of applying its changes.
 - **Unchanged:** the read-only model, the session and document checks before
   publishing, the tool boundary, key isolation, failure issue, and schedule.
 

@@ -235,12 +235,14 @@ branch that closes the issue. The user merges the pull request, or an agent
 that works unassigned issues picks up the issue and reviews it; the audit
 never merges, assigns, or closes its own work. To reject the changes, close
 the pull request and the issue; the prompt tells later audits to propose a
-rejected change again only on evidence newer than the rejection. The runner
-puts a zero-width space after each bare `@` in the model's evidence and
-report, outside code and links, so the issue mentions no one, such as a
-GitHub user named like the Swift attribute `@MainActor`. If the issue or the
-pull request cannot be opened, the runner deletes the branch, closes any
-issue it opened as not planned, and fails the run.
+rejected change again only on evidence newer than the rejection. An issue left
+open after its pull request closes unmerged says to close it as not planned,
+so an agent that picks it up never applies the rejected changes another way.
+The runner puts a zero-width space after each bare `@` in the model's
+evidence and report, outside code and links, so the issue mentions no one,
+such as a GitHub user named like the Swift attribute `@MainActor`. If the
+issue or the pull request cannot be opened, the runner deletes the branch,
+closes any issue it opened as not planned, and fails the run.
 
 The audit keeps one pull request open at a time. While a pull request from a
 `memory-audit/` branch is open, each run skips before it gathers evidence,
