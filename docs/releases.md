@@ -109,5 +109,6 @@ Enable [secret scanning](#secret-scanning) where sync warns about it. Apply
 the changelog's manual follow-up, run the checks it needs there (only
 `bin/check --documents-only` when it changes only text), commit
 on its default branch, push, and confirm CI for the pushed
-commit. When the Actions quota blocks CI, follow
+commit. When GitHub refuses to start CI or an adopter's self-hosted runners
+stay down, follow
 [hosted CI](../starter/docs/foundation/engineering-policy.md#hosted-ci). Rerun `bin/sync --status` to confirm that no adopter reports drift.

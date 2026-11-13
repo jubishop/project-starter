@@ -3,6 +3,61 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 3.10.0 — 2026-11-13
+
+### Synced
+
+- The engineering policy's
+  [hosted CI](starter/docs/foundation/engineering-policy.md#hosted-ci)
+  fallback, a local `bin/check --full` pass on the delivered revision, covers
+  every job GitHub refuses to start, whatever the cause, such as a failed
+  payment, not only an exhausted Actions quota or rate limiting. A refused
+  job has a failure annotation beginning "The job was not started because"
+  and no steps or runner.
+- It also covers a job left queued, with no runner, for 10 or more minutes
+  while every self-hosted runner matching its labels was `offline`, or
+  `online` and not busy. GitHub never moves such a job to a hosted runner
+  and ends it only after 24 hours, so an adopter whose runner went down had
+  to wait until it was back. A busy runner restarts the count, a job that
+  started on a runner is a failure even if the runner then went offline, and
+  a job GitHub ended after 24 hours counts only when listings had already
+  shown its runners down for 10 minutes. The section gives the `gh api`
+  commands that show the job queued and each runner's state, read across
+  the 10 minutes. The evidence rules, exclusions, and anchor are unchanged.
+
+### Manual follow-up
+
+Health, kidsbank, trading, vidservey, and will keep the earlier home rule in
+`docs/development-workflow.md`, which allows the fallback only when "GitHub
+CI is blocked solely by confirmed Actions quota exhaustion or GitHub rate
+limiting" and, as the project's own rule, overrides the policy there. In
+each, widen that cause to the policy's: GitHub refused to start the job, for
+any reason, or the self-hosted runners it needs stayed down, linking
+`foundation/engineering-policy.md#hosted-ci` for how to tell. Keep the rest
+of the paragraph, such as trading's `floor` job. In vidservey and will, also
+drop the next paragraph's requirement to confirm quota exhaustion from the
+account's billing, with its statement that a failed-payment notice doesn't
+prove it. The owner accepted both exceptions on 2026-10-14 while
+reconciling each project's CI guidance with the home account's rule, which
+now covers any refused job. Keep the paragraph's acceptance date and its
+limits on what the exception authorizes. Run `bin/check --documents-only`,
+commit with the synced files, push without `[skip ci]`, and confirm CI.
+
+Home-infra's own rule, from jubishop/home-infra#99, already covers both cases
+with its runner's details and needs no change, and pantrydates keeps its
+owner's choice of no local fallback. Every other adopter takes only the
+synced files.
+
+### Verified
+
+`bin/check` passed 132 tests on macOS 27.0.1 with Python 3.15.2 and Git
+2.56.0. On 2026-11-13 the section's runner listing against home-infra
+printed `nvr-home-infra-1`, `online`, `false`, and its labels
+`self-hosted,Linux,X64,nvr`, and its job query printed a completed job's
+status, runner, and `self-hosted,nvr` labels. No adopter overrides the
+engineering policy, and a search of every adopter's own pages found the
+narrower rule only in the five named above.
+
 ## 3.9.4 — 2026-11-10
 
 ### Synced
