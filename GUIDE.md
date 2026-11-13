@@ -41,7 +41,9 @@ only here, and the other `bin/` commands run in the target.
    project's actual checks, runtime minimums, and deployment. When the
    project deploys on push and decides from every commit since its last
    deployment, record its deploy-skip trailers in `.project-starter.json` as
-   its [sync commit trailers](docs/releases.md#sync-commit-trailers).
+   its [sync commit trailers](docs/releases.md#sync-commit-trailers) and,
+   when the [memory audit](features/memory-audit/docs/foundation/memory-audit.md#settings)
+   is enabled, in `.config/knowledge.json` as `memoryAudit.commitTrailers`.
 4. **Tailor `AGENTS.md`.** Leave the managed block intact. Below it, keep
    project commands, stronger requirements, and intentional exceptions, and
    remove rules that the block or applicable inherited instructions already

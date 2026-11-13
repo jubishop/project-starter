@@ -3,6 +3,41 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 3.13.1 — 2026-11-13
+
+### Synced
+
+- The engineering policy's
+  [deployment decisions](starter/docs/foundation/engineering-policy.md#deployment-decisions)
+  tell a project whose deployment reads skip trailers from every commit since
+  its last deployment to record them, when it starts deciding that way, as
+  `syncCommitTrailers` in `.project-starter.json` and, when the
+  `memory-audit` feature is enabled, as `memoryAudit.commitTrailers` in
+  `.config/knowledge.json`. The policy named neither, so a project that built
+  such a rule from it, as an adopter's development workflow page directs when
+  the project first deploys, could deploy its sync-only and audit commits
+  unnoticed, as screenr did with its sync commits before 3.13.0.
+- The policy's [hosted CI](starter/docs/foundation/engineering-policy.md#hosted-ci)
+  sync paragraph now agrees with step 2 of
+  [sync-only releases](docs/releases.md#sync-only-releases): a sync-only
+  commit keeps `[skip ci]`, such as at the end of its subject, and ends with
+  the project's `syncCommitTrailers` in its final trailer paragraph.
+- The guide's adoption step 3 and
+  [sync commit trailers](docs/releases.md#sync-commit-trailers) name
+  `memoryAudit.commitTrailers` beside `syncCommitTrailers` for such an
+  adopter. Neither page is in the bundle.
+
+### Manual follow-up
+
+None. Adopters take the [sync-only](docs/releases.md#sync-only-releases)
+path. Screenr, the only adopter whose deployment reads every undeployed
+commit's skip trailers, already records both settings.
+
+### Verified
+
+`bin/check` passed 140 tests on macOS 27.0.1 with Python 3.15.2 and Git
+2.56.1. The release changes only text, so no test changed.
+
 ## 3.13.0 — 2026-11-13
 
 ### Synced
