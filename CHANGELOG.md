@@ -34,11 +34,14 @@ limiting" and, as the project's own rule, overrides the policy there. In
 each, widen that cause to the policy's: GitHub refused to start the job, for
 any reason, or the self-hosted runners it needs stayed down, linking
 `foundation/engineering-policy.md#hosted-ci` for how to tell. Keep the rest
-of the paragraph, such as trading's `floor` job. In vidservey, also drop the
-next paragraph's requirement to confirm quota exhaustion from the account's
-billing: it says the exception exists to match the home account's rule,
-which now covers any refused job. Run `bin/check --documents-only`, commit
-with the synced files, push without `[skip ci]`, and confirm CI.
+of the paragraph, such as trading's `floor` job. In vidservey and will, also
+drop the next paragraph's requirement to confirm quota exhaustion from the
+account's billing, with its statement that a failed-payment notice doesn't
+prove it. The owner accepted both exceptions on 2026-10-14 while
+reconciling each project's CI guidance with the home account's rule, which
+now covers any refused job. Keep the paragraph's acceptance date and its
+limits on what the exception authorizes. Run `bin/check --documents-only`,
+commit with the synced files, push without `[skip ci]`, and confirm CI.
 
 Home-infra's own rule, from jubishop/home-infra#99, already covers both cases
 with its runner's details and needs no change, and pantrydates keeps its
