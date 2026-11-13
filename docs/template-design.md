@@ -491,7 +491,9 @@ slow. The tradeoff is that a defect in a managed script reaches every adopter
 before any check sees it; the starter's own CI still runs on the pushed
 release, after the fact. [Override-only follow-up](#override-only-follow-up--2026-10-24)
 later extended this to releases whose follow-up applies only to adopters with
-an override.
+an override. `[skip ci]` alone did not keep every sync from deploying, so
+[sync commit trailers](#sync-commit-trailers--2026-11-13) later added each
+adopter's deploy-skip trailers.
 
 ### Secrets in private repositories — 2026-10-16
 
@@ -752,6 +754,35 @@ projects without notes skip the model.
   [shared start time](#shared-memory-audit--2026-10-25) for the fleet; the
   default stays Saturday 06:00, and the lock still makes overlapping runs
   take turns.
+
+### Sync commit trailers — 2026-11-13
+
+A sync-only commit also carries the deploy-skip trailers of an adopter that
+decides deployment from every commit since its last deployment, which the
+adopter records as `syncCommitTrailers` in `.project-starter.json`
+([issue #58](https://github.com/jubishop/project-starter/issues/58)).
+`[skip ci]` keeps GitHub Actions from starting the push's workflows, but an
+adopter that deploys on push decides at its next push. Screenr skips only when
+every commit since its last production deployment carries its
+`Screenr-Deploy` trailers, so the push of its 3.11.0 follow-up commit deployed
+despite that commit's skip trailers: the 3.10.0 sync commit before it had
+none. Five sync-only
+commits had gone out that way unnoticed, since a fleet run doesn't reread
+each adopter's deployment rules. This was decided from that evidence on
+2026-11-13, and the user may overrule it.
+
+- **A project-owned setting:** `bin/sync` keeps it across syncs, refuses to
+  sync while it is invalid, as the memory audit validates its
+  `commitTrailers`, and prints the trailers after each sync and dry run, so
+  the operator copies them rather than finding each adopter's rule. The
+  setting holds a static reason, which screenr's deployment decision
+  accepts.
+- **Rejected:** telling the operator to read every adopter's deployment rules
+  on each sync, which had already failed, and reading the memory audit's
+  `commitTrailers`, which only adopters with that feature have. `bin/sync`
+  still makes no commit, since
+  [issue #47](https://github.com/jubishop/project-starter/issues/47) left
+  whether follow-up applies to the operator.
 
 ### Unchanged choices — 2026-10-09
 

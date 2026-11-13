@@ -73,7 +73,10 @@ itself, so adopter documents never become test fixtures. It covers:
   keep it across syncs, refuse to disable a changed copy, refuse a project
   file in a feature's path until it is removed, and leave adopters without
   the feature unchanged by a release that changes only feature files; each
-  enabled adopter passes `bin/check --documents-only`. A fake `gh` keeps the
+  enabled adopter passes `bin/check --documents-only`. An adopter's
+  `syncCommitTrailers` survive a sync, and each sync and dry run ends by
+  printing them as lines `git interpret-trailers --parse` reads; an invalid
+  setting stops either before it writes. A fake `gh` keeps the
   suite off the network and checks that sync warns about a public GitHub
   adopter without secret scanning or push protection, skips private
   repositories and other hosts, and notes settings it cannot read.
