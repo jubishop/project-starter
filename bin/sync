@@ -31,6 +31,9 @@ LEGACY_REFS = ("source_ref", "knowledge_source_ref", "task_tracking_source_ref")
 WORKTREE = "WORKTREE"
 GITHUB_REMOTE = re.compile(r"(?:https://(?:[^@/]+@)?|(?:ssh://)?git@)github\.com[:/]([^/]+)/([^/]+?)(?:\.git)?/?", re.I)
 SECRET_SCANNING = {"secret_scanning": "secret scanning", "secret_scanning_push_protection": "push protection"}
+# The project's own trailers for sync-only commits, such as a deployment skip; sync keeps and prints them.
+SYNC_COMMIT_TRAILERS = "syncCommitTrailers"
+TRAILER_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9-]*")
 
 
 def git(*args, cwd=ROOT, check=True):
@@ -132,6 +135,17 @@ def block_digest(text):
 def read_manifest(target):
     path = target / MANIFEST
     return json.loads(path.read_text()) if path.is_file() else None
+
+
+def sync_commit_trailers(manifest):
+    """Return the manifest's trailers for sync-only commits, refusing any Git could not read as one-line trailers."""
+    trailers = manifest.get(SYNC_COMMIT_TRAILERS, {})
+    if not isinstance(trailers, dict) or not all(
+            TRAILER_NAME.fullmatch(name) and isinstance(value, str) and value.splitlines() == [value] == [value.strip()]
+            for name, value in trailers.items()):
+        raise RuntimeError(MANIFEST + ": " + SYNC_COMMIT_TRAILERS + ' must map trailer names such as "Deploy" to'
+                           " one-line values")
+    return trailers
 
 
 class Plan:
@@ -268,6 +282,8 @@ def plan(target, label, files, manifest, init, features=(), origins=None):
     }
     if features:
         updated_manifest["features"] = list(features)
+    if SYNC_COMMIT_TRAILERS in manifest:
+        updated_manifest[SYNC_COMMIT_TRAILERS] = manifest[SYNC_COMMIT_TRAILERS]
     result.writes[MANIFEST] = ((json.dumps(updated_manifest, indent=2) + "\n").encode(), False)
     return template["version"], result
 
@@ -327,6 +343,7 @@ def sync(target, ref, init, dry_run, force, enable=(), disable=()):
         raise RuntimeError(str(target) + " has already adopted Project Starter; run bin/sync without --init")
     if not init and manifest is None:
         raise RuntimeError(str(target) + " has no " + MANIFEST + "; use --init to adopt the starter")
+    trailers = sync_commit_trailers(manifest or {})
     if not dry_run and git("status", "--porcelain", cwd=target).stdout.strip():
         raise RuntimeError(str(target) + " has uncommitted changes; commit or stash them before syncing")
     label, files, features = release(ref or latest_tag())
@@ -352,9 +369,14 @@ def sync(target, ref, init, dry_run, force, enable=(), disable=()):
         return 1
     if dry_run:
         print("Dry run; nothing was written.")
-        return 0
-    apply(target, result)
-    print("No commits were made. Review git diff, run bin/check --full, then commit.")
+    else:
+        apply(target, result)
+        print("No commits were made. Review git diff, run bin/check --full, then commit.")
+    if trailers:
+        # Unindented, since Git reads an indented line as the previous trailer's continuation.
+        print("End a sync-only commit's message with this project's trailers from " + MANIFEST
+              + " (docs/releases.md#sync-commit-trailers):")
+        print("\n".join(name + ": " + value for name, value in trailers.items()))
     return 0
 
 

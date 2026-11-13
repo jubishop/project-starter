@@ -56,8 +56,8 @@ class SyncTests(unittest.TestCase):
         gh.chmod(0o755)
         self.env["PATH"] = str(fake) + os.pathsep + self.env["PATH"]
 
-    def run_command(self, *args, cwd, check=True):
-        result = subprocess.run(args, cwd=cwd, env=self.env, text=True, capture_output=True, timeout=60)
+    def run_command(self, *args, cwd, check=True, input=None):
+        result = subprocess.run(args, cwd=cwd, env=self.env, text=True, capture_output=True, timeout=60, input=input)
         if check:
             self.assertEqual(result.returncode, 0, (args, result.stdout, result.stderr))
         return result
@@ -399,6 +399,45 @@ class SyncTests(unittest.TestCase):
         self.assertIn("upstream changed since v2.1.0", result.stdout)
         self.assertIn("-- features/memory-audit/bin/_memory_audit.py", result.stdout)
         self.assertTrue((featured / "bin/_memory_audit.py").read_text().endswith("# local change\n"))
+
+    def test_sync_keeps_validates_and_prints_sync_commit_trailers(self):
+        repo = self.target()
+        self.sync("--init", "--ref", "WORKTREE", str(repo))
+        self.commit(repo, "Adopt")
+        plain = self.sync("--ref", "WORKTREE", str(repo))
+        self.assertNotIn("trailer", plain.stdout)
+        self.assertNotIn("syncCommitTrailers", self.manifest(repo))
+
+        trailers = {"Screenr-Deploy": "skip",
+                    "Screenr-Deploy-Reason": "Project Starter sync with no manual follow-up; nothing it changes runs in production."}
+        manifest = self.manifest(repo)
+        manifest["syncCommitTrailers"] = trailers
+        (repo / ".project-starter.json").write_text(json.dumps(manifest))
+        self.commit(repo, "Record sync commit trailers")
+        for args in (("--dry-run",), ()):
+            with self.subTest(args=args):
+                result = self.sync("--ref", "WORKTREE", *args, str(repo))
+                self.assertEqual(self.manifest(repo)["syncCommitTrailers"], trailers)
+                # The closing advice ends with the trailer lines, unindented so Git reads them as written.
+                lines = result.stdout.splitlines()
+                self.assertIn("docs/releases.md#sync-commit-trailers", lines[-3])
+                self.assertEqual(lines[-2:], [name + ": " + value for name, value in trailers.items()])
+                message = "Sync Project Starter\n\nThe manifest records the release.\n\n" + "\n".join(lines[-2:]) + "\n"
+                parsed = self.run_command("git", "interpret-trailers", "--parse", cwd=repo, input=message).stdout
+                self.assertEqual(parsed, "\n".join(lines[-2:]) + "\n")
+
+        for invalid in (["Screenr-Deploy: skip"], {"Bad name": "skip"}, {"Deploy": "two\nlines"}, {"Deploy": ""},
+                        {"Deploy": " padded"}, {"Deploy": 1}):
+            with self.subTest(invalid=invalid):
+                manifest["syncCommitTrailers"] = invalid
+                (repo / ".project-starter.json").write_text(json.dumps(manifest))
+                self.commit(repo, "Invalid trailers")
+                before = snapshot(repo)
+                for args in (("--dry-run",), ()):
+                    result = self.sync("--ref", "WORKTREE", *args, str(repo), check=False)
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn(".project-starter.json: syncCommitTrailers must map trailer names", result.stderr)
+                    self.assertEqual(snapshot(repo), before)
 
     def test_sync_warns_when_a_public_github_adopter_lacks_secret_scanning(self):
         def repository(visibility, scanning, protection):

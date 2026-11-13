@@ -49,6 +49,34 @@ repositories, where these settings need a paid GitHub Secret Protection
 license, and other hosts, and it prints a note when it cannot read the
 settings.
 
+## Sync commit trailers
+
+`[skip ci]` keeps GitHub Actions from starting a push's workflows, but it
+decides nothing about deployment. An adopter that deploys on push may decide
+at its next push from every commit since its last deployment, so a sync-only
+commit without the adopter's deploy-skip trailers can still be deployed. An
+adopter whose rules define such trailers records them in
+`.project-starter.json`, mapping each trailer name to a one-line value:
+
+```json
+"syncCommitTrailers": {
+  "Screenr-Deploy": "skip",
+  "Screenr-Deploy-Reason": "Project Starter sync with no manual follow-up; nothing it changes runs in production."
+}
+```
+
+`bin/sync` keeps the setting across syncs, refuses to sync while it is
+invalid, and prints the trailers at the end of each sync and dry run of that
+adopter. Git reads trailers only from a message's final paragraph, and any
+other line there can stop it, so make every line of that paragraph a
+`Key: value` trailer, such as `Co-Authored-By:`, and keep `[skip ci]` and
+references such as `Refs #12` in earlier lines;
+`git interpret-trailers --parse` shows what Git reads. A sync with manual
+follow-up decides deployment by the adopter's own rules instead. Adding the
+setting, or changing it, changes nothing that runs, so it may go in a
+sync-only commit. Add it whenever an adopter that deploys on push defines
+deploy-skip trailers, at adoption or later.
+
 ## Sync-only releases
 
 When a release needs no manual follow-up, or its follow-up applies only to
@@ -61,8 +89,11 @@ records:
    `git push origin main vX.Y.Z`.
 2. Fetch every adopter listed by `bin/sync --status`, then sync each one,
    enabling [secret scanning](#secret-scanning) where sync warns about it.
-   Where no follow-up applies, commit only the synced files, with `[skip ci]`
-   in the message so GitHub Actions starts no push workflows, and push.
+   Where no follow-up applies, commit only the synced files and push. Put
+   `[skip ci]` in the message, such as at the end of its subject, so GitHub
+   Actions starts no push workflows. End the message with any
+   [sync commit trailers](#sync-commit-trailers) the adopter records, which
+   `bin/sync` prints after the sync, in its final trailer paragraph.
 3. Give each adopter with an override or feature that the follow-up applies
    to the [fleet sync](#sync-the-fleet) steps: apply the follow-up, run the
    checks it needs, push without `[skip ci]`, and confirm CI.

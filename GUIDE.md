@@ -38,7 +38,10 @@ only here, and the other `bin/` commands run in the target.
    `foundation/README.md` from `docs/README.md`. The copied
    `docs/development-workflow.md` describes a project with no application
    yet; keep that wording only when it is true, and otherwise record the
-   project's actual checks, runtime minimums, and deployment.
+   project's actual checks, runtime minimums, and deployment. When the
+   project deploys on push and its rules define deploy-skip trailers, record
+   them in `.project-starter.json` as its
+   [sync commit trailers](docs/releases.md#sync-commit-trailers).
 4. **Tailor `AGENTS.md`.** Leave the managed block intact. Below it, keep
    project commands, stronger requirements, and intentional exceptions, and
    remove rules that the block or applicable inherited instructions already
@@ -96,7 +99,12 @@ release's manual follow-up from the [changelog](CHANGELOG.md), enable
 [secret scanning](docs/releases.md#secret-scanning) if sync warns, run
 `bin/check --full`, and commit. An adopter skips the check and deployment
 when the release has no manual follow-up, or when the release's follow-up
-applies only to overrides or features the adopter lacks; see [sync-only releases](docs/releases.md#sync-only-releases). `bin/sync --status` reports each adopter's
+applies only to overrides or features the adopter lacks; see [sync-only releases](docs/releases.md#sync-only-releases).
+Its sync-only commit carries `[skip ci]` and, where the adopter's rules
+define deploy-skip trailers, those trailers in the message's final trailer
+paragraph. `bin/sync` prints them after the sync from the
+[sync commit trailers](docs/releases.md#sync-commit-trailers) in
+`.project-starter.json`. `bin/sync --status` reports each adopter's
 version, drift, overrides, and features.
 
 ## Enable or disable a feature

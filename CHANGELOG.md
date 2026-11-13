@@ -3,6 +3,62 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 3.12.0 — 2026-11-13
+
+### Synced
+
+- `bin/sync` keeps a project-owned `syncCommitTrailers` setting in
+  `.project-starter.json` across syncs: the trailers, such as an adopter's
+  deploy-skip trailers, that its
+  [sync-only](docs/releases.md#sync-only-releases) commits end with. It
+  refuses to sync, even as a dry run, while the setting is not an object
+  mapping trailer names such as `Deploy` to one-line values, and it ends each
+  sync and dry run of that adopter by printing the trailers, unindented, to
+  copy into the commit message. `bin/sync` isn't in the bundle, so adopters
+  receive only the version change.
+- A sync-only commit keeps `[skip ci]` in an earlier line, such as its
+  subject, and ends with the adopter's
+  [sync commit trailers](docs/releases.md#sync-commit-trailers) in its final
+  trailer paragraph. `[skip ci]` decides nothing about deployment, so screenr
+  deployed its trailerless sync commits at its next push, even when that
+  push's own commit asked to skip.
+
+### Manual follow-up
+
+Screenr, the only adopter whose deployment counts every undeployed commit's
+skip trailers, records its trailers with this sync. After `bin/sync`, add
+them to its `.project-starter.json`:
+
+```json
+"syncCommitTrailers": {
+  "Screenr-Deploy": "skip",
+  "Screenr-Deploy-Reason": "Project Starter sync with no manual follow-up; nothing it changes runs in production."
+}
+```
+
+Run `bin/sync --dry-run` to confirm it prints them. The setting changes
+nothing that runs, so, as [sync commit trailers](docs/releases.md#sync-commit-trailers)
+allows, commit it with the synced files as a sync-only commit, with
+`[skip ci]` in the subject and the printed trailers in the final trailer
+paragraph, and confirm that `git interpret-trailers --parse` lists both. This
+release therefore takes the [sync-only](docs/releases.md#sync-only-releases)
+path in every adopter; every other adopter has no follow-up. An adopter that
+later defines deploy-skip trailers adds them the same way.
+
+### Verified
+
+`bin/check` passed 138 tests on macOS 27.0.1 with Python 3.15.2 and Git
+2.56.1. Through `bin/sync`'s command line, an adopter's
+`syncCommitTrailers` survive a sync, each sync and dry run ends by printing
+them as lines that `git interpret-trailers --parse` reads back unchanged, and
+a list, a name with a space, or a multi-line, empty, padded, or non-string
+value stops both before anything is written. The new test failed before the
+change, which dropped the setting, printed no trailers, and accepted every
+invalid setting. Screenr's `bin/deployment-decision` returned the static
+reason as a valid skip for a throwaway commit whose subject held `[skip ci]`
+and whose final paragraph held `Co-Authored-By:` and the two printed
+trailers. No adopter was synced before the release.
+
 ## 3.11.0 — 2026-11-13
 
 ### Synced
