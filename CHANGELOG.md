@@ -49,7 +49,7 @@ deployment adds its trailers the same way.
 
 ### Verified
 
-`bin/check` passed 138 tests on macOS 27.0.1 with Python 3.15.2 and Git
+`bin/check` passed 140 tests on macOS 27.0.1 with Python 3.15.2 and Git
 2.56.1. Through `bin/sync`'s command line, an adopter's
 `syncCommitTrailers` survive a sync, each sync and dry run ends by printing
 them as lines that `git interpret-trailers --parse` reads back unchanged, and
