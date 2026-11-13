@@ -77,7 +77,7 @@ def command(args, cwd, env, timeout=120, input=None):
 
 
 def environment():
-    # API keys stay out; only the API-key attempt adds the project's own key.
+    # API keys stay out; only the API-key attempt adds the audit's key.
     return {key: os.environ[key] for key in
             ("PATH", "HOME", "USER", "LOGNAME", "LANG", "LC_ALL", "TMPDIR", "CLAUDE_CONFIG_DIR")
             if key in os.environ}
