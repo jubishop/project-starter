@@ -726,7 +726,8 @@ roll out to 20 more repositories.
 
 ### Sync commit trailers — 2026-11-13
 
-A sync-only commit also carries the adopter's deploy-skip trailers, which the
+A sync-only commit also carries the deploy-skip trailers of an adopter that
+decides deployment from every commit since its last deployment, which the
 adopter records as `syncCommitTrailers` in `.project-starter.json`
 ([issue #58](https://github.com/jubishop/project-starter/issues/58)).
 `[skip ci]` keeps GitHub Actions from starting the push's workflows, but an

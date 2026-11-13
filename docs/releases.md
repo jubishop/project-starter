@@ -54,9 +54,9 @@ settings.
 `[skip ci]` keeps GitHub Actions from starting a push's workflows, but it
 decides nothing about deployment. An adopter that deploys on push may decide
 at its next push from every commit since its last deployment, so a sync-only
-commit without the adopter's deploy-skip trailers can still be deployed. An
-adopter whose rules define such trailers records them in
-`.project-starter.json`, mapping each trailer name to a one-line value:
+commit without the adopter's deploy-skip trailers can still be deployed. Such
+an adopter records its deploy-skip trailers in `.project-starter.json`,
+mapping each trailer name to a one-line value:
 
 ```json
 "syncCommitTrailers": {
@@ -74,8 +74,10 @@ references such as `Refs #12` in earlier lines;
 `git interpret-trailers --parse` shows what Git reads. A sync with manual
 follow-up decides deployment by the adopter's own rules instead. Adding the
 setting, or changing it, changes nothing that runs, so it may go in a
-sync-only commit. Add it whenever an adopter that deploys on push defines
-deploy-skip trailers, at adoption or later.
+sync-only commit. Add it whenever an adopter starts deciding deployment from
+every commit since its last deployment, at adoption or later. An adopter that
+reads skip trailers only from the pushed commit, as news does, records none,
+since `[skip ci]` already keeps its sync commits from deploying.
 
 ## Sync-only releases
 

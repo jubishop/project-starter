@@ -42,8 +42,10 @@ allows, commit it with the synced files as a sync-only commit, with
 `[skip ci]` in the subject and the printed trailers in the final trailer
 paragraph, and confirm that `git interpret-trailers --parse` lists both. This
 release therefore takes the [sync-only](docs/releases.md#sync-only-releases)
-path in every adopter; every other adopter has no follow-up. An adopter that
-later defines deploy-skip trailers adds them the same way.
+path in every adopter; every other adopter has no follow-up. News, whose
+deployment reads skip trailers only from the pushed commit, records none. An
+adopter that later decides deployment from every commit since its last
+deployment adds its trailers the same way.
 
 ### Verified
 
