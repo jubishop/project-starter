@@ -592,7 +592,9 @@ settled three choices:
   lock that every project's runner computes the same way, and the wait does
   not count against the 90-minute model limit. A run that waits too long
   fails and reports like any other failure. The existing projects keep their
-  times: screenr sets Saturday 08:00, and podhaven keeps 06:00.
+  times: screenr sets Saturday 08:00, and podhaven keeps 06:00. For the
+  fleet, superseded by
+  [spread schedules](#memory-audit-in-every-adopter--2026-11-13).
 - **Feature-only follow-up:** a release whose manual follow-up applies only to
   adopters that enable a feature, such as the projects moving to the shared
   audit, ships to the others as a
@@ -721,6 +723,35 @@ roll out to 20 more repositories.
   closes it as not planned instead of applying its changes.
 - **Unchanged:** the read-only model, the session and document checks before
   publishing, the tool boundary, key isolation, failure issue, and schedule.
+
+### Memory audit in every adopter — 2026-11-13
+
+On 2026-11-13 the user decided to run the memory audit in all 22 adopters,
+not only podhaven and screenr, and to bill every audit to one shared API key
+on Sonnet at high effort
+([issue #52](https://github.com/jubishop/project-starter/issues/52)). A
+repository that doesn't change costs nothing, since unchanged inputs and
+projects without notes skip the model.
+
+- **Shared key:** the user stored it in `~/.env`, which holds keys that more
+  than one project uses, as `ANTHROPIC_MEMORY_AUDIT_API_KEY`. The runner
+  reads that line from the checkout's `.env` and then from `~/.env`, so a
+  project can still bill its own key or, with an empty value, the
+  subscription. The name matches the home `ANTHROPIC_<PROGRAM>_API_KEY`
+  names, and the old `MEMORY_AUDIT_ANTHROPIC_API_KEY` gets no fallback, since
+  only podhaven and screenr set it and both moved to the shared key. The user
+  may override this routine detail.
+- **Default branch:** jubishop.github.io's default branch is `master`, so the
+  audit reads and proposes changes to the branch `origin`'s `HEAD` names
+  instead of requiring `main`.
+- **Spread schedules:** with 22 projects on one Mac, each adopter gets its own
+  `schedule`, spread across the week at night, so that no run waits past
+  `lockWaitMinutes` and the wider review in
+  [issue #51](https://github.com/jubishop/project-starter/issues/51) has room
+  in the same runs. This replaces the
+  [shared start time](#shared-memory-audit--2026-10-25) for the fleet; the
+  default stays Saturday 06:00, and the lock still makes overlapping runs
+  take turns.
 
 ### Unchanged choices — 2026-10-09
 

@@ -3,6 +3,58 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 3.12.0 — 2026-11-13
+
+### Synced
+
+- The `memory-audit` feature reads its Anthropic API key as
+  `ANTHROPIC_MEMORY_AUDIT_API_KEY`, from the checkout's `.env` and, without a
+  line there, from `~/.env`, where one key serves every project's audit on
+  the Mac. The checkout's line wins even when empty, which keeps that project
+  on the subscription. The old name, `MEMORY_AUDIT_ANTHROPIC_API_KEY`, is no
+  longer read, and nothing falls back to it.
+- `latest.json` and `run-meta.json` record the `keyFile`, `.env` or `~/.env`,
+  that set an API-key run's key, and the key's errors name that file.
+- The audit works on a default branch other than `main`. Each run reads the
+  branch `origin`'s `HEAD` names, such as `master`, audits it, rebases its
+  commit onto it, and opens its pull request into it.
+- The feature's page recommends giving each project on a Mac that audits many
+  its own schedule, at idle hours, so that no run waits past
+  `lockWaitMinutes`.
+
+### Manual follow-up
+
+Adopters without the `memory-audit` feature need none and take the
+[sync-only](docs/releases.md#sync-only-releases) path. An adopter with the
+feature whose `.env` sets `MEMORY_AUDIT_ANTHROPIC_API_KEY` renames the line to
+`ANTHROPIC_MEMORY_AUDIT_API_KEY` to keep its own key, or deletes it to use the
+shared key in `~/.env`; no reinstall is needed. Podhaven's and screenr's
+`.env` files no longer set it. Update their pages that name the old variable
+or say the audit bills the project's own key:
+
+- podhaven: `memoryAudit.context` in `.config/knowledge.json`, the scheduled
+  memory audit section of `docs/development-workflow.md`, and
+  `memory/memory-audit-model-selection.md` with its entry in
+  `memory/README.md`.
+- screenr: the scheduled memory audit section of
+  `docs/development-workflow.md`, including its billing bullet, and the
+  memory audit lines of `.env.example`. Delete that file's empty
+  `MEMORY_AUDIT_ANTHROPIC_API_KEY=` placeholder instead of renaming it, and
+  say in its comment that the audit bills the shared key in `~/.env`:
+  screenr's setup copies `.env.example` to `.env`, where an empty
+  `ANTHROPIC_MEMORY_AUDIT_API_KEY=` would keep screenr on the subscription.
+  Nothing in this sync runs in production, so its commit ends with screenr's
+  `Screenr-Deploy: skip` trailers; its CI otherwise deploys every push.
+
+### Verified
+
+`bin/check` passed 139 tests on macOS 27.0.1 with Python 3.15.2 and Git
+2.56.1. The new key and default-branch tests failed before the change: the
+old name still billed the key, `~/.env` was never read, and an origin without
+`main` failed with "couldn't find remote ref main". On GitHub,
+`git ls-remote --symref origin HEAD` named `master` for jubishop.github.io
+and `main` for podhaven. No real audit ran before the release.
+
 ## 3.11.0 — 2026-11-13
 
 ### Synced
