@@ -85,14 +85,18 @@ itself, so adopter documents never become test fixtures. It covers:
   remotes: proposal and session validation, the change gate, failure issues
   and their labels, and the settings. Publishing pushes a rebased branch to
   every push URL and opens an unassigned issue listing each change and a pull
-  request that closes it, never touching `main`; the issue's model-written
-  text mentions no one outside code and links; a failed pull request closes
-  the issue and deletes the branch, and runs skip while an audit pull request
-  is open. For the tool boundary check, a fake Claude Code drives the
-  runner's stand-in API and runs the scripted tools, and variants of it that
-  break the boundary stop the audit. Repeated audits leave one Claude Code
-  project record, and a run replaces working folders that an interrupted run
-  left. The LaunchAgent installer tests run only on macOS.
+  request that closes it, never touching the default branch; an origin whose
+  default branch is `master` is audited and gets the pull request; the
+  issue's model-written text mentions no one outside code and links; a failed
+  pull request closes the issue and deletes the branch, and runs skip while
+  an audit pull request is open. The audit's key comes from the checkout's
+  `.env` before `~/.env`, never from the shell or its old name, and an empty
+  value in the checkout's `.env` keeps the subscription. For the tool
+  boundary check, a fake Claude Code drives the runner's stand-in API and
+  runs the scripted tools, and variants of it that break the boundary stop
+  the audit. Repeated audits leave one Claude Code project record, and a run
+  replaces working folders that an interrupted run left. The LaunchAgent
+  installer tests run only on macOS.
 - Setup: `bin/setup-application` runs only after a successful foundation
   setup, must be executable, and its failure fails setup. A new worktree and
   `bin/prep-worktree` run it too; its failure fails `bin/prep-worktree` but

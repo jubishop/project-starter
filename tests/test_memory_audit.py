@@ -221,7 +221,7 @@ class MemoryAuditTests(unittest.TestCase):
             f"  other={str(self.base / 'other')!r}\n"
             f"  subprocess.run(['git','clone','--quiet',{str(self.origin)!r},other],check=True,capture_output=True)\n"
             "  pathlib.Path(other,change['path']).write_text(change['text'])\n"
-            "  for args in (['add','-A'],['-c','user.name=Other','-c','user.email=other@example.invalid','commit','--quiet','-m','Other work'],['push','--quiet','origin','HEAD:main']):\n"
+            "  for args in (['add','-A'],['-c','user.name=Other','-c','user.email=other@example.invalid','commit','--quiet','-m','Other work'],['push','--quiet','origin','HEAD:'+change.get('branch','main')]):\n"
             "   subprocess.run(['git','-C',other,*args],check=True,capture_output=True)\n"
         ))
 
@@ -567,6 +567,23 @@ class MemoryAuditTests(unittest.TestCase):
         self.assertEqual(self.git("rev-parse", published + "^", root=self.origin), self.remote_head())
         self.assertEqual(self.git("rev-parse", output["branch"], root=self.origin), published)
 
+    def test_a_default_branch_other_than_main_is_audited_and_targeted(self):
+        # A GitHub Pages site such as jubishop.github.io keeps master as its default branch, and has no main.
+        self.git("push", "--quiet", "origin", "main:master")
+        self.git("symbolic-ref", "HEAD", "refs/heads/master", root=self.origin)
+        self.git("push", "--quiet", "origin", "--delete", "main")
+        self.archive()
+        self.during.write_text(json.dumps({"path": "docs/README.md", "text": "# Docs\n\nNewer.\n", "branch": "master"}))
+        output = self.run_audit()
+        self.assertEqual(output["status"], "success")
+        [pull] = self.gh("pr", "create")
+        self.assertEqual(pull["args"][pull["args"].index("--base") + 1], "master")
+        self.assertEqual(self.branches(), sorted(["master", output["branch"]]))
+        # The audit read master, and its commit sits on the master that moved during the audit.
+        self.assertEqual(self.git("rev-parse", output["publishedCommit"] + "^", root=self.origin),
+                         self.git("rev-parse", "master", root=self.origin))
+        self.assertEqual(self.git("log", "-1", "--format=%s", "master", root=self.origin), "Other work")
+
     def test_memory_changed_on_main_during_the_audit_fails_without_pushing(self):
         self.archive()
         self.during.write_text(json.dumps({"path": "memory/incident.md", "text": CONTENT + "\nNewer fact.\n"}))
@@ -579,13 +596,15 @@ class MemoryAuditTests(unittest.TestCase):
     # Model, evidence, and change gate
 
     def test_without_a_key_a_read_only_audit_uses_the_subscription(self):
-        # Only the checkout's .env supplies the audit's key, and an empty one is no key.
+        # Only the env files supply the audit's key, never the shell, and the key's old name is no longer read.
         self.env.update(ANTHROPIC_API_KEY="fixture-key", OPENROUTER_API_KEY="fixture-router",
-                        MEMORY_AUDIT_ANTHROPIC_API_KEY="fixture-shell-key")
-        self.set_api_key("MEMORY_AUDIT_ANTHROPIC_API_KEY=")
+                        ANTHROPIC_MEMORY_AUDIT_API_KEY="fixture-shell-key")
+        for shared in (False, True):
+            self.set_api_key("MEMORY_AUDIT_ANTHROPIC_API_KEY=" + API_KEY, shared=shared)
         output = self.run_audit()
         self.assertEqual(output["credential"], "subscription")
-        self.assertNotIn("fallback", output)
+        for key in ("fallback", "keyFile"):
+            self.assertNotIn(key, output)
         [call] = self.model_calls()
         args = call["args"]
         self.assertEqual(args[args.index("--model") + 1], "claude-sonnet-5-5")
@@ -597,7 +616,8 @@ class MemoryAuditTests(unittest.TestCase):
         self.assertEqual(args[args.index("--permission-prompts") + 1], "none")
         rules = json.loads(args[args.index("--settings") + 1])["permissions"]
         self.assertFalse([rule for rule in rules["allow"] if not rule.startswith(("Bash(jq ", "Bash(qmd search "))])
-        for key in ("ANTHROPIC_API_KEY", "OPENROUTER_API_KEY", "MEMORY_AUDIT_ANTHROPIC_API_KEY"):
+        for key in ("ANTHROPIC_API_KEY", "OPENROUTER_API_KEY", "ANTHROPIC_MEMORY_AUDIT_API_KEY",
+                    "MEMORY_AUDIT_ANTHROPIC_API_KEY"):
             self.assertNotIn(key, call["env"])
         self.assertNotIn("{{", call["prompt"])
         self.assertNotIn("Project context", call["prompt"])
@@ -634,9 +654,10 @@ class MemoryAuditTests(unittest.TestCase):
 
     # Credentials
 
-    def set_api_key(self, line="MEMORY_AUDIT_ANTHROPIC_API_KEY=" + API_KEY):
-        """Write the project's key line into the checkout's ignored .env, among unrelated settings."""
-        (self.repo / ".env").write_text("DATABASE_URL=postgresql://localhost/example\n" + line + "\nOTHER=1\n")
+    def set_api_key(self, line="ANTHROPIC_MEMORY_AUDIT_API_KEY=" + API_KEY, shared=False):
+        """Write a key line among unrelated settings into the checkout's ignored .env, or with shared into ~/.env."""
+        path = self.base / ".env" if shared else self.repo / ".env"
+        path.write_text("DATABASE_URL=postgresql://localhost/example\n" + line + "\nOTHER=1\n")
 
     def refuse_key(self, events, from_call=0):
         """Make model runs that bill the API key, from the given model call on, print these events and exit 1."""
@@ -660,16 +681,34 @@ class MemoryAuditTests(unittest.TestCase):
     def latest(self):
         return json.loads((self.repo / ".cache/memory-audit/latest.json").read_text())
 
-    def test_the_projects_key_from_its_env_file_bills_the_audit(self):
-        self.set_api_key(f'export MEMORY_AUDIT_ANTHROPIC_API_KEY="{API_KEY}"  # this project only')
+    def test_the_shared_key_in_the_home_env_file_bills_the_audit(self):
+        # launchd gives the job none of ~/.env's keys, so the runner reads the shared key from the file itself.
+        self.set_api_key(shared=True)
         output = self.run_audit()
-        self.assertEqual((output["status"], output["credential"]), ("success", "api-key"))
+        self.assertEqual((output["status"], output["credential"], output["keyFile"]), ("success", "api-key", "~/.env"))
+        [call] = self.model_calls()
+        self.assertEqual(call["env"]["ANTHROPIC_API_KEY"], API_KEY)
+        for key in ("ANTHROPIC_MEMORY_AUDIT_API_KEY", "DATABASE_URL", "OTHER"):
+            self.assertNotIn(key, call["env"])
+        # An empty value in the checkout's .env keeps that project on the subscription.
+        self.set_api_key("ANTHROPIC_MEMORY_AUDIT_API_KEY=")
+        output = self.run_audit(force=True)
+        self.assertEqual(output["credential"], "subscription")
+        self.assertNotIn("keyFile", output)
+        self.assertNotIn("ANTHROPIC_API_KEY", self.model_calls()[1]["env"])
+
+    def test_the_projects_key_from_its_env_file_overrides_the_shared_key(self):
+        self.set_api_key("ANTHROPIC_MEMORY_AUDIT_API_KEY=sk-ant-api03-shared-fixture", shared=True)
+        self.set_api_key(f'export ANTHROPIC_MEMORY_AUDIT_API_KEY="{API_KEY}"  # this project only')
+        output = self.run_audit()
+        self.assertEqual((output["status"], output["credential"], output["keyFile"]), ("success", "api-key", ".env"))
         self.assertNotIn("fallback", output)
         [call] = self.model_calls()
         self.assertEqual(call["env"]["ANTHROPIC_API_KEY"], API_KEY)
-        for key in ("MEMORY_AUDIT_ANTHROPIC_API_KEY", "DATABASE_URL", "OTHER"):
+        for key in ("ANTHROPIC_MEMORY_AUDIT_API_KEY", "DATABASE_URL", "OTHER"):
             self.assertNotIn(key, call["env"])
-        self.assertEqual(json.loads((Path(output["directory"]) / "run-meta.json").read_text())["credential"], "api-key")
+        meta = json.loads((Path(output["directory"]) / "run-meta.json").read_text())
+        self.assertEqual((meta["credential"], meta["keyFile"]), ("api-key", ".env"))
 
     def test_claude_withholds_the_key_from_the_models_tools(self):
         # Claude Code passes its environment to Bash, where jq's env builtin reads it without approval. Scrub
@@ -687,7 +726,7 @@ class MemoryAuditTests(unittest.TestCase):
         self.set_api_key()
         self.executable("claude", "import json\nprint(json.dumps({'loggedIn': True, 'authMethod': 'claude.ai', "
                         "'apiProvider': 'firstParty'}))\n")
-        self.failed_audit("MEMORY_AUDIT_ANTHROPIC_API_KEY")
+        self.failed_audit(r"ANTHROPIC_MEMORY_AUDIT_API_KEY from \.env")
         self.assertEqual(self.model_calls(), [])
 
     def test_a_refused_key_reruns_the_attempt_on_the_subscription(self):
