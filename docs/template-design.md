@@ -783,6 +783,16 @@ each adopter's deployment rules. This was decided from that evidence on
   still makes no commit, since
   [issue #47](https://github.com/jubishop/project-starter/issues/47) left
   whether follow-up applies to the operator.
+- **Adopter-facing trigger:** the engineering policy's deployment decisions,
+  which every adopter receives, tell a project that starts deciding
+  deployment from every commit since its last deployment to record its
+  trailers as `syncCommitTrailers` and, with the memory audit enabled, as
+  `memoryAudit.commitTrailers`
+  ([issue #62](https://github.com/jubishop/project-starter/issues/62)).
+  The guide and the releases page reach only this repository's operator,
+  while an adopter's development workflow page sends its agent to that policy
+  when the project first deploys. The policy names the audit's setting
+  without linking its page, which exists only where the feature is enabled.
 
 ### Unchanged choices — 2026-10-09
 

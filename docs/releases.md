@@ -75,9 +75,15 @@ references such as `Refs #12` in earlier lines;
 follow-up decides deployment by the adopter's own rules instead. Adding the
 setting, or changing it, changes nothing that runs, so it may go in a
 sync-only commit. Add it whenever an adopter starts deciding deployment from
-every commit since its last deployment, at adoption or later. An adopter that
-reads skip trailers only from the pushed commit, as news does, records none,
-since `[skip ci]` already keeps its sync commits from deploying.
+every commit since its last deployment, at adoption or later, as the
+[engineering policy](../starter/docs/foundation/engineering-policy.md#deployment-decisions)
+tells the adopter. An adopter that reads skip trailers only from the pushed
+commit, as news does, records none, since `[skip ci]` already keeps its sync
+commits from deploying. An adopter that decides from every commit and enables
+the [memory audit](../features/memory-audit/docs/foundation/memory-audit.md#settings)
+also records its deploy-skip trailers as `memoryAudit.commitTrailers` in
+`.config/knowledge.json`, since the audit's commit, merged by rebase or
+squash, would otherwise land without them and deploy at the next push.
 
 ## Sync-only releases
 
