@@ -4,9 +4,9 @@ Store durable guidance and non-derivable context here. Use
 [docs](../docs/README.md) for intentional designs and research, and the
 project's issue tracker for tracked work.
 
-Search before writing. Update a related page instead of duplicating it.
-Do not record session logs, recent Git history, or facts the current source
-already explains. Pages are searched when needed, not loaded in bulk.
+Search before writing. Do not record session logs, recent Git history, or
+facts the current source already explains. Pages are searched when needed,
+not loaded in bulk.
 
 ## Page format
 

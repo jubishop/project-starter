@@ -9,8 +9,8 @@ for automatic loading; the [fleet sync skill](.agents/skills/sync-fleet/SKILL.md
 runs only when invoked.
 
 Follow the [engineering policy](starter/docs/foundation/engineering-policy.md)
-for dependencies, red-green tests through public interfaces, test cost, flaky
-tests, file and page organization, checkout isolation, and toolchain versions.
+for dependencies, red-green tests through public interfaces, test cost, file
+and page organization, checkout isolation, and toolchain versions.
 
 Finish every change to Project Starter with a release synced to every adopter,
 as described in [releases](docs/releases.md), so no adopter falls behind

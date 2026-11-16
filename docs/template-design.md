@@ -31,6 +31,7 @@ as its origin or a requirement for using it.
 [Fleet-first audience](#fleet-first-audience--2026-10-09) refines this
 decision: the starter serves the user's projects and may hold personal
 conventions, but not secrets or private data.
+[Adopters on one Mac](#adopters-on-one-mac--2026-11-15) supersedes it.
 
 ### Public distribution — 2026-09-04
 
@@ -82,6 +83,8 @@ to automatically loaded instructions or change the home file during adoption.
 From 2.0.0, the [managed AGENTS.md block](#managed-vendoring-and-sync--2026-10-09)
 is not pruned against home guidance. This pruning applies only to
 project-owned content outside the block.
+[Adopters on one Mac](#adopters-on-one-mac--2026-11-15) supersedes this
+paragraph: the block is pruned against home guidance too.
 
 Keep engineering requirements concise in the guide and agent instructions.
 Maintain their details in the [engineering policy](../starter/docs/foundation/engineering-policy.md)
@@ -333,6 +336,8 @@ The tradeoff is that failures outside focused local coverage may first appear
 in CI; the full gate must pass before delivery is complete. Preserve stronger
 existing project requirements during adoption. Keep these policies standalone,
 without references to another project or assumptions about its stack.
+[Adopters on one Mac](#adopters-on-one-mac--2026-11-15) supersedes the ban on
+references to another project; the policies stay stack-neutral.
 
 ### Task tracking retired — 2026-10-25
 
@@ -383,6 +388,8 @@ manual effort: 17 adopters had byte-identical `_knowledge.py` and 16 had
 identical `_checks.py`, while updates were merged by hand across eight source
 revisions and ad hoc manifest fields. The tradeoff is that projects no longer
 edit managed files freely.
+[Adopters on one Mac](#adopters-on-one-mac--2026-11-15) supersedes the
+self-contained clones; only CI stays self-contained.
 
 ### Extension points — 2026-10-09
 
@@ -914,6 +921,28 @@ supersedes.
   [Keep QMD current](qmd-maintenance.md). Rejected: keeping only the weekly
   hosted run as an early warning of upstream breakage, and keeping the
   workflow as it was.
+- **No duplicated guidance**, decided by the user on 2026-11-15 (issue #66):
+  the bundle carries only the starter's own guidance and points to home rules
+  and skills rather than restating them. The managed block, the engineering
+  policy, the knowledge search page, and the memory index template no longer
+  restate `~/AGENTS.md`'s Kinds of change, flaky-test, worktree, or memory
+  rules, or the `fix-ci` skill's fallback for unavailable hosted CI, and the
+  guide's tailoring step points to the `edit-agents-md` skill. They keep the
+  starter's own part: `bin/check --documents-only` for text, the sync
+  commit's route, a project's own delivery rule, `bin/check --full` on the
+  exact revision as CI's local equivalent, and what the hooks and
+  `bin/prep-worktree` do for a new worktree. This supersedes
+  [standalone repository](#standalone-repository--2026-09-04), the
+  self-contained clones in
+  [managed vendoring and sync](#managed-vendoring-and-sync--2026-10-09), the
+  ban on references to another project in
+  [portable engineering guidance](#portable-engineering-guidance--2026-09-08),
+  and the 2.0.0 paragraph of
+  [tailor instructions to home guidance](#tailor-instructions-to-home-guidance--2026-09-28),
+  which kept the block from being pruned against home guidance. On 2026-11-16
+  the user decided that this repository's `AGENTS.md` carries no copy of the
+  home rule against duplicating guidance between the two, since that copy
+  would itself duplicate it.
 
 ### No check reuse in CI — 2026-11-16
 
