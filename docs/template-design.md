@@ -220,6 +220,9 @@ require actionlint, while copied projects keep their existing dependencies.
 
 ## Adoption feedback — 2026-09-05
 
+Superseded by
+[starter improvements under the home rule](#starter-improvements-under-the-home-rule--2026-11-15).
+
 Agents applying the guide should propose improvements to Project Starter
 when the setup reveals reusable gaps. The user requested this feedback step
 so lessons from adoption can improve the guide and template.
@@ -823,6 +826,35 @@ agents load `~/AGENTS.md`.
   no longer duplicated between the two.
 - **Rejected:** restating the home rule to match it, and a sentence in the
   block and policy putting `~/AGENTS.md` ahead of them.
+
+### Starter improvements under the home rule — 2026-11-15
+
+An agent that finds a reusable gap in the starter while adopting or syncing a
+repository acts on it as `~/AGENTS.md`'s Improvement rule says, with no
+ask-first step
+([issue #69](https://github.com/jubishop/project-starter/issues/69)). The
+guide had told it to describe a proposal and ask before editing this
+repository or opening a pull request, as
+[adoption feedback](#adoption-feedback--2026-09-05) decided. Newer home rules
+contradict that: Improvement, which makes a change or files an issue and asks
+only when unsure; Ownership; and Git commits and pushes. Project Starter's own
+instructions override the home file in a session here, and the sync-fleet
+skill sent every gap it found to that section, so a fleet sync stopped to ask
+instead of filing, while agents already filed starter issues without asking.
+The user decided this on 2026-11-15.
+
+- **Pointers, not copies:** the guide's
+  [improve the starter](../GUIDE.md#improve-the-starter) section points to the
+  home rule, and the sync-fleet skill points to that section, following the
+  same day's decision against duplicating guidance between home and Project
+  Starter ([issue #66](https://github.com/jubishop/project-starter/issues/66)).
+- **The starter's own steps stay:** finish the target work first, and turn a
+  repeated override into an extension point once a second repository needs
+  it. The section stays in the guide, read on request.
+- **No proposal checklist:** the section drops its list of what a proposal
+  describes, since filing the issue through the create-issue skill covers
+  that. The user may override this detail.
+- **Rejected:** keeping the 2026-09-05 ask-first step.
 
 ### No check reuse in CI — 2026-11-16
 

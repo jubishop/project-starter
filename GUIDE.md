@@ -145,14 +145,12 @@ feature, move its schedule, labels, and other differences into the
 `memoryAudit` settings, point the project's docs at
 `docs/foundation/memory-audit.md`, and rerun `bin/memory-audit install`.
 
-## Propose starter improvements
+## Improve the starter
 
-When adoption reveals a reusable gap, finish the target work first. Then
-describe the observed problem, the proposed change, why it belongs here, and
-how to verify it, and ask before editing this repository or opening a pull
-request. Approval to edit does not include publishing, and approval to open a
-pull request does not include merging it. Turn a repeated override into an
-extension point once a second repository needs it.
+When adopting or syncing a repository reveals a reusable gap in the starter,
+finish the target work first, then act on the gap as `~/AGENTS.md`'s
+Improvement rule says. Turn a repeated override into an extension point once
+a second repository needs it.
 
 The guide and starter are [MIT licensed](LICENSE); keep
 `LICENSE.project-starter` with copied files.
