@@ -63,7 +63,9 @@ follow-up it cannot apply. See [releases](docs/releases.md).
   root, cache and configuration folders, and index-worker command it runs
   with, defaulting to the checkout that holds it. Code outside a checkout,
   such as home's `home-knowledge`, can import it instead of keeping a fork,
-  which missed fixes such as 2.12.0's orphaned-vector cleanup. Adopters'
+  which missed fixes such as 2.12.0's orphaned-vector cleanup. A subclass
+  can name its own commands, settings, and pages in the engine's messages,
+  such as those for missing QMD and a folder in the models link's place. Adopters'
   commands and messages are unchanged.
 - QMD is required, and direnv in a checkout with an `.envrc`, as
   [required tools](starter/docs/foundation/knowledge-search.md#required-tools)

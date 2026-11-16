@@ -1016,9 +1016,11 @@ imports the engine from this repository's checkout instead, as home's
   defaulting to the checkout that holds it, so adopters' commands and
   behavior stay the same
   ([issue #73](https://github.com/jubishop/project-starter/issues/73)). A
-  subclass may read its settings elsewhere and name its own commands in
-  messages, and `diagnose_index()` checks the index alone, without a
-  checkout's hooks and tools.
+  subclass may read its settings elsewhere and name its own commands,
+  settings, and pages in the messages its engine paths print
+  ([issue #85](https://github.com/jubishop/project-starter/issues/85)), and
+  `diagnose_index()` checks the index alone, without a checkout's hooks and
+  tools.
 - **An interface home depends on:** home imports whatever the checkout holds,
   not a release, so a change to the class's constructor or to the methods
   home calls or overrides needs a matching change in home.
