@@ -102,6 +102,7 @@ else:
     with open(os.environ["APPROVALS"], "a") as stream:
         stream.write(json.dumps(sys.argv[1:]) + "\\n")
 ''')
+        self.tool("shellcheck", "import sys\nif sys.argv[1:] == ['--version']:\n    print('version: 0.11.0')\n")
         self.run_command("git", "init", "-b", "main")
         self.run_command("git", "config", "user.name", "Starter test")
         self.run_command("git", "config", "user.email", "test@example.invalid")
@@ -135,6 +136,13 @@ else:
         self.assertIn("bin/doctor", result.stderr)
         self.assertNotIn("approv", result.stderr)
         self.assert_document_references(result.stderr)
+
+    def assert_fails_naming(self, command, message):
+        """The command fails, naming the problem and a bundled page that explains it."""
+        result = self.run_command(command, check=False)
+        self.assertNotEqual(result.returncode, 0, (command, result.stdout, result.stderr))
+        self.assertIn(message, result.stdout + result.stderr)
+        self.assert_document_references(result.stdout + result.stderr)
 
     def records(self):
         return [json.loads(line) for line in self.events.read_text().splitlines()] if self.events.exists() else []
@@ -211,14 +219,28 @@ else:
         self.drain()
         self.assertEqual(self.records(), before)
 
-    def test_both_optional_tools_absent(self):
+    def test_a_missing_qmd_fails_setup_refresh_and_doctor(self):
         (self.tools / "qmd").unlink()
+        for command in ("bin/setup", "bin/qmd-index", "bin/doctor"):
+            with self.subTest(command=command):
+                self.assert_fails_naming(command, "QMD is required")
+        self.assertEqual(json.loads(self.run_command("bin/doctor", "--json", check=False).stdout)["last_refresh"]["status"],
+                         "failed")
+
+    def test_a_missing_direnv_fails_setup_and_doctor_only_in_a_checkout_with_an_environment_file(self):
         (self.tools / "direnv").unlink()
-        result = self.run_command("bin/setup")
-        self.assertIn("absent", result.stdout)
-        self.assertEqual(self.records(), [])
-        report = json.loads(self.run_command("bin/doctor", "--json").stdout)
-        self.assertEqual(report["freshness"], "unavailable")
+        self.run_command("bin/setup")
+        self.run_command("bin/doctor")
+        (self.repo / ".envrc").write_text("export APPLICATION_MODE=development\n")
+        for command in ("bin/setup", "bin/prep-worktree", "bin/doctor"):
+            with self.subTest(command=command):
+                self.assert_fails_naming(command, "direnv is required")
+
+    def test_a_missing_shellcheck_is_a_doctor_issue(self):
+        self.run_command("bin/setup")
+        self.run_command("bin/doctor")
+        (self.tools / "shellcheck").unlink()
+        self.assert_fails_naming("bin/doctor", "ShellCheck is required")
 
     def test_unrelated_git_revision_does_not_invalidate_search(self):
         self.env["QMD_TEST_REVISION"] = "abc1234"
@@ -302,32 +324,6 @@ else:
         self.assertNotEqual(result.returncode, 0)
         report = json.loads(self.run_command("bin/doctor", "--json", extra={"BROKEN_QMD": "1"}, check=False).stdout)
         self.assertTrue(any("installed" in message for message in report["issues"]))
-
-    def test_home_memory_edits_deletions_and_opt_out(self):
-        home = self.base / 'home notes "quoted"'
-        home.mkdir()
-        note = home / "note.md"
-        note.write_text("# Personal guidance\nFirst version\n")
-        self.run_command("git", "config", "knowledge.homeMemoryPath", str(home))
-        self.run_command("bin/setup")
-        self.assertIn("home-memory", self.records()[-1]["collections"])
-        initial = len(self.records())
-        note.write_text("# Personal guidance\nSecond version\n")
-        self.drain()
-        note.unlink()
-        self.drain()
-        self.run_command("git", "config", "--unset", "knowledge.homeMemoryPath")
-        self.drain()
-        self.assertEqual(len(self.records()), initial + 9)
-        self.assertNotIn("home-memory", self.records()[-1]["collections"])
-
-    def test_missing_home_memory_notice_and_relative_path_rejection(self):
-        self.run_command("git", "config", "knowledge.homeMemoryPath", str(self.base / "missing"))
-        self.run_command("bin/setup")
-        report = json.loads(self.run_command("bin/doctor", "--json").stdout)
-        self.assertTrue(any("Home memory is missing" in item for item in report["notices"]))
-        self.run_command("git", "config", "knowledge.homeMemoryPath", "relative")
-        self.assertNotEqual(self.run_command("bin/setup", check=False).returncode, 0)
 
     def test_doctor_is_read_only_and_detects_uncommitted_edits(self):
         self.run_command("bin/setup")
@@ -472,6 +468,8 @@ else:
         result = self.run_command("bin/knowledge", "search", "reference", check=False)
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual(result.stdout, "")
+        self.assertIn("QMD is required", result.stderr)
+        self.assertNotIn("without QMD", result.stderr)
         self.assert_defers_to_home_rule(result)
 
     def test_code_elsewhere_runs_the_engine_on_the_root_cache_and_configuration_it_passes(self):
@@ -810,20 +808,6 @@ sys.exit(int(os.environ.get("OLD_HOOK_EXIT", "0")))
         self.drain(root=worktree)
         self.drain(root=failed)
 
-    def test_existing_models_are_preserved_and_shared_with_worktree(self):
-        models = self.repo / ".cache/qmd/models"
-        models.mkdir(parents=True)
-        (models / "existing.gguf").write_text("preserve")
-        self.run_command("bin/setup")
-        self.commit()
-        worktree = self.base / "another checkout"
-        self.run_command("git", "worktree", "add", "-b", "another", str(worktree))
-        self.drain(root=worktree)
-        self.assertEqual((worktree / ".cache/qmd/models").resolve(), self.base / "home/.cache/qmd/models")
-        self.assertTrue(models.is_symlink())
-        self.assertEqual((models / "existing.gguf").read_text(), "preserve")
-        self.run_command("git", "worktree", "remove", "--force", str(worktree))
-
     def test_unrelated_repositories_share_home_models_and_keep_local_indexes(self):
         self.run_command("bin/setup")
         models = self.base / "home/.cache/qmd/models"
@@ -837,39 +821,32 @@ sys.exit(int(os.environ.get("OLD_HOOK_EXIT", "0")))
         self.assertEqual((other / ".cache/qmd/models/existing.gguf").read_text(), "downloaded once")
         self.assertFalse(os.path.samefile(self.repo / ".cache/qmd/index.sqlite", other / ".cache/qmd/index.sqlite"))
 
-    def test_model_migration_deduplicates_but_rejects_conflicts(self):
-        models = self.base / "home/.cache/qmd/models"
+    def test_setup_links_and_repairs_the_shared_models_but_stops_at_a_folder_in_their_place(self):
         local = self.repo / ".cache/qmd/models"
-        models.mkdir(parents=True)
-        local.mkdir(parents=True)
-        (models / "existing.gguf").write_text("shared")
-        (local / "existing.gguf").write_text("different")
-        result = self.run_command("bin/setup", check=False)
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("conflict", result.stderr.lower())
-        self.assertFalse(local.is_symlink())
-        self.assertEqual((local / "existing.gguf").read_text(), "different")
-        (local / "existing.gguf").write_text("shared")
-        (local / "another.gguf").write_text("another model")
+        models = self.base / "home/.cache/qmd/models"
         self.run_command("bin/setup")
         self.assertTrue(local.is_symlink())
         self.assertEqual(local.resolve(), models)
-        self.assertEqual((models / "another.gguf").read_text(), "another model")
-
-    def test_model_link_migration_preserves_external_source_and_repairs_broken_links(self):
-        source = self.base / "old model cache"
-        source.mkdir()
-        (source / "existing.gguf").write_text("preserve external source")
-        local = self.repo / ".cache/qmd/models"
-        local.parent.mkdir(parents=True)
-        local.symlink_to(source)
-        self.run_command("bin/setup")
-        self.assertEqual(local.resolve(), self.base / "home/.cache/qmd/models")
-        self.assertEqual((source / "existing.gguf").read_bytes(), (local / "existing.gguf").read_bytes())
+        # A broken link, or one to another folder, is repaired, and the other folder is left alone.
+        elsewhere = self.base / "other models"
+        elsewhere.mkdir()
+        (elsewhere / "kept.gguf").write_text("kept")
+        for target in (self.base / "missing", elsewhere):
+            with self.subTest(target=target.name):
+                local.unlink()
+                local.symlink_to(target)
+                self.run_command("bin/setup")
+                self.assertEqual(local.resolve(), models)
+        self.assertEqual((elsewhere / "kept.gguf").read_text(), "kept")
+        # A folder there may hold models, so setup stops and deletes nothing.
         local.unlink()
-        local.symlink_to(self.base / "missing")
-        self.run_command("bin/setup")
-        self.assertEqual(local.resolve(), self.base / "home/.cache/qmd/models")
+        local.mkdir()
+        (local / "existing.gguf").write_text("preserve")
+        self.assert_fails_naming("bin/setup", str(local))
+        self.assertFalse(local.is_symlink())
+        self.assertEqual((local / "existing.gguf").read_text(), "preserve")
+        self.assertIn("bin/prep-worktree", "\n".join(json.loads(
+            self.run_command("bin/doctor", "--json", check=False).stdout)["issues"]))
 
     def test_burst_requests_coalesce_without_duplicate_qmd_pairs(self):
         self.run_command("bin/setup")
@@ -1007,7 +984,6 @@ fcntl.flock = flock
         self.assertEqual(self.records(), [])
 
     def test_only_full_check_runs_application_checks_after_foundation_checks(self):
-        self.tool("shellcheck", "import sys\nsys.exit(0)\n")
         self.assertIn("no bin/check-application", self.run_command("bin/check", "--full").stdout)
         calls = self.base / "application calls"
         application = self.repo / "bin/check-application"
@@ -1033,7 +1009,6 @@ fcntl.flock = flock
         self.assertFalse(calls.exists())
 
     def test_full_check_reuses_a_recent_application_pass_for_the_same_clean_tree_and_environment(self):
-        self.tool("shellcheck", "import sys\nsys.exit(0)\n")
         calls = self.base / "application calls"
         application = self.repo / "bin/check-application"
         application.write_text("#!" + sys.executable + "\nimport os, sys\n"
@@ -1102,7 +1077,6 @@ fcntl.flock = flock
         self.assertEqual(runs(), 12)
 
     def test_fast_check_still_rejects_syntax_and_lint_errors(self):
-        self.tool("shellcheck", "import sys\nsys.exit(0)\n")
         (self.repo / "tests").mkdir()
         for folder in (self.repo / "bin", self.repo / "tests"):
             with self.subTest(folder=folder):
@@ -1147,7 +1121,6 @@ sys.exit(1 if found else 0)
         self.run_command("bin/check")
 
     def test_fast_check_still_rejects_staged_whitespace(self):
-        self.tool("shellcheck", "import sys\nsys.exit(0)\n")
         (self.repo / "whitespace.txt").write_text("trailing space \n")
         self.run_command("git", "add", "whitespace.txt")
         result = self.run_command("bin/check", check=False)
@@ -1155,7 +1128,6 @@ sys.exit(1 if found else 0)
         self.assertIn("trailing whitespace", result.stdout)
 
     def test_fast_check_rejects_whitespace_committed_since_the_default_branch(self):
-        self.tool("shellcheck", "import sys\nsys.exit(0)\n")
         (self.repo / "fixture.txt").write_text("published trailing space \n")
         self.run_command("git", "add", ".")
         self.run_command("git", "commit", "-m", "Fixture")
@@ -1189,7 +1161,6 @@ sys.exit(1 if found else 0)
         self.run_command("bin/check", root=clone)
 
     def test_fast_check_reads_whitespace_since_a_github_actions_events_base(self):
-        self.tool("shellcheck", "import sys\nsys.exit(0)\n")
         (self.repo / "fixture.txt").write_text("published trailing space \n")
         self.run_command("git", "add", ".")
         self.run_command("git", "commit", "-m", "Fixture")

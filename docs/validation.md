@@ -21,6 +21,10 @@ itself, so adopter documents never become test fixtures. It covers:
 
 - Knowledge tooling: setup, search routing, freshness, refresh coordination,
   hooks, worktrees, model caches, diagnostics, and refresh-log timestamps.
+  Without QMD, `bin/setup`, `bin/qmd-index`, and `bin/doctor` fail and name
+  it. Without direnv, `bin/setup` and `bin/doctor` pass in a checkout without
+  an `.envrc`, and they and `bin/prep-worktree` fail in one with it. Without
+  ShellCheck, `bin/doctor` fails.
   When `core.hooksPath` names one checkout's `bin/hooks` by absolute path,
   `bin/doctor` passes and `bin/setup` leaves the path unchanged in that
   checkout and a linked worktree. A hook there that differs from the
@@ -66,8 +70,8 @@ itself, so adopter documents never become test fixtures. It covers:
   Git's arguments and stdin, refuses the push when it fails, and must be
   executable.
 - `bin/sync`: initial adoption, hash and block enforcement with overrides,
-  updates between tagged releases with conflict refusal and `--force`, 1.x
-  migration through recorded source revisions, and fleet `--status`. The
+  updates between tagged releases with conflict refusal and `--force`, and
+  fleet `--status`. The
   adoption test also confirms that the copied CI workflow runs
   `bin/check --full`. Feature tests enable a feature at adoption and later,
   keep it across syncs, refuse to disable a changed copy, refuse a project
@@ -131,8 +135,9 @@ still need verification in the real checkout. Automated regression checks
 verify adopter-specific setup failures propagate and leave source files intact.
 
 Model-cache regressions exercise unrelated repositories, linked worktrees,
-separate Git metadata, verified duplicate removal, conflict preservation,
-external symlink migration, and broken-link repair in isolated home directories.
+separate Git metadata, and repair of a broken link or one to another folder in
+isolated home directories, and confirm that setup stops without deleting
+anything when a folder holds the link's place.
 
 ## Release 2.0 and fleet migration — 2026-10-09
 

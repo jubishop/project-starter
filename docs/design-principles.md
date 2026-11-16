@@ -40,7 +40,7 @@ Reference: [Git worktree documentation](https://git-scm.com/docs/git-worktree).
 Combine bursts of hook requests into the minimum refreshes needed to index
 the final state. Preserve a pending refresh when indexed files change during
 an active run. Skip work only when the indexed inputs and configuration are
-known to be unchanged, accounting for deletions and optional home memory.
+known to be unchanged, accounting for deletions.
 
 Keep a foreground refresh command for uncommitted edits and recovery.
 Search documentation must explain that Git hooks do not observe each file
@@ -58,7 +58,6 @@ knowledge search, which keeps them from silently replacing search with direct
 reads, since that can conceal a persistently broken index. The starter
 supplies only its own repair steps and does not restate that rule.
 Known-file reads and successful searches with no matches remain normal work.
-Deliberate operation without optional QMD remains an explicit project choice.
 
 ## Add a read-only diagnostic command
 
@@ -66,11 +65,11 @@ A command such as `bin/doctor` should report the active hook integration,
 available tools and supported versions, selected collections, current
 checkout's database, shared model path, and the last refresh outcome.
 
-Distinguish an optional tool that is absent from a tool that is installed
-but failing. Report whether index freshness is known, stale, or unknown.
-Give a specific recovery command when a check finds a problem. Diagnostic
-inspection should not approve environment files, download models, or rebuild
-the index as a side effect.
+Fail when a required tool is absent, and distinguish that from a tool that
+is installed but failing. Report whether index freshness is known, stale, or
+unknown. Give a specific recovery command when a check finds a problem.
+Diagnostic inspection should not approve environment files, download models,
+or rebuild the index as a side effect.
 
 ## Separate document lifecycle from implementation progress
 
@@ -118,7 +117,7 @@ Keep detailed rules in the [Markdown guidance](../starter/docs/foundation/engine
 
 Test the starter as copied into disposable repositories. Run the base bundle
 and the optional GitHub integration on macOS and Linux in CI. Include existing
-hooks, missing optional tools, subdirectory searches,
+hooks, missing required tools, subdirectory searches,
 repeated setup, concurrent refresh requests, and worktree isolation.
 
 Keep routine tests independent of model downloads. Add an explicit smoke

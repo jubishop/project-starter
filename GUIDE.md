@@ -68,25 +68,25 @@ only here, and the other `bin/` commands run in the target.
    the managed [pre-push hook](starter/docs/foundation/engineering-policy.md#pre-push-hook)
    runs after the document checks pass.
 7. **Configure knowledge.** Adjust collections and deliberate exclusions in
-   `.config/knowledge.json`, keeping personal paths in local Git
-   configuration. Keep or add the `readme` collection, which indexes only the
+   `.config/knowledge.json`; every collection stays inside the checkout.
+   Keep or add the `readme` collection, which indexes only the
    root `README.md`; a collection rooted at `.` with `**/*.md` should ignore
    `README.md` so it is not indexed twice. Bring existing pages into the
    documented formats, and do not invent memories.
-8. **Verify.** Run `bin/setup`, `bin/check --full`, and `bin/doctor`. With QMD,
-   search for a distinctive term from the tailored root README, expecting
-   `qmd://readme/README.md`, and for one from a real `docs/` or `memory/`
-   page, and read each result.
+8. **Verify.** Run `bin/setup`, `bin/check --full`, and `bin/doctor`, which
+   fail when a [required tool](starter/docs/foundation/knowledge-search.md#required-tools)
+   is missing. Search for a distinctive term from the tailored root README,
+   expecting `qmd://readme/README.md`, and for one from a real `docs/` or
+   `memory/` page, and read each result.
    `bin/smoke-qmd --project /path/to/project` exercises a snapshot with real
-   QMD. Report missing optional tools as skipped features, and check CI for
-   the pushed commit.
+   QMD. Check CI for the pushed commit.
 9. **Set up the remote for new hosted projects.** After the first commit and
     checks, follow [Git remote setup](starter/docs/git-remotes.md) to publish
     to the primary host. Adopting an existing repository does not authorize
     adding a host or changing visibility. For a public GitHub repository, run
     `bin/sync --dry-run /path/to/project` once the remote exists, and enable
     [secret scanning](docs/releases.md#secret-scanning) if it warns.
-10. **Report** changes, checks actually run, skipped features, and overrides.
+10. **Report** changes, checks actually run, and overrides.
     Commit and push according to the user's request and the repository's rules.
 
 ## Update an adopter

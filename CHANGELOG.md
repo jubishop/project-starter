@@ -65,12 +65,57 @@ follow-up it cannot apply. See [releases](docs/releases.md).
   such as home's `home-knowledge`, can import it instead of keeping a fork,
   which missed fixes such as 2.12.0's orphaned-vector cleanup. Adopters'
   commands and messages are unchanged.
+- QMD is required, and direnv in a checkout with an `.envrc`, as
+  [required tools](starter/docs/foundation/knowledge-search.md#required-tools)
+  says. Without QMD, `bin/setup`, every refresh, and `bin/doctor` fail and
+  name it, where setup and each hook's refresh had succeeded with "QMD absent:
+  local search skipped." and `bin/doctor` had passed with freshness
+  `unavailable`. Without direnv, `bin/setup`, `bin/prep-worktree`, and
+  `bin/doctor` fail in a checkout with an `.envrc`, and `bin/doctor` fails
+  without ShellCheck instead of printing a notice. Home's setup installs all
+  three on the Mac, so the optional-tool paths only hid a broken install
+  until an agent's lookup failed. A failed lookup no longer offers to operate
+  without QMD.
+- The knowledge tools drop paths no adopter reached on 2026-11-15: the
+  `knowledge.homeMemoryPath` setting and its `home-memory` collection, which
+  no adopter set and which would index `~/memory` again beside
+  `~/bin/home-knowledge`; moving a checkout's own `.cache/qmd/models` folder
+  into `~/.cache/qmd/models`, which every checkout and worktree had done, so
+  setup now only creates or repairs that link and stops, deleting nothing, at
+  a folder in its place; and the refusal of Python before 3.9. The template
+  `README.md` and `docs/development-workflow.md` name the required tools, but
+  each adopter's copy is its own, so sync leaves it unchanged. Not in the
+  bundle: `bin/sync` no longer plans from 1.x manifests without `managed`
+  hashes, `--status` drops its "legacy manifest" line, and `bin/smoke-qmd`
+  drops its home-memory step.
 
 ### Manual follow-up
 
-None. Vps-infra's copy of home-infra's runner facts is already a link, and
-intentional, tracked stopgap copies, such as repository-local CI fallbacks,
-stay with their own issues. The starter workflow keeps running
+Podhaven and screenr need the follow-up below; the other adopters take the
+[sync-only](docs/releases.md#sync-only-releases) path.
+
+- podhaven: `bin/tests/test_knowledge.py`, its own copy of the starter's
+  knowledge tests, which `bin/check-application` runs, fails against this
+  release. Three of its tests expect the failed-lookup pause that the
+  search-failure change drops, others test the home-memory setting, missing
+  optional tools, and model-cache migration, and its fixture has no
+  `shellcheck`, which `bin/doctor` now requires. Bring it in line with the
+  starter's `tests/test_knowledge.py`, or drop the tests that duplicate the
+  starter's own suite, drop `bin/smoke-knowledge`'s home-memory step, and run
+  `bin/check --full`.
+- screenr: `README.md` links
+  `docs/foundation/knowledge-search.md#optional-home-memory`, which this
+  release removes, so `bin/check --documents-only` fails until that paragraph
+  goes. Drop it and `docs/development-workflow.md`'s paragraph about copying
+  `screenr.homeMemoryPath` to `knowledge.homeMemoryPath`, then run
+  `bin/check --documents-only`.
+
+No other adopter sets `knowledge.homeMemoryPath`, links the removed section,
+keeps a folder in place of a model link, or tests the knowledge tools itself,
+and the Mac has QMD, direnv, and ShellCheck. Vps-infra's copy of
+home-infra's runner facts is already a link, and intentional, tracked
+stopgap copies, such as repository-local CI fallbacks, stay with their own
+issues. The starter workflow keeps running
 `bin/check --full`, and no adopter workflow changes. Records that earlier CI
 runs left in a self-hosted runner's checkout are never read again. No adopter
 overrides the files the search-failure change touches, and none restates the

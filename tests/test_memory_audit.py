@@ -631,9 +631,6 @@ class MemoryAuditTests(unittest.TestCase):
         self.assertIn("## Project context\n\nLedgers under memory/sentry/ are historical.\n\n## Evidence", prompt)
 
     def test_search_index_holds_only_the_clones_collections(self):
-        personal = self.base / "home-memory"
-        personal.mkdir()
-        self.git("config", "knowledge.homeMemoryPath", str(personal))
         self.run_audit()
         clone = self.repo / ".cache/memory-audit/repository"
         collections = json.loads(self.qmd_config.read_text())["collections"]

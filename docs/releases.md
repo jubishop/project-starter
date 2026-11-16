@@ -28,12 +28,6 @@ them. Add a new extension point once a second repository needs the same
 override. A new managed or feature file whose path holds a file sync does not
 manage is a conflict too; move or delete that file first.
 
-Version 1.x adopters recorded starter revisions instead of hashes. Sync treats
-a file as unchanged when it matches the content at any recorded revision
-(`source_ref`, `knowledge_source_ref`, or `task_tracking_source_ref`),
-removes unchanged files the release no longer ships, and inserts the managed
-blocks, placing the `AGENTS.md` block after the page title.
-
 ## Secret scanning
 
 Every public GitHub adopter keeps GitHub secret scanning and push protection

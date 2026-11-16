@@ -143,10 +143,6 @@ def main():
             path = repo / directory
             path.mkdir(parents=True, exist_ok=True)
             (path / filename).write_text(content)
-        home = base / "optional home notes"
-        home.mkdir()
-        (home / "note.md").write_text("# Home note\n\nhomemarkerzeta is optional cross-project context.\n")
-        run("git", "config", "knowledge.homeMemoryPath", str(home))
         print("Building isolated indexes; missing models download only when allowed...", flush=True)
         run("bin/setup")
         if (repo / "bin/check").is_file():
@@ -174,11 +170,6 @@ def main():
                                 "--json", "-n", "5", "-C", "5").stdout)
         assert result and any(name in json.dumps(result) for name in ("retrieval-proof.md", "knowledge-search.md")), result
         passed("query expansion and reranking with real models")
-        assert json.loads(run("bin/knowledge", "search", "homemarkerzeta", "--json").stdout)
-        run("git", "config", "--unset", "knowledge.homeMemoryPath")
-        run("bin/qmd-index")
-        assert not json.loads(run("bin/knowledge", "search", "homemarkerzeta", "--json").stdout)
-        passed("home-memory opt-in and removal from real search")
 
         def readback(root):
             return {str(path.relative_to(root)): (path.stat().st_mtime_ns, path.read_bytes())

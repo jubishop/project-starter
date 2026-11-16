@@ -5,8 +5,8 @@ Until the project has an application, say so instead of listing entry points.
 
 ## Development
 
-Run `bin/setup` after cloning; it needs Git and Python 3.9 or later. QMD and
-direnv are optional, and setup reports skipped features. See the
+Run `bin/setup` after cloning; it needs Git, Python 3, and QMD, plus direnv
+when the project has an `.envrc`. See the
 [development workflow](docs/development-workflow.md) for this project's
 commands and the [check schedule](docs/foundation/engineering-policy.md#checks)
 for when to run `bin/check --documents-only`, `bin/check`, and
