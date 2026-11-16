@@ -530,6 +530,43 @@ except RuntimeError as error:
         self.assertFalse((self.repo / ".cache").exists())
         self.assertFalse((self.repo / ".config/qmd").exists())
 
+    def test_code_elsewhere_names_its_own_pages_and_settings_in_engine_messages(self):
+        # The starter's pages and Git settings do not exist under another root, such as home's.
+        root, cache = self.base / "outside root", self.base / "outside cache"
+        root.mkdir()
+        caller = self.base / "outside tool.py"
+        caller.write_text(f'''
+import json, sys
+sys.path.insert(0, {str(self.repo / "bin")!r})
+from _knowledge import Knowledge
+class Outside(Knowledge):
+    required_tools_page, models_page = "outside.md#tools", "outside.md#models"
+    def setting(self, name):
+        path = self.root / "settings.json"
+        return json.loads(path.read_text()).get(name, "") if path.exists() else ""
+    def setting_name(self, name):
+        return name + " in settings.json"
+try:
+    sys.exit(Outside({str(root)!r}, cache={str(cache)!r}).lookup(["search", "guidance"]))
+except (RuntimeError, ValueError) as error:
+    sys.exit(str(error))
+''')
+        def failure():
+            result = self.run_command(sys.executable, "-B", str(caller), root=self.base, check=False)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertNotIn("docs/foundation", result.stderr)
+            self.assertNotIn("knowledge.", result.stderr)
+            return result.stderr
+
+        models = cache / "qmd/models"
+        models.mkdir(parents=True)
+        self.assertIn("so it can link to the shared models; see outside.md#models", failure())
+        models.rmdir()
+        (self.tools / "qmd").unlink()
+        self.assertIn("Restore it, or point qmdPath in settings.json at it; see outside.md#tools", failure())
+        (root / "settings.json").write_text(json.dumps({"qmdPath": "missing-qmd"}))
+        self.assertIn("qmdPath in settings.json is not executable: missing-qmd", failure())
+
     def test_preserve_existing_configured_and_default_hooks(self):
         for configured in (False, True):
             with self.subTest(configured=configured):

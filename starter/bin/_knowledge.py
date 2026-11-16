@@ -21,10 +21,9 @@ from datetime import datetime, timezone
 ROOT = Path(__file__).resolve().parents[1]
 EVENTS = ("post-checkout", "post-commit", "post-merge", "post-rewrite", "pre-push")
 # The home repository's setup installs these tools on the Mac every adopter runs on, so a missing one means it broke.
-REQUIRED_TOOLS = "; see docs/foundation/knowledge-search.md#required-tools"
-QMD_MISSING = "QMD is required but not installed. Restore it, or point knowledge.qmdPath at it" + REQUIRED_TOOLS
-DIRENV_MISSING = "direnv is required for this checkout's .envrc but not installed. Restore it" + REQUIRED_TOOLS
-SHELLCHECK_MISSING = "ShellCheck is required by bin/check but not installed. Restore it" + REQUIRED_TOOLS
+REQUIRED_TOOLS = "docs/foundation/knowledge-search.md#required-tools"
+DIRENV_MISSING = "direnv is required for this checkout's .envrc but not installed. Restore it; see " + REQUIRED_TOOLS
+SHELLCHECK_MISSING = "ShellCheck is required by bin/check but not installed. Restore it; see " + REQUIRED_TOOLS
 
 
 def stamp():
@@ -127,24 +126,6 @@ def shared_models(root=ROOT):
     return Path.home() / ".cache" / "qmd" / "models"
 
 
-def prepare_models(cache):
-    """Link the models folder in QMD's cache folder to the shared models, creating or repairing the link."""
-    models = shared_models()
-    local = cache / "models"
-    models.mkdir(parents=True, exist_ok=True)
-    if local.resolve() == models.resolve():
-        return
-    if local.exists() and not local.is_symlink():
-        raise ValueError("Move what " + str(local) + " holds into " + str(models) + " and remove it, so it can link "
-                         "to the shared models; see docs/foundation/knowledge-search.md#worktrees-and-models")
-    cache.mkdir(parents=True, exist_ok=True)
-    # Replacing the link in one rename leaves concurrent setups no gap. The old target stays untouched.
-    with tempfile.TemporaryDirectory(prefix="models-", dir=cache) as temporary:
-        link = Path(temporary) / "models"
-        link.symlink_to(models, target_is_directory=True)
-        link.replace(local)
-
-
 def primary_checkout(root):
     common = Path(git("rev-parse", "--path-format=absolute", "--git-common-dir", root=root)).resolve()
     current = Path(git("rev-parse", "--absolute-git-dir", root=root)).resolve()
@@ -176,7 +157,7 @@ def prepare(root):
     primary = primary_checkout(root)
     if primary and primary.resolve() == root:
         git("config", "--local", "knowledge.primaryWorktree", str(root), root=root)
-    prepare_models(Knowledge(root).cache)
+    Knowledge(root).prepare_models()
     envrc = root / ".envrc"
     if not envrc.exists():
         return
@@ -223,13 +204,16 @@ class Knowledge:
     - worker: the command that runs the index worker. The engine appends the worker's lock descriptor, which the
       command passes to worker().
 
-    Settings come from the root's local Git configuration. A subclass may read them elsewhere by overriding
-    setting(), and may name its own commands below, which messages tell the reader to run.
+    Settings come from the root's local Git configuration. A subclass that reads them elsewhere overrides setting(),
+    and setting_name() to name them in messages as its reader sets them. It may also name its own commands and pages
+    below, which messages tell the reader to run or read.
     """
 
     doctor_command = "bin/doctor"
     refresh_command = "bin/qmd-index"
     prepare_command = "bin/prep-worktree"
+    required_tools_page = REQUIRED_TOOLS
+    models_page = "docs/foundation/knowledge-search.md#worktrees-and-models"
 
     def __init__(self, root=ROOT, cache=None, config=None, worker=None):
         self.root = Path(root).resolve()
@@ -241,6 +225,10 @@ class Knowledge:
 
     def setting(self, name):
         return git("config", "--local", "--get", "knowledge." + name, root=self.root, optional=True)
+
+    def setting_name(self, name):
+        """Name a setting in a message as the reader sets it."""
+        return "knowledge." + name
 
     def shown(self, path):
         """Name a path in a message, relative to the root when inside it."""
@@ -291,14 +279,32 @@ class Knowledge:
         requested = self.setting("qmdPath")
         command = shutil.which(requested or "qmd")
         if requested and not command:
-            raise ValueError("knowledge.qmdPath is not executable: " + requested)
+            raise ValueError(self.setting_name("qmdPath") + " is not executable: " + requested)
         if not command:
-            raise RuntimeError(QMD_MISSING)
+            raise RuntimeError("QMD is required but not installed. Restore it, or point " +
+                               self.setting_name("qmdPath") + " at it; see " + self.required_tools_page)
         result = subprocess.run([command, "--version"], cwd=self.root, env=self.environment(),
                                 text=True, capture_output=True, timeout=15)
         if result.returncode:
             raise RuntimeError("QMD is installed but --version failed: " + result.stderr.strip())
         return command, result.stdout.strip()
+
+    def prepare_models(self):
+        """Link the models folder in QMD's cache folder to the shared models, creating or repairing the link."""
+        models = shared_models()
+        local = self.cache / "models"
+        models.mkdir(parents=True, exist_ok=True)
+        if local.resolve() == models.resolve():
+            return
+        if local.exists() and not local.is_symlink():
+            raise ValueError("Move what " + str(local) + " holds into " + str(models) +
+                             " and remove it, so it can link to the shared models; see " + self.models_page)
+        self.cache.mkdir(parents=True, exist_ok=True)
+        # Replacing the link in one rename leaves concurrent setups no gap. The old target stays untouched.
+        with tempfile.TemporaryDirectory(prefix="models-", dir=self.cache) as temporary:
+            link = Path(temporary) / "models"
+            link.symlink_to(models, target_is_directory=True)
+            link.replace(local)
 
     def hooks_path(self):
         path = Path(git("rev-parse", "--git-path", "hooks", root=self.root))
@@ -456,7 +462,7 @@ class Knowledge:
         try:
             rendered = self.config()
             atomic_json(self.qmd_config / "index.yml", rendered)
-            prepare_models(self.cache)
+            self.prepare_models()
             tool, version = self.qmd_tool()
             result["qmd_version"] = version
             # Logs append across runtime upgrades; date each section for later triage.
@@ -536,13 +542,13 @@ class Knowledge:
                 self.configuration_matches(rendered) and not self.worker_active())
 
     def lookup(self, args):
-        prepare_models(self.cache)
+        self.prepare_models()
         tool, version = self.qmd_tool()
         retrieves = args[0] in {"search", "query", "vsearch", "get", "multi-get", "ls"}
         if retrieves and not self.current_index(version):
             timeout = float(self.setting("searchRefreshTimeout") or "60")
             if not math.isfinite(timeout) or timeout <= 0:
-                raise ValueError("knowledge.searchRefreshTimeout must be a positive number of seconds")
+                raise ValueError(self.setting_name("searchRefreshTimeout") + " must be a positive number of seconds")
             print("Search index freshness is stale or unknown; refreshing before lookup.", file=sys.stderr)
             if self.wait_for(self.enqueue(), timeout=timeout, output=sys.stderr):
                 raise RuntimeError("Search refresh failed; no results returned. " + self.repair())
