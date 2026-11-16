@@ -99,7 +99,8 @@ changes, or that a new file would replace one sync does not manage. Move the cha
 its reason in `.project-starter.json`, or discard it with `--force`. Apply the
 release's manual follow-up from the [changelog](CHANGELOG.md), enable
 [secret scanning](docs/releases.md#secret-scanning) if sync warns, run
-`bin/check --full`, and commit. An adopter skips the check and deployment
+`bin/check --full`, or only `bin/check --documents-only` when the follow-up
+changes only text, and commit. An adopter skips the check and deployment
 when the release has no manual follow-up, or when the release's follow-up
 applies only to overrides or features the adopter lacks; see [sync-only releases](docs/releases.md#sync-only-releases).
 Its sync-only commit carries `[skip ci]` and, in the message's final trailer

@@ -153,7 +153,7 @@ bin/sync /path/to/project
 ```
 
 Enable [secret scanning](#secret-scanning) where sync warns about it. Apply
-the changelog's manual follow-up, run the checks it needs there (only
+the changelog's manual follow-up, run `bin/check --full` there (only
 `bin/check --documents-only` when it changes only text), commit
 on its default branch, push, and confirm CI for the pushed
 commit. When GitHub refuses to start CI or an adopter's self-hosted runners
