@@ -30,6 +30,12 @@ follow-up it cannot apply. See [releases](docs/releases.md).
   starter's own repair steps. The block is part of each adopter's own
   instructions, which override `~/AGENTS.md`, so its pause outlived the home
   rule's and stalled unattended agents on their first QMD failure.
+- `bin/_knowledge.py`'s search engine is a `Knowledge` class that takes the
+  root, cache and configuration folders, and index-worker command it runs
+  with, defaulting to the checkout that holds it. Code outside a checkout,
+  such as home's `home-knowledge`, can import it instead of keeping a fork,
+  which missed fixes such as 2.12.0's orphaned-vector cleanup. Adopters'
+  commands and messages are unchanged.
 
 ### Manual follow-up
 
@@ -39,7 +45,10 @@ stay with their own issues. The starter workflow keeps running
 `bin/check --full`, and no adopter workflow changes. Records that earlier CI
 runs left in a self-hosted runner's checkout are never read again. No adopter
 overrides the files the search-failure change touches, and none restates the
-pause in its own instructions.
+pause in its own instructions. The module-level helpers project code imports
+from `bin/_knowledge.py`, as podhaven's `bin/_worktrees.py` does, are
+unchanged; on 2026-11-16 no adopter imported a function that became a
+`Knowledge` method.
 
 ## 3.13.1 — 2026-11-13
 

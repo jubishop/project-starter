@@ -474,6 +474,64 @@ else:
         self.assertEqual(result.stdout, "")
         self.assert_defers_to_home_rule(result)
 
+    def test_code_elsewhere_runs_the_engine_on_the_root_cache_and_configuration_it_passes(self):
+        # A tool outside the checkout, such as home's knowledge search, imports the engine and passes its own paths.
+        root, cache, config = self.base / "outside root", self.base / "outside cache", self.base / "outside config"
+        note = root / "notes/guide.md"
+        note.parent.mkdir(parents=True)
+        note.write_text("# Guide\n\nOutside guidance.\n")
+        self.run_command("git", "init", "-b", "main", root=root)
+        config.mkdir()
+        (config / "knowledge.json").write_text(json.dumps(
+            {"schema_version": 1, "collections": {"notes": {"path": "notes", "pattern": "**/*.md"}}}))
+        caller = self.base / "outside tool.py"
+        caller.write_text(f'''
+import json, sys
+sys.path.insert(0, {str(self.repo / "bin")!r})
+from _knowledge import Knowledge
+class Outside(Knowledge):
+    doctor_command, refresh_command, prepare_command = "tool doctor", "tool refresh", "tool refresh"
+engine = Outside({str(root)!r}, cache={str(cache)!r}, config={str(config)!r},
+                 worker=[sys.executable, __file__, "worker"])
+command, arguments = sys.argv[1], sys.argv[2:]
+try:
+    if command == "worker":
+        sys.exit(engine.worker(int(arguments[0])))
+    if command == "refresh":
+        sys.exit(engine.wait_for(engine.enqueue()))
+    if command == "doctor":
+        print(json.dumps(engine.diagnose_index()))
+        sys.exit(0)
+    sys.exit(engine.lookup(sys.argv[1:]))
+except RuntimeError as error:
+    sys.exit(str(error))
+''')
+        def tool(*args, **options):
+            return self.run_command(sys.executable, "-B", str(caller), *args, root=self.base, **options)
+
+        tool("refresh")
+        self.assertEqual([r["command"] for r in self.records()], ["update", "embed", "cleanup"])
+        for record in self.records():
+            self.assertEqual((record["cwd"], Path(record["config"]).parent, record["cache"], record["index"]),
+                             (str(root), cache / "qmd", str(cache), str(cache / "qmd/index.sqlite")))
+            self.assertEqual(record["collections"], {"notes": {"path": str(root / "notes"), "pattern": "**/*.md"}})
+        self.assertTrue((config / "qmd/index.yml").is_file())
+        self.assertEqual(json.loads(tool("search", "guidance").stdout)["index"], str(cache / "qmd/index.sqlite"))
+        # A stale index refreshes through the caller's own worker command before the lookup.
+        note.write_text(note.read_text() + "Changed guidance.\n")
+        initial = len(self.records())
+        self.assertEqual(json.loads(tool("search", "guidance").stdout)["command"], "search")
+        self.assertEqual([r["command"] for r in self.records()[initial:]], ["update", "embed", "cleanup", "search"])
+        report = json.loads(tool("doctor").stdout)
+        self.assertEqual((report["freshness"], report["collections"], report["index"], report["issues"]),
+                         ("current", {"notes": str(root / "notes")}, str(cache / "qmd/index.sqlite"), []))
+        result = tool("search", "guidance", extra={"FAIL_QUERY": "1"}, check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Run tool doctor and tool refresh.", result.stderr)
+        # The engine's own checkout gains no index, cache, or QMD configuration.
+        self.assertFalse((self.repo / ".cache").exists())
+        self.assertFalse((self.repo / ".config/qmd").exists())
+
     def test_preserve_existing_configured_and_default_hooks(self):
         for configured in (False, True):
             with self.subTest(configured=configured):
