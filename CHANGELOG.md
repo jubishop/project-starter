@@ -91,6 +91,17 @@ follow-up it cannot apply. See [releases](docs/releases.md).
   bundle: `bin/sync` no longer plans from 1.x manifests without `managed`
   hashes, `--status` drops its "legacy manifest" line, and `bin/smoke-qmd`
   drops its home-memory step.
+- `bin/check --full` no longer reuses an application pass recorded under
+  other values of the environment variables a project lists in
+  `checks.applicationEnvironment` in `.config/knowledge.json`. The pass's
+  fingerprint includes each listed variable's value, with unset distinct
+  from empty, and the record keeps only its digest; a malformed list fails
+  `bin/check --full`. Home-infra's `bin/check-application` runs the NVR's and
+  the Raspberry Pi's tests only when `NVR_PYTHON` and `PI_PYTHON` name an
+  interpreter, so a pass recorded without them stood for a run that set
+  them, and neither set of tests ran. The engineering policy's
+  [checks](starter/docs/foundation/engineering-policy.md#checks) section says
+  what to list. A project that lists none keeps its fingerprint.
 
 ### Manual follow-up
 
@@ -114,6 +125,24 @@ adopter the [fleet sync](docs/releases.md#sync-the-fleet) steps.
   `foundation/knowledge-search.md#required-tools`. Drop "setup reports
   skipped features" and any "Missing optional tools" sentence, then run
   `bin/check --documents-only`.
+- health: add `"applicationEnvironment": ["HEALTH_TEST_DESTINATION"]` to
+  `checks` in `.config/knowledge.json`, since `bin/check-application` runs the
+  simulator tests on the device it names instead of a disposable one, then
+  run `bin/check --full`.
+- home-infra: add
+  `"applicationEnvironment": ["MAC_MINI_PYTHON", "NVR_PYTHON", "PI_PYTHON"]`
+  to `checks` in `.config/knowledge.json`, since `bin/check-application` runs
+  each host's tests under the Python its variable names. In
+  `docs/development-workflow.md`, drop `--no-reuse` from the command that runs
+  every lane locally and the paragraph after it, which the listed variables
+  now cover. Run `bin/check --full`, then that command, and confirm the
+  second runs the NVR's and the Pi's tests rather than reusing the first's
+  pass.
+- offline-librarian: add
+  `"applicationEnvironment": ["OFFLINE_LIBRARIAN_PYTHON"]` to `checks` in
+  `.config/knowledge.json`, since `bin/check-application` runs the tests under
+  the interpreter it names instead of `.venv/bin/python`, then run
+  `bin/check --full`.
 - podhaven: `bin/tests/test_knowledge.py`, its own copy of the starter's
   knowledge tests, which `bin/check-application` runs, fails against this
   release. Three of its tests expect the failed-lookup pause that the
@@ -153,6 +182,10 @@ follow-up, since it agrees with that rule.
 The module-level helpers project code imports from `bin/_knowledge.py`, as
 podhaven's `bin/_worktrees.py` does, are unchanged; on 2026-11-16 no adopter
 imported a function that became a `Knowledge` method.
+On 2026-11-16 no other adopter's `bin/check-application` read a variable
+that changes which checks run or what runs them; screenr's sets
+`SCREENR_TEST_SHARD` only from its own `--shard` argument, which `bin/check`
+never passes.
 
 ## 3.13.1 — 2026-11-13
 

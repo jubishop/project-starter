@@ -196,13 +196,22 @@ change. Report focused and full results separately.
 `bin/check --full` reuses a passing `bin/check-application` run on its own: when
 the checkout has no uncommitted or untracked changes, and that run passed in
 the last 12 hours for the same tree and environment (the platform, `python3`
-and `node` versions, and the packages in `.venv` and `node_modules`), it says
-which commit passed and skips the application checks. A reused result counts
-as a successful `bin/check --full` for that tree. Worktrees of a repository
-share the record, and `bin/check --full --no-reuse` runs the application checks
-regardless. In GitHub Actions, `bin/check --full` neither reuses nor records a
-pass, so a CI result always comes from running the checks on its revision,
-even on a self-hosted runner whose checkout keeps `.git` between jobs.
+and `node` versions, the packages in `.venv` and `node_modules`, and the
+values of the variables below), it says which commit passed and skips the
+application checks. A reused result counts as a successful `bin/check --full`
+for that tree. Worktrees of a repository share the record, and
+`bin/check --full --no-reuse` runs the application checks regardless. In
+GitHub Actions, `bin/check --full` neither reuses nor records a pass, so a CI
+result always comes from running the checks on its revision, even on a
+self-hosted runner whose checkout keeps `.git` between jobs.
+
+List in `checks.applicationEnvironment` in `.config/knowledge.json` each
+environment variable that changes which application checks run or what runs
+them, such as `["NVR_PYTHON"]` for a variable naming the Python that runs a
+host's tests. A pass then stands only for runs where each listed variable has
+the same value, or is unset as it was. The record keeps a digest, never the
+values. Never list the whole environment or a variable that changes on every
+run, such as a temporary path, since no pass would match.
 
 ### Pre-push hook
 
