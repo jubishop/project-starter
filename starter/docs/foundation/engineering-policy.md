@@ -77,9 +77,10 @@ reader task. Split a page when it mixes independent topics or readers must
 scan unrelated material, not because of its length. Move complete topics into
 descriptively named pages, leave a short overview and links, and update
 indexes and incoming links. Keep each rule or decision in one authoritative
-place with its reasons, evidence, dates, and status. Keep indexes and
-automatically loaded instructions short and link to details. Preserve
-generated and tool-managed formats.
+place with its reasons, evidence, dates, and status, across repositories too:
+for a system another repository owns, link to that repository's page rather
+than restating its facts. Keep indexes and automatically loaded instructions
+short and link to details. Preserve generated and tool-managed formats.
 
 ## Validation checkout isolation
 

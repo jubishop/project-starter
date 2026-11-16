@@ -7,6 +7,13 @@ follow-up it cannot apply. See [releases](docs/releases.md).
 
 ### Synced
 
+- The engineering policy's
+  [Markdown pages](starter/docs/foundation/engineering-policy.md#markdown-pages)
+  section holds its one-authoritative-place rule across repositories too: for
+  a system another repository owns, an adopter links to that repository's page
+  rather than restating its facts. The rule never said whether one place meant
+  one per repository, so agents copied home-infra's runner facts into
+  vps-infra's development workflow page.
 - A failed knowledge search no longer pauses knowledge-dependent work until
   the user approves a fallback. The managed `AGENTS.md` block,
   [search failures](starter/docs/foundation/knowledge-search.md#search-failures),
@@ -18,8 +25,10 @@ follow-up it cannot apply. See [releases](docs/releases.md).
 
 ### Manual follow-up
 
-None. No adopter overrides the changed files, and none restates the pause in
-its own instructions.
+None. Vps-infra's copy of home-infra's runner facts is already a link, and
+intentional, tracked stopgap copies, such as repository-local CI fallbacks,
+stay with their own issues. No adopter overrides the files the search-failure
+change touches, and none restates the pause in its own instructions.
 
 ## 3.13.1 — 2026-11-13
 
