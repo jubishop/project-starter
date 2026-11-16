@@ -59,6 +59,12 @@ follow-up it cannot apply. See [releases](docs/releases.md).
   drops its `git worktree add` example and removal steps. The block is part of
   each adopter's own instructions, which override `~/AGENTS.md`, so each copy
   froze an older version of a home rule, and the copies had begun to drift.
+- `bin/_knowledge.py`'s search engine is a `Knowledge` class that takes the
+  root, cache and configuration folders, and index-worker command it runs
+  with, defaulting to the checkout that holds it. Code outside a checkout,
+  such as home's `home-knowledge`, can import it instead of keeping a fork,
+  which missed fixes such as 2.12.0's orphaned-vector cleanup. Adopters'
+  commands and messages are unchanged.
 
 ### Manual follow-up
 
@@ -73,6 +79,9 @@ No adopter overrides the files the home-guidance sweep trims or links the
 removed flaky-test section. The template `memory/README.md` drops a sentence
 restating home's memory rule, but each adopter's copy is its own, so sync
 leaves it unchanged.
+The module-level helpers project code imports from `bin/_knowledge.py`, as
+podhaven's `bin/_worktrees.py` does, are unchanged; on 2026-11-16 no adopter
+imported a function that became a `Knowledge` method.
 
 ## 3.13.1 — 2026-11-13
 

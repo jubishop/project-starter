@@ -967,6 +967,29 @@ later run trusts. The user decided on 2026-11-16:
   each adopter's own workflow would have to copy, and keeping reuse in CI as
   an accepted saving.
 
+### Knowledge engine for home — 2026-11-15
+
+Home's `home-knowledge` kept a fork of the knowledge engine, taken from
+`57c0f58` on 2026-09-13, that missed later fixes here, such as 2.12.0's
+orphaned-vector cleanup. The user decided on 2026-11-15, in
+[jubishop/zshrc#342](https://github.com/jubishop/zshrc/issues/342), that it
+imports the engine from this repository's checkout instead, as home's
+`~/bin/auto-update` already runs `bin/smoke-qmd` from it.
+
+- **Paths as arguments:** `_knowledge.py`'s `Knowledge` class takes the root,
+  cache and configuration folders, and index-worker command it runs with,
+  defaulting to the checkout that holds it, so adopters' commands and
+  behavior stay the same
+  ([issue #73](https://github.com/jubishop/project-starter/issues/73)). A
+  subclass may read its settings elsewhere and name its own commands in
+  messages, and `diagnose_index()` checks the index alone, without a
+  checkout's hooks and tools.
+- **An interface home depends on:** home imports whatever the checkout holds,
+  not a release, so a change to the class's constructor or to the methods
+  home calls or overrides needs a matching change in home.
+- **Rejected,** in that issue: vendoring the engine into home through
+  `bin/sync`, and keeping the fork and porting fixes by hand.
+
 ### Sync closing advice — 2026-11-16
 
 After writing an update, `bin/sync` names the
