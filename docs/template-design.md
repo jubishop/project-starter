@@ -824,6 +824,29 @@ agents load `~/AGENTS.md`.
 - **Rejected:** restating the home rule to match it, and a sentence in the
   block and policy putting `~/AGENTS.md` ahead of them.
 
+### No check reuse in CI — 2026-11-16
+
+[Check reuse](#check-reuse-and-worktree-setup--2026-10-25) assumed CI starts
+from a fresh checkout, as GitHub's hosted runners do. Adopters are moving
+private CI to self-hosted runners, where `actions/checkout` reuses the
+runner's repository and its `git clean -ffdx` leaves `.git`, with its pass
+records, in place
+([issue #49](https://github.com/jubishop/project-starter/issues/49)). A push
+run on `main` after a squash merge of an up-to-date pull request, or a rerun
+of a passing job, could then reuse an earlier run's pass and run no tests,
+and any job, a pull request's code included, could write a record that a
+later run trusts. The user decided on 2026-11-16:
+
+- **Never reuse in CI:** when `GITHUB_ACTIONS` is `true`, `bin/check --full`
+  runs `bin/check-application` despite a matching pass, since a CI result
+  should come from running the checks on its revision. Adopters' workflows
+  keep `bin/check --full` unchanged.
+- **Never record in CI:** `bin/check` writes no pass record there, so a
+  runner's `.git` collects none.
+- **Rejected:** `bin/check --full --no-reuse` in the starter workflow, which
+  each adopter's own workflow would have to copy, and keeping reuse in CI as
+  an accepted saving.
+
 ### Unchanged choices — 2026-10-09
 
 Keep the [search reliability decision](#search-reliability-decision--2026-09-13)

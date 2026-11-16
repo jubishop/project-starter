@@ -986,8 +986,8 @@ fcntl.flock = flock
         (self.repo / ".git/info/exclude").write_text(".venv/\n")
         self.commit()
 
-        def runs(*args, reused=False):
-            result = self.run_command("bin/check", "--full", *args)
+        def runs(*args, reused=False, extra=None):
+            result = self.run_command("bin/check", "--full", *args, extra=extra)
             self.assertIn("Full foundation and application checks passed", result.stdout)
             self.assertEqual("Reused the application checks that passed" in result.stdout, reused, result.stdout)
             return len(calls.read_text().splitlines())
@@ -1032,6 +1032,16 @@ fcntl.flock = flock
             data["passed_at"] = "2000-01-01T00:00:00+00:00"
             record.write_text(json.dumps(data))
         self.assertEqual(runs(), 9)
+
+        # GitHub Actions runs them despite a pass and records none, since a self-hosted runner's checkout keeps .git.
+        ci = {"GITHUB_ACTIONS": "true"}
+        self.assertEqual(runs(reused=True), 9)
+        self.assertEqual(runs(extra=ci), 10)
+        with (self.repo / "docs/README.md").open("a") as stream:
+            stream.write("\nOne more line.\n")
+        self.commit()
+        self.assertEqual(runs(extra=ci), 11)
+        self.assertEqual(runs(), 12)
 
     def test_fast_check_still_rejects_syntax_and_lint_errors(self):
         self.tool("shellcheck", "import sys\nsys.exit(0)\n")

@@ -14,6 +14,14 @@ follow-up it cannot apply. See [releases](docs/releases.md).
   rather than restating its facts. The rule never said whether one place meant
   one per repository, so agents copied home-infra's runner facts into
   vps-infra's development workflow page.
+- In GitHub Actions, `bin/check --full` runs `bin/check-application` even
+  when a pass record matches the clean tree and environment, and records no
+  pass. On a self-hosted runner, `actions/checkout` keeps the checkout's
+  `.git` between jobs, so a push run on `main` after a squash merge, or a
+  rerun of a passing job, could reuse an earlier run's pass and report
+  success without running the application checks. The engineering policy's
+  [checks](starter/docs/foundation/engineering-policy.md#checks) section
+  says so.
 - A failed knowledge search no longer pauses knowledge-dependent work until
   the user approves a fallback. The managed `AGENTS.md` block,
   [search failures](starter/docs/foundation/knowledge-search.md#search-failures),
@@ -27,8 +35,11 @@ follow-up it cannot apply. See [releases](docs/releases.md).
 
 None. Vps-infra's copy of home-infra's runner facts is already a link, and
 intentional, tracked stopgap copies, such as repository-local CI fallbacks,
-stay with their own issues. No adopter overrides the files the search-failure
-change touches, and none restates the pause in its own instructions.
+stay with their own issues. The starter workflow keeps running
+`bin/check --full`, and no adopter workflow changes. Records that earlier CI
+runs left in a self-hosted runner's checkout are never read again. No adopter
+overrides the files the search-failure change touches, and none restates the
+pause in its own instructions.
 
 ## 3.13.1 — 2026-11-13
 

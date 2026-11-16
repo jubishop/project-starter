@@ -509,8 +509,12 @@ def record_pass(root, tree, fingerprint):
 
 
 def application_checks(root, application, reuse):
-    """Run bin/check-application, or reuse its recent pass on the same clean tree and environment."""
-    tree = clean_tree(root)
+    """Run bin/check-application, or reuse its recent pass on the same clean tree and environment.
+
+    GitHub Actions neither reuses nor records a pass: a CI result comes from running the checks on its revision,
+    and a self-hosted runner's checkout keeps .git, with any records in it, between jobs.
+    """
+    tree = None if os.environ.get("GITHUB_ACTIONS") == "true" else clean_tree(root)
     fingerprint = environment(root) if tree else None
     record = reusable_pass(root, tree, fingerprint) if tree and reuse else None
     if record:
