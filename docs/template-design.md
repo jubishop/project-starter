@@ -194,6 +194,9 @@ check on each lookup and a possible wait for pending indexing. Keep ordinary
 known-file reads and deliberate operation without optional QMD available.
 The detailed contract is in the [search failure policy](../starter/docs/foundation/knowledge-search.md#search-failures).
 
+[Search failures follow home guidance](#search-failures-follow-home-guidance--2026-11-15)
+supersedes the pause for approval.
+
 ## Improvements accepted — 2026-09-04
 
 All [design principles](design-principles.md) are accepted, including collection
@@ -821,6 +824,33 @@ each adopter's deployment rules. This was decided from that evidence on
   while an adopter's development workflow page sends its agent to that policy
   when the project first deploys. The policy names the audit's setting
   without linking its page, which exists only where the feature is enabled.
+
+### Search failures follow home guidance — 2026-11-15
+
+On 2026-11-15 the user dropped the pause in the
+[search reliability decision](#search-reliability-decision--2026-09-13):
+after a failed repair, knowledge-dependent work no longer waits for the user
+to approve a fallback
+([issue #68](https://github.com/jubishop/project-starter/issues/68)). The
+home `~/AGENTS.md` had dropped its own pause on 2026-10-15, but it yields to a
+repository's own instructions wherever they differ, and the managed block is
+part of each adopter's `AGENTS.md`, so the starter's pause won in every
+adopter. An unattended agent that trusted it stopped for approval no one could
+give. The decision rests on every adopter living under `~/projects`, where its
+agents load `~/AGENTS.md`.
+
+- **Defer to the home rule:** the managed block, the
+  [search failure policy](../starter/docs/foundation/knowledge-search.md#search-failures),
+  and the message a failed lookup prints point to `~/AGENTS.md` for a failed
+  knowledge search rather than restate it. Silent fallback stays forbidden
+  there, the 2026-09-13 decision's reason, so only the stop for approval goes.
+  The starter keeps only its own repair steps: `bin/doctor`,
+  `.cache/qmd/index.log`, and repeating the failed lookup to confirm recovery.
+- **No precedence line:** neither the managed block nor the engineering
+  policy says that `~/AGENTS.md` takes precedence over them, since guidance is
+  no longer duplicated between the two.
+- **Rejected:** restating the home rule to match it, and a sentence in the
+  block and policy putting `~/AGENTS.md` ahead of them.
 
 ### Starter improvements under the home rule — 2026-11-15
 
