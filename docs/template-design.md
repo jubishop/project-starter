@@ -938,6 +938,22 @@ later run trusts. The user decided on 2026-11-16:
   each adopter's own workflow would have to copy, and keeping reuse in CI as
   an accepted saving.
 
+### Sync closing advice — 2026-11-16
+
+After writing an update, `bin/sync` names the
+[sync-only](releases.md#sync-only-releases) path, which commits only the
+synced files with `[skip ci]` and runs no checks when no manual follow-up
+applies, and otherwise gives `bin/check --full`, or only
+`bin/check --documents-only` when the follow-up changes only text. It had
+told every update to run `bin/check --full`, so an operator who followed it
+rather than the docs would check all 22 adopters on a sync-only release
+([issue #47](https://github.com/jubishop/project-starter/issues/47)). The
+user chose static wording on 2026-11-11, leaving whether follow-up applies to
+the operator. Reading each installed release's manual follow-up from the
+changelog was rejected: it would tie the tool to the changelog's prose, and
+follow-up for only some overrides or features would still need judgment.
+After `--init`, the advice keeps the guide's adoption checks.
+
 ### Unchanged choices — 2026-10-09
 
 Keep the [search reliability decision](#search-reliability-decision--2026-09-13)

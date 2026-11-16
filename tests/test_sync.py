@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
@@ -438,6 +439,29 @@ class SyncTests(unittest.TestCase):
                     self.assertNotEqual(result.returncode, 0)
                     self.assertIn(".project-starter.json: syncCommitTrailers must map trailer names", result.stderr)
                     self.assertEqual(snapshot(repo), before)
+
+    def test_closing_advice_gives_adoption_checks_after_init_and_the_sync_only_path_after_an_update(self):
+        def references(output):
+            """Return each page#anchor the advice names, after checking that its heading exists here."""
+            found = re.findall(r"([\w./-]+\.md)#([\w-]+)", output)
+            for page, anchor in found:
+                headings = re.findall(r"^#+ (.+)$", (ROOT / page).read_text(), re.M)
+                self.assertIn(anchor, {re.sub(r"[^\w -]", "", h.lower()).replace(" ", "-") for h in headings}, page)
+            return {page + "#" + anchor for page, anchor in found}
+
+        repo = self.target()
+        adopted = self.sync("--init", "--ref", "WORKTREE", str(repo)).stdout
+        self.assertEqual(references(adopted), {"GUIDE.md#adopt-a-repository"})
+        for command in ("bin/setup", "bin/check --full", "bin/doctor"):
+            self.assertIn(command, adopted)
+        self.assertNotIn("[skip ci]", adopted)
+
+        self.commit(repo, "Adopt")
+        updated = self.sync("--ref", "WORKTREE", str(repo)).stdout
+        self.assertEqual(references(updated), {"docs/releases.md#sync-only-releases"})
+        for text in ("manual follow-up", "[skip ci]", "bin/check --full", "bin/check --documents-only"):
+            self.assertIn(text, updated)
+        self.assertNotIn("bin/doctor", updated)
 
     def test_sync_warns_when_a_public_github_adopter_lacks_secret_scanning(self):
         def repository(visibility, scanning, protection):

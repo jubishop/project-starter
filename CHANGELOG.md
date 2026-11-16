@@ -30,6 +30,18 @@ follow-up it cannot apply. See [releases](docs/releases.md).
   starter's own repair steps. The block is part of each adopter's own
   instructions, which override `~/AGENTS.md`, so its pause outlived the home
   rule's and stalled unattended agents on their first QMD failure.
+- After an update, `bin/sync` no longer tells every adopter to run
+  `bin/check --full`. Its closing advice names the
+  [sync-only](docs/releases.md#sync-only-releases) path: when no manual
+  follow-up applies to the project, commit only the synced files with
+  `[skip ci]` and run no checks; otherwise apply the follow-up and run
+  `bin/check --full`, or only `bin/check --documents-only` when it changes
+  only text. After `--init`, it points to the guide's
+  [adoption steps](GUIDE.md#adopt-a-repository), including `bin/setup`,
+  `bin/check --full`, and `bin/doctor`. The guide's
+  [update an adopter](GUIDE.md#update-an-adopter) and
+  [sync the fleet](docs/releases.md#sync-the-fleet) now agree with it on the
+  text-only case. None of these is in the bundle.
 
 ### Manual follow-up
 
@@ -39,7 +51,7 @@ stay with their own issues. The starter workflow keeps running
 `bin/check --full`, and no adopter workflow changes. Records that earlier CI
 runs left in a self-hosted runner's checkout are never read again. No adopter
 overrides the files the search-failure change touches, and none restates the
-pause in its own instructions.
+pause in its own instructions. `bin/sync`'s closing advice needs none either.
 
 ## 3.13.1 — 2026-11-13
 
