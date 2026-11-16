@@ -7,6 +7,13 @@ follow-up it cannot apply. See [releases](docs/releases.md).
 
 ### Synced
 
+- The engineering policy's
+  [Markdown pages](starter/docs/foundation/engineering-policy.md#markdown-pages)
+  section holds its one-authoritative-place rule across repositories too: for
+  a system another repository owns, an adopter links to that repository's page
+  rather than restating its facts. The rule never said whether one place meant
+  one per repository, so agents copied home-infra's runner facts into
+  vps-infra's development workflow page.
 - In GitHub Actions, `bin/check --full` runs `bin/check-application` even
   when a pass record matches the clean tree and environment, and records no
   pass. On a self-hosted runner, `actions/checkout` keeps the checkout's
@@ -18,9 +25,11 @@ follow-up it cannot apply. See [releases](docs/releases.md).
 
 ### Manual follow-up
 
-None. The starter workflow keeps running `bin/check --full`, and no adopter
-workflow changes. Records that earlier CI runs left in a self-hosted runner's
-checkout are never read again.
+None. Vps-infra's copy of home-infra's runner facts is already a link, and
+intentional, tracked stopgap copies, such as repository-local CI fallbacks,
+stay with their own issues. The starter workflow keeps running
+`bin/check --full`, and no adopter workflow changes. Records that earlier CI
+runs left in a self-hosted runner's checkout are never read again.
 
 ## 3.13.1 — 2026-11-13
 
