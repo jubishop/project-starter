@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
-"""Validate the guide and test the copyable bundle on the current platform.
+"""Usage: bin/check [-h | --help]
 
-Outside GitHub Actions, a change to the knowledge tools also runs bin/smoke-qmd with this machine's real QMD.
+Validate the guide and the bundle's documents, check Python syntax, shell scripts, workflows, and whitespace, and run
+the tests, which exercise copies of the bundle, on the current platform. Outside GitHub Actions, a change to the
+knowledge tools also runs bin/smoke-qmd with this machine's real QMD. The check has no modes: it always runs everything.
 """
 import ast
 import os
@@ -31,6 +33,12 @@ def knowledge_tools_changed():
 
 
 def main():
+    if sys.argv[1:] in (["-h"], ["--help"]):
+        print(__doc__.strip())
+        return 0
+    if sys.argv[1:]:
+        print(__doc__.strip(), file=sys.stderr)
+        return 2
     # Feature pages link to adopter paths, so the sync tests check them in an adopter that enables them.
     errors = validate(root, areas=("docs",), options={"checks": {"exclude": ["starter/**", "extras/**", "features/**"]}})
     errors += validate(root / "starter")

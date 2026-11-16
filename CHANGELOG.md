@@ -85,8 +85,9 @@ follow-up it cannot apply. See [releases](docs/releases.md).
   into `~/.cache/qmd/models`, which every checkout and worktree had done, so
   setup now only creates or repairs that link and stops, deleting nothing, at
   a folder in its place; and the refusal of Python before 3.9. The template
-  `README.md` and `docs/development-workflow.md` name the required tools, but
-  each adopter's copy is its own, so sync leaves it unchanged. Not in the
+  `README.md` and `docs/development-workflow.md` name the required tools.
+  Sync leaves each adopter's own copies unchanged, so the manual follow-up
+  rewrites them. Not in the
   bundle: `bin/sync` no longer plans from 1.x manifests without `managed`
   hashes, `--status` drops its "legacy manifest" line, and `bin/smoke-qmd`
   drops its home-memory step.
@@ -104,10 +105,26 @@ follow-up it cannot apply. See [releases](docs/releases.md).
 
 ### Manual follow-up
 
-Health, home-infra, offline-librarian, podhaven, and screenr need the
-follow-up below; the other adopters take the
-[sync-only](docs/releases.md#sync-only-releases) path.
+Every adopter needs the follow-up below, so this release, the starter
+included, takes the [full process](docs/releases.md#cut-a-release), and each
+adopter the [fleet sync](docs/releases.md#sync-the-fleet) steps.
 
+- Every adopter: its own pages, copied from the old template, still call QMD
+  and direnv optional, and its `AGENTS.md` block ranks them above
+  [required tools](starter/docs/foundation/knowledge-search.md#required-tools).
+  On 2026-11-16, `docs/development-workflow.md` said "QMD and direnv are
+  optional; setup reports skipped features." in every adopter but podhaven,
+  and `README.md` called them optional in all but jeeves, printing, and
+  podhaven; podhaven's and screenr's other lines are in their items below.
+  Find each such line with
+  `git grep -n -i -E '(qmd|direnv).*optional|optional.*(qmd|direnv)|optional tools|skipped features|when qmd is available' -- '*.md' ':!docs/foundation'`.
+  Rewrite it to name the required tools as the template does: setup "needs
+  Git, Python 3, and QMD, plus direnv when the project has an `.envrc`",
+  keeping the project's own requirements, such as sourdough's Node.js and
+  pnpm, with the workflow page linking
+  `foundation/knowledge-search.md#required-tools`. Drop "setup reports
+  skipped features" and any "Missing optional tools" sentence, then run
+  `bin/check --documents-only`.
 - health: add `"applicationEnvironment": ["HEALTH_TEST_DESTINATION"]` to
   `checks` in `.config/knowledge.json`, since `bin/check-application` runs the
   simulator tests on the device it names instead of a disposable one, then
@@ -133,13 +150,19 @@ follow-up below; the other adopters take the
   optional tools, and model-cache migration, and its fixture has no
   `shellcheck`, which `bin/doctor` now requires. Bring it in line with the
   starter's `tests/test_knowledge.py`, or drop the tests that duplicate the
-  starter's own suite, drop `bin/smoke-knowledge`'s home-memory step, and run
-  `bin/check --full`.
+  starter's own suite, and drop `bin/smoke-knowledge`'s home-memory step.
+  Rewrite `docs/development-workflow.md`'s "uses optional QMD search" and
+  "QMD and direnv are optional. Missing optional tools produce clear notices"
+  as the first item says, and run `bin/check --full`.
 - screenr: `README.md` links
   `docs/foundation/knowledge-search.md#optional-home-memory`, which this
   release removes, so `bin/check --documents-only` fails until that paragraph
   goes. Drop it and `docs/development-workflow.md`'s paragraph about copying
-  `screenr.homeMemoryPath` to `knowledge.homeMemoryPath`, then run
+  `screenr.homeMemoryPath` to `knowledge.homeMemoryPath`. Rewrite the two
+  `README.md` setup paragraphs above the dropped one, which say "QMD
+  supplies optional local Markdown search", "Direnv is optional", "Missing
+  optional tools produce notices", and that setup "builds the QMD index when
+  QMD is available", as the first item says, then run
   `bin/check --documents-only`.
 
 No other adopter sets `knowledge.homeMemoryPath`, links the removed section,
@@ -154,8 +177,8 @@ overrides the files the search-failure change touches, and none restates the
 pause in its own instructions. `bin/sync`'s closing advice needs none either.
 No adopter overrides the files the home-guidance sweep trims or links the
 removed flaky-test section. The template `memory/README.md` drops a sentence
-restating home's memory rule, but each adopter's copy is its own, so sync
-leaves it unchanged.
+restating home's memory rule. Adopters' copies keep it, which needs no
+follow-up, since it agrees with that rule.
 The module-level helpers project code imports from `bin/_knowledge.py`, as
 podhaven's `bin/_worktrees.py` does, are unchanged; on 2026-11-16 no adopter
 imported a function that became a `Knowledge` method.
