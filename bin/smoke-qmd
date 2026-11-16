@@ -24,7 +24,6 @@ def main():
     parser.add_argument("--qmd", default="qmd", help="QMD executable or its absolute path")
     parser.add_argument("--download-models", action="store_true", help="Allow missing default models to download")
     parser.add_argument("--strict-diagnostics", action="store_true", help="Fail on warning/error diagnostics, even after exit zero")
-    parser.add_argument("--cpu-only", action="store_true", help="Force CPU mode and permit only its expected no-GPU notice")
     parser.add_argument("--command-timeout", type=float, default=240, help="Seconds allowed for each command")
     args = parser.parse_args()
     if not math.isfinite(args.command_timeout) or args.command_timeout <= 0:
@@ -42,11 +41,8 @@ def main():
         if result.stderr:
             diagnostics.append({"command": list(command), "stderr": result.stderr})
             sys.stderr.write(result.stderr)
-            unexpected = re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", result.stderr)
-            if args.cpu_only:
-                expected = "QMD Warning: no GPU acceleration, running on CPU (slow). Run 'qmd doctor' for device diagnostics."
-                unexpected = unexpected.replace(expected, "")
-            if args.strict_diagnostics and re.search(r"\b(?:warning|error|failed)\b", unexpected, re.I):
+            plain = re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", result.stderr)
+            if args.strict_diagnostics and re.search(r"\b(?:warning|error|failed)\b", plain, re.I):
                 raise RuntimeError("Unexpected diagnostics from " + repr(command))
 
     reported = subprocess.run([qmd, "--version"], text=True, capture_output=True, check=True)
@@ -55,8 +51,6 @@ def main():
     print("Real-QMD smoke check: " + version + " on " + platform.platform(), flush=True)
     env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
     env.update(GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=os.devnull, PYTHONDONTWRITEBYTECODE="1")
-    if args.cpu_only:
-        env["QMD_FORCE_CPU"] = "1"
     checks = []
     source = args.project.expanduser().resolve() if args.project else ROOT / "starter"
     output = ROOT / ".cache/validation" / ("smoke-qmd-" + source.name + ".json")
@@ -66,7 +60,7 @@ def main():
         output.write_text(json.dumps({"at": datetime.now(timezone.utc).isoformat(), "platform": platform.platform(),
                                       "python": platform.python_version(), "qmd": version, "source": str(source),
                                       "models": str(models), "checks": checks, "diagnostics": diagnostics,
-                                      "status": status, "error": error, "cpu_only": args.cpu_only}, indent=2) + "\n")
+                                      "status": status, "error": error}, indent=2) + "\n")
 
     @contextmanager
     def recording():
