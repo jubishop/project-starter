@@ -111,7 +111,9 @@ itself, so adopter documents never become test fixtures. It covers:
 - Check reuse: `bin/check --full` skips `bin/check-application` only for a
   clean checkout whose tree and environment passed it within 12 hours,
   including in a linked worktree; uncommitted changes, a new tree, changed
-  `.venv` packages, an older pass, a failed run, and `--no-reuse` run it.
+  `.venv` packages, a listed variable set, changed, or unset since the pass,
+  an older pass, a failed run, and `--no-reuse` run it. The record keeps no
+  variable's value, and a malformed list fails before the application checks.
   In GitHub Actions it runs despite a matching pass and records none.
 
 Adopters run the same check modes, verify managed-file hashes against the

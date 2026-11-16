@@ -1026,6 +1026,29 @@ later run trusts. The user decided on 2026-11-16:
   each adopter's own workflow would have to copy, and keeping reuse in CI as
   an accepted saving.
 
+### Variables in check reuse — 2026-11-16
+
+[Check reuse](#check-reuse-and-worktree-setup--2026-10-25) fingerprinted the
+platform, tool versions, and installed packages, but no environment
+variables. Home-infra's `bin/check-application` runs the NVR's and the
+Raspberry Pi's tests only when `NVR_PYTHON` and `PI_PYTHON` name an
+interpreter, so on 2026-11-16 a pass recorded without them stood for a run
+that set them, and neither set of tests ran
+([issue #81](https://github.com/jubishop/project-starter/issues/81)).
+
+- **Listed variables:** a project lists the variables its application checks
+  read in `checks.applicationEnvironment` in its own `.config/knowledge.json`,
+  beside `checks.exclude`, and the fingerprint includes each one's value,
+  with unset distinct from empty. A project that lists none keeps its
+  fingerprint, so its earlier passes stay reusable.
+- **Exact match:** a pass stands only for the same values, even where a run
+  that sets more variables runs a superset of the tests, since which values
+  cover which is each project's own rule.
+- **Rejected:** hashing the whole environment, which holds secrets and values
+  that change on every run; a setting in `.project-starter.json`, which
+  records what Project Starter manages and which `bin/sync` rewrites; and a
+  separate file for one list.
+
 ### Knowledge engine for home — 2026-11-15
 
 Home's `home-knowledge` kept a fork of the knowledge engine, taken from

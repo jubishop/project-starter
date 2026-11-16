@@ -1113,6 +1113,57 @@ fcntl.flock = flock
         self.assertEqual(runs(extra=ci), 11)
         self.assertEqual(runs(), 12)
 
+    def test_full_check_reruns_application_checks_when_a_variable_they_read_changes(self):
+        # The application records the value it ran with, as a host's tests run only when a variable names its Python.
+        calls = self.base / "application calls"
+        application = self.repo / "bin/check-application"
+        application.write_text("#!" + sys.executable + "\nimport os\n"
+                               "open(os.environ['APP_CALLS'], 'a').write(os.environ.get('HOST_PYTHON', 'unset') + '\\n')\n")
+        application.chmod(0o755)
+        self.env["APP_CALLS"] = str(calls)
+        for name in ("HOST_PYTHON", "UNLISTED"):
+            self.env.pop(name, None)
+        path = self.repo / ".config/knowledge.json"
+        config = json.loads(path.read_text())
+        config["checks"]["applicationEnvironment"] = ["HOST_PYTHON"]
+        path.write_text(json.dumps(config))
+        self.commit()
+
+        def runs(reused=False, **variables):
+            result = self.run_command("bin/check", "--full", extra=variables)
+            self.assertIn("Full foundation and application checks passed", result.stdout)
+            self.assertEqual("Reused the application checks that passed" in result.stdout, reused, result.stdout)
+            return calls.read_text().splitlines()
+
+        self.assertEqual(runs(), ["unset"])
+        self.assertEqual(runs(reused=True), ["unset"])
+        # A pass recorded with the variable unset doesn't stand for a run that sets it, or sets it otherwise.
+        self.assertEqual(runs(HOST_PYTHON="/opt/python3.12"), ["unset", "/opt/python3.12"])
+        self.assertEqual(runs(reused=True, HOST_PYTHON="/opt/python3.12"), ["unset", "/opt/python3.12"])
+        self.assertEqual(runs(HOST_PYTHON="/opt/python3.13")[-1], "/opt/python3.13")
+        self.assertEqual(runs(HOST_PYTHON="")[-1], "")
+        self.assertEqual(runs()[-1], "unset")
+        # A variable the project doesn't list leaves the pass reusable.
+        self.assertEqual(len(runs(reused=True, UNLISTED="1")), 5)
+        # The record keeps only a digest, since a listed value may be a secret.
+        self.assertEqual(runs(HOST_PYTHON="private value")[-1], "private value")
+        records = Path(self.run_command("git", "rev-parse", "--path-format=absolute", "--git-common-dir")
+                       .stdout.strip(), "project-starter/check-passes")
+        self.assertTrue(list(records.glob("*.json")))
+        for record in records.glob("*.json"):
+            self.assertNotIn("private value", record.read_text())
+
+        # A malformed list fails before the application checks run.
+        for setting in ("HOST_PYTHON", ["HOST PYTHON"], [3], {"HOST_PYTHON": True}):
+            with self.subTest(setting=setting):
+                config["checks"]["applicationEnvironment"] = setting
+                path.write_text(json.dumps(config))
+                self.commit()
+                result = self.run_command("bin/check", "--full", check=False)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("checks.applicationEnvironment", result.stderr)
+                self.assertEqual(len(calls.read_text().splitlines()), 6)
+
     def test_fast_check_still_rejects_syntax_and_lint_errors(self):
         (self.repo / "tests").mkdir()
         for folder in (self.repo / "bin", self.repo / "tests"):
