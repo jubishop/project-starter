@@ -2,4 +2,3 @@
 .cache/
 __pycache__/
 *.py[cod]
-tools/qmd/node_modules/

@@ -25,16 +25,19 @@ Sync copies managed files, records their hashes in `.project-starter.json`,
 and never commits. An adopter's `bin/check` verifies those hashes, and
 `bin/check --full` adds the project's `bin/check-application`.
 
-The scripts target macOS and Linux and need Git and Python 3.9 or later;
-checks need ShellCheck. QMD and direnv are optional at runtime.
+The scripts target macOS, where every adopter lives; only `bin/check` and
+what it imports also support Linux, for adopters' CI. They need Git and
+Python 3.9 or later; checks need ShellCheck. QMD and direnv are optional at
+runtime.
 
 ## Maintain
 
 `bin/check` runs the maintainer suite: document checks, ShellCheck,
 [actionlint](https://github.com/rhysd/actionlint/blob/main/docs/install.md),
 and behavior tests against copies of the bundle.
-[CI](.github/workflows/check.yml) runs it on Ubuntu and macOS. `bin/smoke-qmd`
-runs a real-QMD smoke test locally. See [releases](docs/releases.md) for
+[CI](.github/workflows/check.yml) runs it on Ubuntu and macOS. Outside CI,
+it also runs `bin/smoke-qmd`, a smoke test with the Mac's real QMD, when a
+change touches the knowledge tools. See [releases](docs/releases.md) for
 cutting a version and syncing adopters.
 
 Released under the [MIT license](LICENSE).
