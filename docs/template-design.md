@@ -46,6 +46,9 @@ Use shell scripts and Python helpers that work on both supported platforms.
 This keeps the setup small without requiring separate Windows entry points
 or file-locking behavior.
 
+[Adopters on one Mac](#adopters-on-one-mac--2026-11-15) supersedes this
+decision.
+
 ### Optional local tools — 2026-09-04
 
 Include QMD and direnv integration in every starter, but do not require these
@@ -855,6 +858,40 @@ The user decided this on 2026-11-15.
   describes, since filing the issue through the create-issue skill covers
   that. The user may override this detail.
 - **Rejected:** keeping the 2026-09-05 ask-first step.
+
+### Adopters on one Mac — 2026-11-15
+
+Every adopter lives at `~/projects/<repo>` on the user's Mac, under the home
+repository. Its agents run there and load the home `~/AGENTS.md` and skills,
+and home's setup installs and updates its tools. Only adopters' GitHub CI runs
+elsewhere, and it runs just `bin/check` and what that imports, which stay
+self-contained. The user set this premise on 2026-11-15
+([issue #66](https://github.com/jubishop/project-starter/issues/66)). Each item
+below is a decision that follows from it, naming any earlier record it
+supersedes.
+
+- **Platforms**, decided by the user on 2026-11-15
+  ([issue #70](https://github.com/jubishop/project-starter/issues/70)): Linux
+  support covers only `bin/check`, `_checks.py`, and the Git helpers it
+  imports from `_knowledge.py`, which adopters' workflows run on Linux
+  runners. Everything else targets the Mac: the knowledge tools, hooks,
+  `bin/setup`, `bin/prep-worktree`, the memory audit, `bin/sync`, and
+  `bin/smoke-qmd`. Native Windows stays out of scope, and the starter checks
+  keep their Linux leg for `bin/check`. This supersedes
+  [supported platforms](#supported-platforms--2026-09-04).
+- **Real QMD only on the Mac**, decided by the user on 2026-11-15 (issue #70):
+  the hosted QMD compatibility workflow is retired, with its validation
+  manifest, its 2.2 GB model cache, and `bin/smoke-qmd --cpu-only`, which only
+  it used. It ran the strict smoke check with npm's QMD on a Linux CPU runner,
+  while the Mac runs Bun's QMD with home's pins and backend override on Metal,
+  and keeping it working took at least seven commits since September. This
+  repository's `bin/check` now runs `bin/smoke-qmd --strict-diagnostics`
+  against the Mac's QMD when it runs outside GitHub Actions and the change
+  touches the knowledge tools, and home's `~/bin/auto-update` keeps gating
+  each new QMD release on the same check; see
+  [Keep QMD current](qmd-maintenance.md). Rejected: keeping only the weekly
+  hosted run as an early warning of upstream breakage, and keeping the
+  workflow as it was.
 
 ### No check reuse in CI — 2026-11-16
 

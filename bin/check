@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
-"""Validate the guide and test the copyable bundle on the current platform."""
+"""Validate the guide and test the copyable bundle on the current platform.
+
+Outside GitHub Actions, a change to the knowledge tools also runs bin/smoke-qmd with this machine's real QMD.
+"""
 import ast
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -9,7 +13,21 @@ import sys
 sys.dont_write_bytecode = True
 root = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(root / "starter/bin"))
-from _checks import check_whitespace, validate
+from _checks import change_base, check_whitespace, validate
+from _knowledge import git
+
+# The knowledge module, the commands and hooks that load it, its collections, and the smoke check that runs them.
+KNOWLEDGE_TOOLS = ("bin/smoke-qmd", "starter/.config/knowledge.json", "starter/bin",
+                   ":(exclude)starter/bin/check", ":(exclude)starter/bin/_checks.py")
+
+
+def knowledge_tools_changed():
+    """Return whether this checkout's own changes, committed or not, touch the knowledge tools."""
+    base = change_base(root)
+    since = [base] if base else []
+    return any(git(*command, "--", *KNOWLEDGE_TOOLS, root=root) for command in (
+        ("diff", "--name-only", *since), ("diff", "--cached", "--name-only", *since),
+        ("ls-files", "--others", "--exclude-standard")))
 
 
 def main():
@@ -35,6 +53,10 @@ def main():
     subprocess.run(["actionlint", *map(str, workflows)], cwd=root, check=True)
     subprocess.run([sys.executable, "-B", "-m", "unittest", "discover", "-s", "tests", "-v"], cwd=root, check=True)
     check_whitespace(root)
+    # Only the Mac runs real QMD; hosted runners test the knowledge tools with fakes. See docs/qmd-maintenance.md.
+    if os.environ.get("GITHUB_ACTIONS") != "true" and knowledge_tools_changed():
+        print("The knowledge tools changed, so bin/smoke-qmd checks them with this machine's QMD.", flush=True)
+        subprocess.run([str(root / "bin/smoke-qmd"), "--strict-diagnostics"], check=True)
     print("Guide and copied-bundle checks passed on " + sys.platform + ".")
     return 0
 

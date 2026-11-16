@@ -116,10 +116,10 @@ do not establish real-QMD compatibility on a CI runner.
 ## Current real-QMD commands
 
 The [QMD maintenance guide](qmd-maintenance.md) records the current runtime,
-weekly compatibility workflow, dependency updates, and strict diagnostic checks.
+the weekly updates on the Mac, and strict diagnostic checks.
 
-
-Run `bin/smoke-qmd` for the bundle or
+Outside GitHub Actions, `bin/check` runs `bin/smoke-qmd` when a change
+touches the knowledge tools. Run `bin/smoke-qmd` for the bundle or
 `bin/smoke-qmd --project /absolute/path/to/adopter` for a current adopter
 snapshot. Both use `~/.cache/qmd/models`. Reports identify the source and
 models under `.cache/validation/`. The adopter mode tests uncommitted source
