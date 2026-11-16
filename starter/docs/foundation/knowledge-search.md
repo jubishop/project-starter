@@ -94,14 +94,11 @@ indexed, not copied. Unset the setting and refresh to remove the collection.
 
 ## Worktrees and models
 
-```sh
-git worktree add -b feature-name worktrees/feature-name
-```
-
-The first checkout prepares a new worktree, and `bin/prep-worktree` repeats
-that preparation. Both run the project's executable `bin/setup-application`,
-when present, so a new worktree gets its dependencies, such as a `.venv`; a
-failure in a new worktree is reported without stopping Git. Each checkout keeps its own `.cache/qmd/index.sqlite`.
+The `post-checkout` hook prepares a new worktree when Git creates it, and
+`bin/prep-worktree` repeats that preparation. Both run the project's
+executable `bin/setup-application`, when present, so a new worktree gets its
+dependencies, such as a `.venv`; a failure in a new worktree is reported
+without stopping Git. Each checkout keeps its own `.cache/qmd/index.sqlite`.
 Every project shares model files at `~/.cache/qmd/models`, independent of
 `XDG_CACHE_HOME`, through each checkout's `.cache/qmd/models` link. Setup
 migrates old local caches after verifying their contents and stops without
@@ -110,9 +107,7 @@ directory while cleaning up a checkout.
 
 A worktree's `.envrc` is approved automatically only when it matches a primary
 checkout file that direnv already allows. After moving a checkout, repair the
-worktree, run `bin/doctor`, and rerun `bin/prep-worktree`. Remove a worktree
-only after checking for uncommitted and unpushed work, then verify
-`git worktree list`.
+worktree, run `bin/doctor`, and rerun `bin/prep-worktree`.
 
 ## Existing hooks
 

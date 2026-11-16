@@ -42,6 +42,23 @@ follow-up it cannot apply. See [releases](docs/releases.md).
   [update an adopter](GUIDE.md#update-an-adopter) and
   [sync the fleet](docs/releases.md#sync-the-fleet) now agree with it on the
   text-only case. None of these is in the bundle.
+- The managed `AGENTS.md` block and the foundation pages stop restating home
+  rules and skills, which every adopter's agents already load, and keep only
+  the starter's own part. The block drops its kind-of-change bullet, its
+  flaky-test clause, and "preserve unrelated changes", and its checks bullet
+  names `bin/check --documents-only` for text. The engineering policy drops
+  its flaky-test section, cuts
+  [kinds of change](starter/docs/foundation/engineering-policy.md#kinds-of-change)
+  to a pointer to `~/AGENTS.md` plus the documents-only check, the sync's
+  route, and a project's own rule, and replaces
+  [hosted CI](starter/docs/foundation/engineering-policy.md#hosted-ci)'s
+  fallback for refused jobs and down self-hosted runners with a pointer to
+  the `fix-ci` skill, keeping `bin/check --full` on the exact revision as the
+  local equivalent.
+  [Worktrees and models](starter/docs/foundation/knowledge-search.md#worktrees-and-models)
+  drops its `git worktree add` example and removal steps. The block is part of
+  each adopter's own instructions, which override `~/AGENTS.md`, so each copy
+  froze an older version of a home rule, and the copies had begun to drift.
 
 ### Manual follow-up
 
@@ -52,6 +69,10 @@ stay with their own issues. The starter workflow keeps running
 runs left in a self-hosted runner's checkout are never read again. No adopter
 overrides the files the search-failure change touches, and none restates the
 pause in its own instructions. `bin/sync`'s closing advice needs none either.
+No adopter overrides the files the home-guidance sweep trims or links the
+removed flaky-test section. The template `memory/README.md` drops a sentence
+restating home's memory rule, but each adopter's copy is its own, so sync
+leaves it unchanged.
 
 ## 3.13.1 — 2026-11-13
 

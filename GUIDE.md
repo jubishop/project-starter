@@ -44,10 +44,9 @@ only here, and the other `bin/` commands run in the target.
    its [sync commit trailers](docs/releases.md#sync-commit-trailers) and,
    when the [memory audit](features/memory-audit/docs/foundation/memory-audit.md#settings)
    is enabled, in `.config/knowledge.json` as `memoryAudit.commitTrailers`.
-4. **Tailor `AGENTS.md`.** Leave the managed block intact. Below it, keep
-   project commands, stronger requirements, and intentional exceptions, and
-   remove rules that the block or applicable inherited instructions already
-   cover. A runtime that needs another filename should reference `AGENTS.md`.
+4. **Tailor `AGENTS.md`** below the managed block with the `edit-agents-md`
+   skill, also removing project rules the block already covers. A runtime
+   that needs another filename should reference `AGENTS.md`.
 5. **Wire application checks.** Put application typechecking, lint, tests, and
    builds in an executable `bin/check-application`, which only
    `bin/check --full` runs. Point CI at `bin/check --full`, skipping
