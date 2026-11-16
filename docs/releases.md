@@ -81,11 +81,15 @@ squash, would otherwise land without them and deploy at the next push.
 
 ## Sync-only releases
 
-When a release needs no manual follow-up, or its follow-up applies only to
-adopters that override a managed file or enable a feature, the other adopters
-receive only what `bin/sync` writes. Follow-up for the adopters that enable a
-feature, or that are moving to one, is handled like override-only follow-up. Ship it without checks, CI waits, deployments, or validation
-records:
+Each adopter takes the path its own manual follow-up gives it. An adopter that
+no follow-up applies to, because the release has none or its follow-up applies
+only to other adopters, receives only what `bin/sync` writes. An adopter that
+a follow-up applies to, through an override, a feature, or its own files,
+takes the [fleet sync](#sync-the-fleet) steps. A follow-up step for every
+adopter, even an optional one, applies to every adopter, so that release, the
+starter included, uses the [full process](#cut-a-release). Ship any other
+release without checks, CI waits, deployments, or validation records, except
+in the adopters a follow-up applies to:
 
 1. Set the version, add the changelog entry, commit, tag `vX.Y.Z`, and run
    `git push origin main vX.Y.Z`.
@@ -96,10 +100,11 @@ records:
    Actions starts no push workflows. End the message with any
    [sync commit trailers](#sync-commit-trailers) the adopter records, which
    `bin/sync` prints after the sync, in its final trailer paragraph.
-3. Give each adopter with an override or feature that the follow-up applies
-   to the [fleet sync](#sync-the-fleet) steps: apply the follow-up, run the
-   checks it needs, push without `[skip ci]`, and confirm CI.
-   `bin/sync --status` lists each adopter's overrides and features.
+3. Give each adopter that a follow-up applies to the
+   [fleet sync](#sync-the-fleet) steps: apply the follow-up, run the checks it
+   needs, push without `[skip ci]`, and confirm CI. The changelog's manual
+   follow-up says which adopters it applies to, and `bin/sync --status` lists
+   each adopter's overrides and features.
 
 Sync only an adopter whose checkout is clean, on its default branch, and even
 with its remote. A clean checkout that is only behind its remote, such as one
@@ -109,8 +114,7 @@ rejected push, such as from enforced branch protection, instead of bypassing
 it. Track each adopter left behind this way
 in a GitHub issue in this repository, reusing an open one, so a later agent
 finishes its sync without anyone having to remember it; the sync that brings
-the adopter current closes the issue. Any other release with manual follow-up, including
-an optional step for every adopter, uses the full process below.
+the adopter current closes the issue.
 
 ## Cut a release
 
