@@ -3,6 +3,23 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## Unreleased
+
+### Synced
+
+- The engineering policy's
+  [Markdown pages](starter/docs/foundation/engineering-policy.md#markdown-pages)
+  section holds its one-authoritative-place rule across repositories too: for
+  a system another repository owns, an adopter links to that repository's page
+  rather than restating its facts. The rule never said whether one place meant
+  one per repository, so agents copied home-infra's runner facts into
+  vps-infra's development workflow page.
+
+### Manual follow-up
+
+None. That copy is already a link, and intentional, tracked stopgap copies,
+such as repository-local CI fallbacks, stay with their own issues.
+
 ## 3.13.1 — 2026-11-13
 
 ### Synced
