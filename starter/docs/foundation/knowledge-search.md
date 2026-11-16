@@ -42,17 +42,15 @@ checks.
 
 ## Search failures
 
-When configured QMD fails, tell the user immediately what failed. Run
-`bin/doctor`, inspect `.cache/qmd/index.log`, and attempt a focused repair.
-Confirm recovery by repeating the failed lookup successfully; never report
-success from a command that failed, timed out, or discarded results.
+When configured QMD fails, follow `~/AGENTS.md` for a failed knowledge
+search. To repair it, run `bin/doctor`, inspect `.cache/qmd/index.log`, and
+attempt a focused repair. Confirm recovery by repeating the failed lookup
+successfully; never report success from a command that failed, timed out, or
+discarded results.
 
-If repair fails, pause knowledge-dependent work until the user explicitly
-approves a fallback. Do not silently substitute `rg`, direct reads, another
-index, or another search tool. Unrelated work may continue. A successful
-search with no matches is not a failure. Operating without QMD requires an
-explicit project decision or user approval; a broken tool never establishes
-that choice.
+A successful search with no matches is not a failure. Operating without QMD
+requires an explicit project decision or user approval; a broken tool never
+establishes that choice.
 
 ## Refresh and recovery
 

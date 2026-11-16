@@ -736,7 +736,7 @@ def cli(action):
     except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as error:
         print(str(error), file=sys.stderr)
         if action == "knowledge":
-            print("Report this failure to the user immediately and attempt repair. If repair fails, pause knowledge-dependent work until the user approves a fallback. Do not silently bypass QMD with rg or direct reads.", file=sys.stderr)
+            print("Handle this failure as ~/AGENTS.md says for a failed knowledge search. To repair, run bin/doctor and read .cache/qmd/index.log, as docs/foundation/knowledge-search.md#search-failures describes.", file=sys.stderr)
         if action == "hook" and args[:1] == ["pre-push"]:
             # Fail closed: a push the hook could not check may carry broken pages.
             print("The pre-push hook could not finish, so Git refused the push. Run bin/doctor.", file=sys.stderr)

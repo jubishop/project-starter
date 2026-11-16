@@ -3,6 +3,24 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## Unreleased
+
+### Synced
+
+- A failed knowledge search no longer pauses knowledge-dependent work until
+  the user approves a fallback. The managed `AGENTS.md` block,
+  [search failures](starter/docs/foundation/knowledge-search.md#search-failures),
+  and the message a failed `bin/knowledge` lookup prints now point to
+  `~/AGENTS.md` for a failed knowledge search instead, and keep only the
+  starter's own repair steps. The block is part of each adopter's own
+  instructions, which override `~/AGENTS.md`, so its pause outlived the home
+  rule's and stalled unattended agents on their first QMD failure.
+
+### Manual follow-up
+
+None. No adopter overrides the changed files, and none restates the pause in
+its own instructions.
+
 ## 3.13.1 — 2026-11-13
 
 ### Synced

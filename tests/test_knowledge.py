@@ -129,6 +129,13 @@ else:
                             for line in (self.repo / page).read_text().splitlines() if line.startswith("#")}
                 self.assertIn(anchor, headings, page + "#" + anchor)
 
+    def assert_defers_to_home_rule(self, result):
+        """A failed lookup points to the home rule and the starter's repair steps; it never pauses for approval."""
+        self.assertIn("~/AGENTS.md", result.stderr)
+        self.assertIn("bin/doctor", result.stderr)
+        self.assertNotIn("approv", result.stderr)
+        self.assert_document_references(result.stderr)
+
     def records(self):
         return [json.loads(line) for line in self.events.read_text().splitlines()] if self.events.exists() else []
 
@@ -410,8 +417,7 @@ else:
                 self.assertNotEqual(result.returncode, 0)
                 self.assertEqual(result.stdout, "")
                 self.assertNotIn("search", [r["command"] for r in self.records()[initial:]])
-                self.assertIn("Report", result.stderr)
-                self.assertIn("pause", result.stderr)
+                self.assert_defers_to_home_rule(result)
                 self.assertEqual(json.loads(self.run_command("bin/knowledge", "search", "reference").stdout)["command"], "search")
 
     def test_lookup_repairs_missing_database_and_changed_configuration(self):
@@ -457,7 +463,7 @@ else:
                 result = self.run_command("bin/knowledge", "search", "reference", extra={failure: "1"}, check=False)
                 self.assertNotEqual(result.returncode, 0)
                 self.assertEqual(result.stdout, "")
-                self.assertIn("Report", result.stderr)
+                self.assert_defers_to_home_rule(result)
                 self.run_command("bin/knowledge", "search", "reference")
 
     def test_lookup_missing_tool_reports_failure_without_fallback(self):
@@ -466,8 +472,7 @@ else:
         result = self.run_command("bin/knowledge", "search", "reference", check=False)
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual(result.stdout, "")
-        self.assertIn("Report", result.stderr)
-        self.assertIn("pause", result.stderr)
+        self.assert_defers_to_home_rule(result)
 
     def test_preserve_existing_configured_and_default_hooks(self):
         for configured in (False, True):

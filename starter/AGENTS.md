@@ -9,10 +9,10 @@ take precedence over this block and the foundation pages wherever they differ.
   non-trivial work or writing memory, search with `bin/knowledge search "term"`
   or `bin/knowledge query "question" --no-rerank`, then read results with
   `bin/knowledge get <path> -l 80`. Markdown sources are authoritative.
-- If configured QMD fails, tell the user immediately and attempt repair. If
-  repair fails, pause knowledge-dependent work until the user approves a
-  fallback; never silently substitute `rg` or direct reads. See
-  [search failures](docs/foundation/knowledge-search.md#search-failures).
+- If configured QMD fails, follow `~/AGENTS.md` for a failed knowledge search,
+  repairing it as
+  [search failures](docs/foundation/knowledge-search.md#search-failures)
+  describes.
 - Follow the [engineering policy](docs/foundation/engineering-policy.md):
   fewer dependencies, red-green tests for behavior changes, flaky tests fixed
   or filed as an issue right away, cohesive files and pages, checkout-isolated
