@@ -231,63 +231,6 @@ class SyncTests(unittest.TestCase):
         self.assertEqual((repo / "bin/doctor").read_bytes(), (source / "starter/bin/doctor").read_bytes())
         self.assertEqual(self.commits(repo), 6)
 
-    def test_legacy_adopter_migrates_from_recorded_source_refs(self):
-        source = self.base / "starter source"
-        shutil.copytree(ROOT, source, ignore=shutil.ignore_patterns(".git", ".cache", "__pycache__"))
-        legacy_files = {"bin/doctor": "# legacy doctor\n", "tests/test_knowledge.py": "# legacy tests\n",
-                        "docs/obsolete-guide.md": "---\nstatus: current\n---\n\n# Obsolete guide\n",
-                        ".envrc": "export LEGACY_ENVIRONMENT=1\n"}
-        current = {relative: (source / "starter" / relative).read_bytes()
-                   for relative in legacy_files if (source / "starter" / relative).is_file()}
-        for relative, text in legacy_files.items():
-            path = source / "starter" / relative
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(text)
-        self.run_command("git", "init", "-b", "main", cwd=source)
-        self.commit(source, "Legacy")
-        legacy_ref = self.run_command("git", "rev-parse", "HEAD", cwd=source).stdout.strip()
-        repo = self.base / "legacy adopter"
-        shutil.copytree(source / "starter", repo)
-        (repo / "AGENTS.md").write_text("# Project instructions\n\nLegacy project rule.\n")
-        (repo / ".gitignore").write_text("node_modules/\n")
-        (repo / ".project-starter.json").write_text(json.dumps(
-            {"version": "1.0.0", "source": "https://example.invalid/starter", "source_ref": legacy_ref,
-             "tested_qmd": "2.8.3"}))
-        checks = repo / "bin/_checks.py"
-        checks.write_text(checks.read_text() + "# adapted application checks\n")
-        self.run_command("git", "init", "-b", "main", cwd=repo)
-        self.commit(repo, "Legacy adoption")
-        for relative in legacy_files:
-            path = source / "starter" / relative
-            if relative in current:
-                path.write_bytes(current[relative])
-            else:
-                path.unlink()
-        self.commit(source, "Current")
-        self.run_command("git", "tag", "v2.0.0", cwd=source)
-
-        conflict = self.sync(str(repo), source=source, check=False)
-        self.assertNotEqual(conflict.returncode, 0)
-        self.assertIn("bin/_checks.py", conflict.stderr)
-        self.assertNotIn("bin/doctor", conflict.stderr)
-        result = self.sync("--force", str(repo), source=source)
-        self.assertEqual((repo / "bin/doctor").read_bytes(), (source / "starter/bin/doctor").read_bytes())
-        self.assertEqual(checks.read_bytes(), (source / "starter/bin/_checks.py").read_bytes())
-        self.assertFalse((repo / "tests/test_knowledge.py").exists())
-        self.assertFalse((repo / "docs/obsolete-guide.md").exists())
-        # 1.x shipped .envrc; it is project configuration, never removed by sync.
-        self.assertEqual((repo / ".envrc").read_text(), "export LEGACY_ENVIRONMENT=1\n")
-        agents = (repo / "AGENTS.md").read_text()
-        self.assertIn("Legacy project rule.", agents)
-        self.assertLess(agents.index("project-starter:begin"), agents.index("Legacy project rule."))
-        self.assertIn("AGENTS.md", result.stdout)
-        gitignore = (repo / ".gitignore").read_text()
-        self.assertTrue(gitignore.startswith("node_modules/\n"))
-        self.assertIn("project-starter:begin", gitignore)
-        manifest = json.loads((repo / ".project-starter.json").read_text())
-        self.assertEqual(set(manifest), {"version", "source", "ref", "managed", "blocks", "overrides"})
-        self.assertEqual(manifest["ref"], "v2.0.0")
-
     def test_init_can_enable_a_feature(self):
         repo = self.target()
         self.sync("--init", "--ref", "WORKTREE", "--enable", "memory-audit", str(repo))
@@ -511,7 +454,7 @@ class SyncTests(unittest.TestCase):
         self.assertIn("enable them with: " + enable + "\n", result.stdout)
         self.assertTrue((self.base / "exposed/.project-starter.json").is_file())
 
-    def test_status_reports_versions_overrides_drift_and_legacy(self):
+    def test_status_reports_versions_overrides_drift_and_features(self):
         fleet = self.base / "projects"
         fleet.mkdir()
         for name in ("current", "drifted", "overridden", "featured"):
@@ -529,13 +472,10 @@ class SyncTests(unittest.TestCase):
         manifest = json.loads(manifest_path.read_text())
         manifest["overrides"] = {"bin/doctor": "Local diagnostics"}
         manifest_path.write_text(json.dumps(manifest))
-        (fleet / "legacy").mkdir()
-        (fleet / "legacy/.project-starter.json").write_text(json.dumps({"version": "1.0.0"}))
         (fleet / "unrelated").mkdir()
         lines = {line.split()[0]: line for line in self.sync("--status", "--root", str(fleet), "--ref", "WORKTREE").stdout.splitlines()
                  if line.strip()}
         self.assertNotIn("unrelated", lines)
-        self.assertIn("legacy", lines["legacy"].split(maxsplit=1)[1])
         self.assertIn("drift 1", lines["drifted"])
         self.assertIn("drift 0", lines["current"])
         self.assertIn("overrides 1", lines["overridden"])

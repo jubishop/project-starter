@@ -27,8 +27,9 @@ and never commits. An adopter's `bin/check` verifies those hashes, and
 
 The scripts target macOS, where every adopter lives; only `bin/check` and
 what it imports also support Linux, for adopters' CI. They need Git and
-Python 3.9 or later; checks need ShellCheck. QMD and direnv are optional at
-runtime.
+Python 3, and checks need ShellCheck. On the Mac, the knowledge tools also
+require QMD, and direnv in a checkout with an `.envrc`; the home repository's
+setup installs them all.
 
 ## Maintain
 

@@ -19,15 +19,13 @@ from _checks import digest, managed_block, MARKERS  # noqa: E402
 MANIFEST = ".project-starter.json"
 BLOCKS = ("AGENTS.md", ".gitignore")
 # Pages each project adapts: --init copies them once, and sync never changes them.
-# Version 1.0.0 also shipped .envrc, which is project configuration.
 PROJECT_OWNED = {"README.md", "docs/README.md", "memory/README.md", "docs/development-workflow.md",
-                 "docs/git-remotes.md", ".config/knowledge.json", ".github/workflows/check.yml", ".envrc"}
+                 "docs/git-remotes.md", ".config/knowledge.json", ".github/workflows/check.yml"}
 EXTRAS = {".github/workflows/check.yml": "extras/github/.github/workflows/check.yml"}
 # Opt-in features live in features/<name>/ at adopter paths; adopters list theirs in the manifest.
 FEATURES = "features"
 FEATURE_METADATA = "feature.json"
 FOUNDATION_INDEX = "docs/foundation/README.md"
-LEGACY_REFS = ("source_ref", "knowledge_source_ref", "task_tracking_source_ref")
 WORKTREE = "WORKTREE"
 GITHUB_REMOTE = re.compile(r"(?:https://(?:[^@/]+@)?|(?:ssh://)?git@)github\.com[:/]([^/]+)/([^/]+?)(?:\.git)?/?", re.I)
 SECRET_SCANNING = {"secret_scanning": "secret scanning", "secret_scanning_push_protection": "push protection"}
@@ -166,18 +164,10 @@ def plan(target, label, files, manifest, init, features=(), origins=None):
     """Decide every change before writing, so conflicts leave the target untouched."""
     result = Plan()
     overrides = dict(manifest.get("overrides", {}))
-    legacy = bool(manifest) and "managed" not in manifest
-    legacy_refs = [manifest[key] for key in LEGACY_REFS if manifest.get(key)] if legacy else []
-    for ref in legacy_refs:
-        if git("cat-file", "-e", ref + "^{commit}", check=False).returncode:
-            raise RuntimeError("Recorded starter revision " + ref + " is not in this checkout; fetch it first")
 
     def bases(relative, block):
-        if not legacy:
-            recorded = manifest.get("blocks" if block else "managed", {}).get(relative)
-            return {recorded} if recorded else set()
-        contents = [ref_content(ref, "starter/" + relative) for ref in legacy_refs]
-        return {block_digest(c.decode()) if block else digest(c) for c in contents if c is not None}
+        recorded = manifest.get("blocks" if block else "managed", {}).get(relative)
+        return {recorded} if recorded else set()
 
     def change(relative, data, executable, current_digest, base_digests, new_digest):
         path = target / relative
@@ -212,13 +202,7 @@ def plan(target, label, files, manifest, init, features=(), origins=None):
         current = digest(path.read_bytes()) if path.is_file() else None
         change(relative, data, executable, current, bases(relative, False), digest(data))
 
-    if legacy:
-        previous = set()
-        for ref in legacy_refs:
-            listing = git("ls-tree", "-r", "-z", "--name-only", ref, "--", "starter/").stdout.decode()
-            previous |= {name.removeprefix("starter/") for name in listing.split("\0") if name}
-    else:
-        previous = set(manifest.get("managed", {}))
+    previous = set(manifest.get("managed", {}))
     for relative in sorted(previous - set(files) - PROJECT_OWNED - set(BLOCKS) - {MANIFEST}):
         path = target / relative
         if relative in overrides or not path.is_file():
@@ -393,9 +377,6 @@ def status(root, ref):
     latest = json.loads(files[MANIFEST][0])["version"]
     for path in sorted(root.expanduser().glob("*/" + MANIFEST)):
         repo, manifest = path.parent, json.loads(path.read_text())
-        if "managed" not in manifest:
-            print(repo.name + "  legacy " + str(manifest.get("version")) + " manifest; migrate with bin/sync")
-            continue
         overrides = manifest.get("overrides", {})
         drift = 0
         for kind, entries in (("managed", manifest["managed"]), ("blocks", manifest.get("blocks", {}))):

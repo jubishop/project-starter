@@ -57,6 +57,9 @@ programs on every machine. Setup can succeed when either is missing and must
 clearly report which features were skipped. The Markdown files and Git
 workflow remain usable without these tools.
 
+[Adopters on one Mac](#adopters-on-one-mac--2026-11-15) supersedes this
+decision.
+
 ### Minimal agent instructions — 2026-09-04
 
 Include a short `AGENTS.md` in each generated project. It explains where
@@ -183,6 +186,9 @@ Use the following defaults to implement the requested foundation:
   From 2.0.0, [managed files](#managed-vendoring-and-sync--2026-10-09) are
   synced from releases instead; other copied files remain project-owned.
 
+[Adopters on one Mac](#adopters-on-one-mac--2026-11-15) drops the home-memory
+opt-in and the migration of local model caches.
+
 ## Search reliability decision — 2026-09-13
 
 Require current indexed inputs before returning knowledge lookup results.
@@ -198,7 +204,9 @@ known-file reads and deliberate operation without optional QMD available.
 The detailed contract is in the [search failure policy](../starter/docs/foundation/knowledge-search.md#search-failures).
 
 [Search failures follow home guidance](#search-failures-follow-home-guidance--2026-11-15)
-supersedes the pause for approval.
+supersedes the pause for approval, and
+[adopters on one Mac](#adopters-on-one-mac--2026-11-15) makes QMD required,
+which ends deliberate operation without it.
 
 ## Improvements accepted — 2026-09-04
 
@@ -943,6 +951,33 @@ supersedes.
   the user decided that this repository's `AGENTS.md` carries no copy of the
   home rule against duplicating guidance between the two, since that copy
   would itself duplicate it.
+- **Required tools**, decided by the user on 2026-11-15
+  ([issue #71](https://github.com/jubishop/project-starter/issues/71)): QMD
+  is required, and direnv wherever a checkout has an `.envrc`. Home's
+  `Brewfile` installs direnv and ShellCheck, and `~/bin/auto-update` installs
+  and smoke-tests QMD behind `~/.local/bin/qmd`, so a missing tool means
+  home's setup broke. Without QMD, `bin/setup`, every refresh and lookup, and
+  `bin/doctor` fail; without direnv, `bin/setup`, `bin/prep-worktree`, and
+  `bin/doctor` fail in a checkout with an `.envrc`; and `bin/doctor` fails
+  without ShellCheck, which had been a notice. Setup and `bin/doctor` had
+  passed without search, so a broken home install surfaced only when an
+  agent's lookup failed. This supersedes
+  [optional local tools](#optional-local-tools--2026-09-04) and the
+  deliberate operation without QMD that the
+  [search reliability decision](#search-reliability-decision--2026-09-13)
+  kept. Rejected: keeping the tools optional and removing only the paths
+  below.
+- **Paths no adopter reaches**, removed in the same issue: the
+  `knowledge.homeMemoryPath` opt-in, which no adopter set and which would
+  embed `~/memory` again in each index, since `~/bin/home-knowledge` already
+  indexes it; moving a checkout's own model folder into
+  `~/.cache/qmd/models`, which every checkout and worktree of the 22 adopters
+  had done, so setup only creates and repairs the link and stops at a folder
+  in its place; `bin/sync`'s planning from 1.x manifests without `managed`
+  hashes, since all 22 adopters had managed 3.13.1 manifests; and the Python
+  3.9 guard, since the tools run under the Mac's default Python. Each was
+  checked on 2026-11-15. This supersedes the home-memory opt-in and model
+  migration in [implementation defaults](#implementation-defaults).
 
 ### No check reuse in CI — 2026-11-16
 

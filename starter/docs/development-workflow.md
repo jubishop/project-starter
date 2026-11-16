@@ -15,10 +15,11 @@ bin/doctor
 bin/check --full
 ```
 
-Setup needs Git and Python 3.9 or later, and checks also need ShellCheck.
+Setup needs Git, Python 3, and QMD, plus direnv when the project has an
+`.envrc`, and checks also need ShellCheck; see
+[required tools](foundation/knowledge-search.md#required-tools).
 `bin/setup` then runs an executable `bin/setup-application`, when present, for
 application dependencies such as `npm ci`; a new worktree runs it too.
-QMD and direnv are optional; setup reports skipped features.
 Create `.envrc` only when the project needs environment settings, and review
 it before running `direnv allow`; search does not need it.
 

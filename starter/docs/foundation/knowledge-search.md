@@ -5,7 +5,7 @@ status: current
 # Knowledge search
 
 Projects keep knowledge as Markdown in `memory/` and `docs/` and search it,
-along with the root `README.md`, with optional
+along with the root `README.md`, with
 [QMD](https://github.com/tobi/qmd). Each checkout has its own index, and Git
 hooks refresh it in the background.
 
@@ -40,6 +40,16 @@ nested pages. Each QMD command receives a temporary copy of the generated
 configuration, so QMD can rewrite that copy without affecting freshness
 checks.
 
+## Required tools
+
+This project runs on the Mac that the home repository sets up, which
+installs QMD, direnv, ShellCheck, and Python, so a missing tool means that
+setup broke; restore the tool through it rather than work around it. Without
+QMD, `bin/setup`, every refresh and lookup, and `bin/doctor` fail. In a
+checkout with an `.envrc`, `bin/setup`, `bin/prep-worktree`, and `bin/doctor`
+fail without direnv. `bin/doctor` also fails without ShellCheck, which
+`bin/check` runs.
+
 ## Search failures
 
 When configured QMD fails, follow `~/AGENTS.md` for a failed knowledge
@@ -48,9 +58,7 @@ attempt a focused repair. Confirm recovery by repeating the failed lookup
 successfully; never report success from a command that failed, timed out, or
 discarded results.
 
-A successful search with no matches is not a failure. Operating without QMD
-requires an explicit project decision or user approval; a broken tool never
-establishes that choice.
+A successful search with no matches is not a failure.
 
 ## Refresh and recovery
 
@@ -80,18 +88,6 @@ rebuilds it. Avoid direct `qmd update`, `qmd embed`, and `qmd cleanup`, which
 bypass this coordination. Logs rotate at about 1 MB and keep one previous
 file.
 
-## Optional home memory
-
-Personal notes are excluded by default. To include them locally:
-
-```sh
-git config --local knowledge.homeMemoryPath /absolute/path/to/personal/notes
-bin/qmd-index
-```
-
-Linked worktrees share the setting, and it is never committed. Notes are
-indexed, not copied. Unset the setting and refresh to remove the collection.
-
 ## Worktrees and models
 
 The `post-checkout` hook prepares a new worktree when Git creates it, and
@@ -101,9 +97,10 @@ dependencies, such as a `.venv`; a failure in a new worktree is reported
 without stopping Git. Each checkout keeps its own `.cache/qmd/index.sqlite`.
 Every project shares model files at `~/.cache/qmd/models`, independent of
 `XDG_CACHE_HOME`, through each checkout's `.cache/qmd/models` link. Setup
-migrates old local caches after verifying their contents and stops without
-deleting anything when files conflict. Never delete the shared model
-directory while cleaning up a checkout.
+creates or repairs that link, and stops without deleting anything when a
+folder or file holds its place; move what it holds into the shared folder,
+remove it, and run setup again. Never delete the shared model directory while
+cleaning up a checkout.
 
 A worktree's `.envrc` is approved automatically only when it matches a primary
 checkout file that direnv already allows. After moving a checkout, repair the
@@ -149,8 +146,8 @@ A `bin/hooks` outside the clone's checkouts counts as
 
 `bin/doctor` and `bin/doctor --json` report hooks, tools and versions,
 collections, model locations, the last refresh, and whether inputs are
-current, stale, unknown, or unavailable. They never approve environment files,
-download models, or rebuild the index. A missing optional tool is a notice;
-broken setup or an installed but failing tool fails with recovery steps.
+current, stale, or unknown. They never approve environment files, download
+models, or rebuild the index. A missing [required tool](#required-tools),
+broken setup, or an installed but failing tool fails with recovery steps.
 Freshness is not a SQLite integrity scan. If QMD reports database errors, run
 `bin/qmd-index --force` and inspect its log.

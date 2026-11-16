@@ -20,6 +20,11 @@ from datetime import datetime, timezone
 
 ROOT = Path(__file__).resolve().parents[1]
 EVENTS = ("post-checkout", "post-commit", "post-merge", "post-rewrite", "pre-push")
+# The home repository's setup installs these tools on the Mac every adopter runs on, so a missing one means it broke.
+REQUIRED_TOOLS = "; see docs/foundation/knowledge-search.md#required-tools"
+QMD_MISSING = "QMD is required but not installed. Restore it, or point knowledge.qmdPath at it" + REQUIRED_TOOLS
+DIRENV_MISSING = "direnv is required for this checkout's .envrc but not installed. Restore it" + REQUIRED_TOOLS
+SHELLCHECK_MISSING = "ShellCheck is required by bin/check but not installed. Restore it" + REQUIRED_TOOLS
 
 
 def stamp():
@@ -122,58 +127,22 @@ def shared_models(root=ROOT):
     return Path.home() / ".cache" / "qmd" / "models"
 
 
-def model_digest(path):
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.digest()
-
-
 def prepare_models(cache):
-    """Link the models folder in QMD's cache folder to the shared models, moving in any models it holds."""
+    """Link the models folder in QMD's cache folder to the shared models, creating or repairing the link."""
     models = shared_models()
     local = cache / "models"
-    if local.is_dir() and local.resolve() == models.resolve():
+    models.mkdir(parents=True, exist_ok=True)
+    if local.resolve() == models.resolve():
         return
-    with lock_file(models.parent / "models-migration.lock"):
-        models.mkdir(parents=True, exist_ok=True)
-        local.parent.mkdir(parents=True, exist_ok=True)
-        if local.resolve() == models.resolve():
-            return
-        files = sorted(local.iterdir()) if local.is_dir() else []
-        if local.exists() and not local.is_dir():
-            raise ValueError("Model cache is not a directory: " + str(local))
-        # Validate everything before removing any old files. Unknown files may be
-        # an in-progress download; let its owner finish before migrating.
-        for source in files:
-            if source.is_symlink() or not source.is_file() or source.suffix not in {".gguf", ".etag"}:
-                raise ValueError("Inspect unexpected model-cache entry before migration: " + str(source))
-            target = models / source.name
-            if target.exists() and (not target.is_file() or model_digest(source) != model_digest(target)):
-                raise ValueError("Model cache conflict; preserve and inspect both files: " + str(source) + " and " + str(target))
-        for source in files:
-            target = models / source.name
-            if not target.exists():
-                with tempfile.NamedTemporaryFile(dir=models, delete=False) as stream:
-                    temporary = Path(stream.name)
-                try:
-                    shutil.copyfile(source, temporary)
-                    if model_digest(source) != model_digest(temporary):
-                        raise RuntimeError("Model changed during migration: " + str(source))
-                    temporary.replace(target)
-                finally:
-                    temporary.unlink(missing_ok=True)
-        if local.is_symlink():
-            # Other consumers may still use the old link target.
-            local.unlink()
-        elif local.exists():
-            for source in files:
-                if model_digest(source) != model_digest(models / source.name):
-                    raise RuntimeError("Model changed during migration: " + str(source))
-                source.unlink()
-            local.rmdir()
-        local.symlink_to(models, target_is_directory=True)
+    if local.exists() and not local.is_symlink():
+        raise ValueError("Move what " + str(local) + " holds into " + str(models) + " and remove it, so it can link "
+                         "to the shared models; see docs/foundation/knowledge-search.md#worktrees-and-models")
+    cache.mkdir(parents=True, exist_ok=True)
+    # Replacing the link in one rename leaves concurrent setups no gap. The old target stays untouched.
+    with tempfile.TemporaryDirectory(prefix="models-", dir=cache) as temporary:
+        link = Path(temporary) / "models"
+        link.symlink_to(models, target_is_directory=True)
+        link.replace(local)
 
 
 def primary_checkout(root):
@@ -208,12 +177,11 @@ def prepare(root):
     if primary and primary.resolve() == root:
         git("config", "--local", "knowledge.primaryWorktree", str(root), root=root)
     prepare_models(Knowledge(root).cache)
-    if not shutil.which("direnv"):
-        print("direnv absent: environment approval skipped.")
-        return
     envrc = root / ".envrc"
     if not envrc.exists():
         return
+    if not shutil.which("direnv"):
+        raise RuntimeError(DIRENV_MISSING)
     if primary and primary.resolve() != root and (primary / ".envrc").is_file():
         result = subprocess.run(["direnv", "status", "--json"], cwd=primary, text=True, capture_output=True)
         try:
@@ -296,26 +264,13 @@ class Knowledge:
                 raise ValueError("Collection " + name + " needs pattern **/*.md or one Markdown file name in its directory")
             path = (self.root / collection["path"]).resolve()
             if not path.is_relative_to(self.root):
-                raise ValueError("Shared collection paths must stay inside the checkout; use knowledge.homeMemoryPath for home notes")
+                raise ValueError("Collection paths must stay inside the checkout: " + name)
             if not path.is_dir():
                 raise ValueError("Collection directory is missing: " + str(path))
             if set(collection) - {"path", "pattern", "ignore", "context"}:
                 raise ValueError("Unsupported collection setting: " + name)
             rendered["collections"][name] = dict(collection, path=str(path))
-        warnings = []
-        home = self.setting("homeMemoryPath")
-        if home:
-            path = Path(home).expanduser()
-            if not path.is_absolute():
-                raise ValueError("knowledge.homeMemoryPath must be absolute")
-            if path.is_dir():
-                rendered["collections"]["home-memory"] = {
-                    "path": str(path.resolve()), "pattern": "**/*.md",
-                    "context": {"/": "Optional personal guidance across projects. Confirm its scope before applying it."},
-                }
-            else:
-                warnings.append("Home memory is missing; skipped: " + str(path))
-        return rendered, warnings
+        return rendered
 
     def environment(self):
         return dict(git_environment(), QMD_CONFIG_DIR=str(self.qmd_config),
@@ -338,7 +293,7 @@ class Knowledge:
         if requested and not command:
             raise ValueError("knowledge.qmdPath is not executable: " + requested)
         if not command:
-            return None, None
+            raise RuntimeError(QMD_MISSING)
         result = subprocess.run([command, "--version"], cwd=self.root, env=self.environment(),
                                 text=True, capture_output=True, timeout=15)
         if result.returncode:
@@ -499,33 +454,27 @@ class Knowledge:
                   "last_success": previous.get("last_success")}
         changed_during_run = False
         try:
-            rendered, warnings = self.config()
-            for warning in warnings:
-                print(warning, flush=True)
+            rendered = self.config()
             atomic_json(self.qmd_config / "index.yml", rendered)
             prepare_models(self.cache)
             tool, version = self.qmd_tool()
             result["qmd_version"] = version
             # Logs append across runtime upgrades; date each section for later triage.
-            print(stamp() + " Refresh started with " + (version or "no QMD"), flush=True)
-            if not tool:
-                result.update(status="skipped", exit_code=0, message="QMD absent: local search skipped.")
-            else:
-                before, counts = snapshot(rendered, version)
-                prior = previous.get("last_success") or {}
-                unchanged = (not force and prior.get("fingerprint") == before and
-                             (self.cache / "index.sqlite").is_file() and previous.get("status") == "success")
-                if not unchanged:
-                    # Cleanup drops vectors of replaced or removed pages, which update and embed keep.
-                    for command in ("update", "embed", "cleanup"):
-                        with self.command_environment() as env:
-                            subprocess.run([tool, command], cwd=self.root, env=env, check=True)
-                after_config, _ = self.config()
-                after, _ = snapshot(after_config, version)
-                changed_during_run = before != after
-                result.update(status="success", exit_code=0,
-                              message="Unchanged inputs; refresh skipped." if unchanged else "Index refreshed.",
-                              last_success={"at": stamp(), "fingerprint": before, "counts": counts, "qmd_version": version})
+            print(stamp() + " Refresh started with " + version, flush=True)
+            before, counts = snapshot(rendered, version)
+            prior = previous.get("last_success") or {}
+            unchanged = (not force and prior.get("fingerprint") == before and
+                         (self.cache / "index.sqlite").is_file() and previous.get("status") == "success")
+            if not unchanged:
+                # Cleanup drops vectors of replaced or removed pages, which update and embed keep.
+                for command in ("update", "embed", "cleanup"):
+                    with self.command_environment() as env:
+                        subprocess.run([tool, command], cwd=self.root, env=env, check=True)
+            after, _ = snapshot(self.config(), version)
+            changed_during_run = before != after
+            result.update(status="success", exit_code=0,
+                          message="Unchanged inputs; refresh skipped." if unchanged else "Index refreshed.",
+                          last_success={"at": stamp(), "fingerprint": before, "counts": counts, "qmd_version": version})
         except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as error:
             result["message"] = str(error)
         result["finished_at"] = stamp()
@@ -578,9 +527,7 @@ class Knowledge:
             time.sleep(0.05)
 
     def current_index(self, version):
-        rendered, warnings = self.config()
-        for warning in warnings:
-            print(warning, file=sys.stderr)
+        rendered = self.config()
         fingerprint, _ = snapshot(rendered, version)
         state = read_json(self.cache / "state.json")
         return (state.get("status") == "success" and
@@ -591,8 +538,6 @@ class Knowledge:
     def lookup(self, args):
         prepare_models(self.cache)
         tool, version = self.qmd_tool()
-        if not tool:
-            raise RuntimeError("QMD is not installed. Restore the configured tool or explicitly agree to operate without QMD.")
         retrieves = args[0] in {"search", "query", "vsearch", "get", "multi-get", "ls"}
         if retrieves and not self.current_index(version):
             timeout = float(self.setting("searchRefreshTimeout") or "60")
@@ -602,7 +547,7 @@ class Knowledge:
             if self.wait_for(self.enqueue(), timeout=timeout, output=sys.stderr):
                 raise RuntimeError("Search refresh failed; no results returned. " + self.repair())
             tool, version = self.qmd_tool()
-            if not tool or not self.current_index(version):
+            if not self.current_index(version):
                 raise RuntimeError("Search freshness could not be established; no results returned. " + self.repair())
         with self.command_environment() as env:
             result = subprocess.run([tool, *args], cwd=self.root, env=env, text=True, stdout=subprocess.PIPE)
@@ -621,36 +566,28 @@ class Knowledge:
                   "models": str((self.cache / "models").resolve()), "shared_models": str(shared_models()),
                   "worker_running": self.worker_active(), "python": sys.version.split()[0], "issues": [], "notices": []}
         try:
-            rendered, warnings = self.config()
-            report["notices"].extend(warnings)
+            rendered = self.config()
             report["collections"] = {k: v["path"] for k, v in rendered["collections"].items()}
-            tool, version = self.qmd_tool()
-            report.update(qmd=tool, qmd_version=version)
             state = read_json(self.cache / "state.json")
             report["last_refresh"] = state or None
-            if not tool:
-                report["freshness"] = "unavailable"
-                report["notices"].append("QMD absent: search is optional. Use the Markdown source files.")
-            else:
-                fingerprint, report["document_counts"] = snapshot(rendered, version)
-                last = state.get("last_success") or {}
-                if not last:
-                    report["freshness"] = "unknown"
-                elif (last.get("fingerprint") == fingerprint and (self.cache / "index.sqlite").is_file()
-                      and self.configuration_matches(rendered)):
-                    report["freshness"] = "current"
-                else:
-                    report["freshness"] = "stale"
-                if report["freshness"] != "current" or state.get("status") == "failed":
-                    report["issues"].append("Search needs refresh or recovery. Run " + self.refresh_command +
-                                            "; inspect " + self.shown(self.cache / "index.log") + " on failure.")
             models = self.cache / "models"
-            if not models.is_dir():
-                report["issues"].append("Model cache missing or broken. Inspect " + self.shown(models) +
-                                        ", then run " + self.prepare_command + ".")
-            elif models.resolve() != shared_models().resolve():
-                report["issues"].append("Model cache must use ~/.cache/qmd/models. Run " + self.prepare_command +
-                                        " to migrate it.")
+            if not models.is_dir() or models.resolve() != shared_models().resolve():
+                report["issues"].append("Model cache must link to ~/.cache/qmd/models. Run " + self.prepare_command +
+                                        " to repair " + self.shown(models) + ".")
+            tool, version = self.qmd_tool()
+            report.update(qmd=tool, qmd_version=version)
+            fingerprint, report["document_counts"] = snapshot(rendered, version)
+            last = state.get("last_success") or {}
+            if not last:
+                report["freshness"] = "unknown"
+            elif (last.get("fingerprint") == fingerprint and (self.cache / "index.sqlite").is_file()
+                  and self.configuration_matches(rendered)):
+                report["freshness"] = "current"
+            else:
+                report["freshness"] = "stale"
+            if report["freshness"] != "current" or state.get("status") == "failed":
+                report["issues"].append("Search needs refresh or recovery. Run " + self.refresh_command +
+                                        "; inspect " + self.shown(self.cache / "index.log") + " on failure.")
         except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as error:
             report["freshness"] = "unknown"
             report["issues"].append(str(error))
@@ -664,15 +601,16 @@ class Knowledge:
         report["git_version"] = git("--version", root=self.root)
         report["primary_checkout"] = str(primary_checkout(self.root))
         for command, argument in (("direnv", "version"), ("shellcheck", "--version")):
+            report[command + "_version"] = None
             if shutil.which(command):
                 result = subprocess.run([command, argument], cwd=self.root, text=True, capture_output=True, timeout=15)
                 report[command + "_version"] = result.stdout.strip()
                 if result.returncode:
                     report["issues"].append(command + " is installed but its version check failed.")
-            else:
-                report[command + "_version"] = None
-        if not report["shellcheck_version"]:
-            report["notices"].append("ShellCheck absent: install it before running bin/check.")
+        if not report["direnv_available"] and (self.root / ".envrc").exists():
+            report["issues"].append(DIRENV_MISSING)
+        if not shutil.which("shellcheck"):
+            report["issues"].append(SHELLCHECK_MISSING)
         active = self.hooks_path()
         if report["hooks_mode"] == "bundled":
             if self.shared_hooks(active):
@@ -698,16 +636,17 @@ class Knowledge:
 
 
 def config():
-    """Render this checkout's collections; return them with any warnings."""
-    return Knowledge().config()
+    """Render this checkout's collections for the memory audit; return them with an empty list.
+
+    The audit runs this from a clone of origin's default branch, which can hold another release than the audit
+    itself, so it keeps the (collections, warnings) shape that every release's audit reads."""
+    return Knowledge().config(), []
 
 
 def cli(action):
     args = sys.argv[1:]
     engine = Knowledge()
     try:
-        if sys.version_info < (3, 9):
-            raise RuntimeError("Python 3.9 or later is required")
         if Path(git("rev-parse", "--show-toplevel")).resolve() != engine.root:
             raise ValueError("Copy the starter into the target checkout root before running its tools")
         if action == "prep":
