@@ -85,9 +85,11 @@ Each adopter takes the path its own manual follow-up gives it. An adopter that
 no follow-up applies to, because the release has none or its follow-up applies
 only to other adopters, receives only what `bin/sync` writes. An adopter that
 a follow-up applies to, through an override, a feature, or its own files,
-takes the [fleet sync](#sync-the-fleet) steps. Ship the release without
-checks, CI waits, deployments, or validation records, except in the adopters
-a follow-up applies to:
+takes the [fleet sync](#sync-the-fleet) steps. A follow-up step for every
+adopter, even an optional one, applies to every adopter, so that release, the
+starter included, uses the [full process](#cut-a-release). Ship any other
+release without checks, CI waits, deployments, or validation records, except
+in the adopters a follow-up applies to:
 
 1. Set the version, add the changelog entry, commit, tag `vX.Y.Z`, and run
    `git push origin main vX.Y.Z`.
@@ -113,10 +115,6 @@ it. Track each adopter left behind this way
 in a GitHub issue in this repository, reusing an open one, so a later agent
 finishes its sync without anyone having to remember it; the sync that brings
 the adopter current closes the issue.
-
-A release with a follow-up step for every adopter, even an optional one,
-applies to every adopter, so the whole release, the starter included, uses
-the full process below.
 
 ## Cut a release
 
