@@ -605,7 +605,31 @@ ones whose Actions jobs the spending limit blocked. Five of the 20 releases
 after 2.0.0 changed that file. The tradeoff is that of
 [unchecked sync-only releases](#unchecked-sync-only-releases--2026-10-15),
 now for releases that change an overridden file; the merged override is still
-checked.
+checked. [Per-adopter follow-up](#per-adopter-follow-up--2026-11-16) later
+widened this to follow-up that applies to any adopters, not only those with an
+override.
+
+### Per-adopter follow-up — 2026-11-16
+
+Each adopter takes the release path its own manual follow-up gives it: the
+[sync-only](releases.md#sync-only-releases) path when no follow-up applies to
+it, and the fleet sync steps when one does, whether through an override, a
+feature, or the adopter's own files. A step for every adopter, even an
+optional one, still gives every adopter and the starter the full process.
+In [issue #5](https://github.com/jubishop/project-starter/issues/5) the user
+chose to "treat each adopter by what applies to it", but the docs recorded the
+choice only for overrides, the case that issue was about, and
+[feature-only follow-up](#shared-memory-audit--2026-10-25) later added
+features the same way. That narrower rule disagreed with the
+[sync closing advice](#sync-closing-advice--2026-11-16) the user chose on
+2026-11-11 and with two releases: 3.9.1's follow-up named only trading's
+workflow, and 3.10.0's named five adopters' own pages, and both sent every
+other adopter down the sync-only path. This was decided from that evidence on
+2026-11-16
+([issue #83](https://github.com/jubishop/project-starter/issues/83)).
+Narrowing `bin/sync`'s advice and the changelog to the narrower rule was
+rejected: it would run checks and CI in adopters that receive only what
+`bin/sync` writes, the cost issue #5 removed.
 
 ### Fleet sync skill — 2026-10-24
 
