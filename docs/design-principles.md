@@ -53,9 +53,10 @@ and configuration. Refresh stale inputs automatically with a bounded wait.
 Discard results if refresh fails, QMD fails, or inputs change during retrieval.
 Keep progress on stderr so structured output contains only successful results.
 
-Agents report configured search failures immediately and attempt repair. If
-repair fails, pause knowledge-dependent work until the user approves a fallback.
-Silent replacement with direct reads can conceal a persistently broken index.
+Agents handle a configured search failure as `~/AGENTS.md` says for a failed
+knowledge search, which keeps them from silently replacing search with direct
+reads, since that can conceal a persistently broken index. The starter
+supplies only its own repair steps and does not restate that rule.
 Known-file reads and successful searches with no matches remain normal work.
 Deliberate operation without optional QMD remains an explicit project choice.
 

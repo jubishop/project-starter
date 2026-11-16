@@ -22,6 +22,14 @@ follow-up it cannot apply. See [releases](docs/releases.md).
   success without running the application checks. The engineering policy's
   [checks](starter/docs/foundation/engineering-policy.md#checks) section
   says so.
+- A failed knowledge search no longer pauses knowledge-dependent work until
+  the user approves a fallback. The managed `AGENTS.md` block,
+  [search failures](starter/docs/foundation/knowledge-search.md#search-failures),
+  and the message a failed `bin/knowledge` lookup prints now point to
+  `~/AGENTS.md` for a failed knowledge search instead, and keep only the
+  starter's own repair steps. The block is part of each adopter's own
+  instructions, which override `~/AGENTS.md`, so its pause outlived the home
+  rule's and stalled unattended agents on their first QMD failure.
 
 ### Manual follow-up
 
@@ -29,7 +37,9 @@ None. Vps-infra's copy of home-infra's runner facts is already a link, and
 intentional, tracked stopgap copies, such as repository-local CI fallbacks,
 stay with their own issues. The starter workflow keeps running
 `bin/check --full`, and no adopter workflow changes. Records that earlier CI
-runs left in a self-hosted runner's checkout are never read again.
+runs left in a self-hosted runner's checkout are never read again. No adopter
+overrides the files the search-failure change touches, and none restates the
+pause in its own instructions.
 
 ## 3.13.1 — 2026-11-13
 
