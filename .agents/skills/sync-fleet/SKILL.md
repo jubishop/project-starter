@@ -46,5 +46,5 @@ beyond those reported. Report each adopter's outcome: synced and pushed (with
 CI results where required), already current, or skipped and why. File or
 reuse the release process's issue for each adopter left behind, and close the
 issue of each adopter this run brought current. When an adopter
-reveals a reusable gap, follow [propose starter
-improvements](../../../GUIDE.md#propose-starter-improvements).
+reveals a reusable gap, follow [improve the
+starter](../../../GUIDE.md#improve-the-starter).
