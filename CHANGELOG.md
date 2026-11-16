@@ -7,6 +7,13 @@ follow-up it cannot apply. See [releases](docs/releases.md).
 
 ### Synced
 
+- The engineering policy's
+  [Markdown pages](starter/docs/foundation/engineering-policy.md#markdown-pages)
+  section holds its one-authoritative-place rule across repositories too: for
+  a system another repository owns, an adopter links to that repository's page
+  rather than restating its facts. The rule never said whether one place meant
+  one per repository, so agents copied home-infra's runner facts into
+  vps-infra's development workflow page.
 - After an update, `bin/sync` no longer tells every adopter to run
   `bin/check --full`. Its closing advice names the
   [sync-only](docs/releases.md#sync-only-releases) path: when no manual
@@ -18,12 +25,13 @@ follow-up it cannot apply. See [releases](docs/releases.md).
   `bin/check --full`, and `bin/doctor`. The guide's
   [update an adopter](GUIDE.md#update-an-adopter) and
   [sync the fleet](docs/releases.md#sync-the-fleet) now agree with it on the
-  text-only case. None of these is in the bundle, so adopters receive only
-  the version change.
+  text-only case. None of these is in the bundle.
 
 ### Manual follow-up
 
-- None for `bin/sync`'s closing advice.
+None. The vps-infra copy is already a link, and intentional, tracked stopgap
+copies, such as repository-local CI fallbacks, stay with their own issues.
+`bin/sync`'s closing advice needs none either.
 
 ## 3.13.1 — 2026-11-13
 
