@@ -76,10 +76,13 @@ itself, so adopter documents never become test fixtures. It covers:
   enabled adopter passes `bin/check --documents-only`. An adopter's
   `syncCommitTrailers` survive a sync, and each sync and dry run ends by
   printing them as lines `git interpret-trailers --parse` reads; an invalid
-  setting stops either before it writes. A fake `gh` keeps the
-  suite off the network and checks that sync warns about a public GitHub
-  adopter without secret scanning or push protection, skips private
-  repositories and other hosts, and notes settings it cannot read.
+  setting stops either before it writes. Once sync writes, its closing
+  advice points an adoption to the guide's adoption checks and an update to
+  the sync-only path, with `bin/check --full` or `--documents-only` only
+  when follow-up applies, and each page anchor it names resolves. A fake
+  `gh` keeps the suite off the network and checks that sync warns about a
+  public GitHub adopter without secret scanning or push protection, skips
+  private repositories and other hosts, and notes settings it cannot read.
 - Memory audit feature: `bin/memory-audit` in an adopter that enabled it, with
   fake `claude`, `gh`, `qmd`, `osascript`, and `launchctl` and real Git
   remotes: proposal and session validation, the change gate, failure issues

@@ -34,6 +34,14 @@ SECRET_SCANNING = {"secret_scanning": "secret scanning", "secret_scanning_push_p
 # The project's own trailers for sync-only commits, such as a deployment skip; sync keeps and prints them.
 SYNC_COMMIT_TRAILERS = "syncCommitTrailers"
 TRAILER_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9-]*")
+# Closing advice once files are written; an update skips checks when no manual follow-up applies.
+ADOPTED = ("No commits were made. Review git diff and finish the steps in GUIDE.md#adopt-a-repository,"
+           " including bin/setup, bin/check --full, and bin/doctor, then commit.")
+UPDATED = ("No commits were made. Review git diff and the changelog's manual follow-up for each release synced.\n"
+           "If none applies to this project, commit only the synced files with [skip ci] and run no checks"
+           " (docs/releases.md#sync-only-releases).\n"
+           "Otherwise apply it, then run bin/check --full (only bin/check --documents-only when it changes only text)"
+           " and commit.")
 
 
 def git(*args, cwd=ROOT, check=True):
@@ -371,7 +379,7 @@ def sync(target, ref, init, dry_run, force, enable=(), disable=()):
         print("Dry run; nothing was written.")
     else:
         apply(target, result)
-        print("No commits were made. Review git diff, run bin/check --full, then commit.")
+        print(ADOPTED if init else UPDATED)
     if trailers:
         # Unindented, since Git reads an indented line as the previous trailer's continuation.
         print("End a sync-only commit's message with this project's trailers from " + MANIFEST

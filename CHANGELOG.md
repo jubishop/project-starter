@@ -3,6 +3,28 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## Unreleased
+
+### Synced
+
+- After an update, `bin/sync` no longer tells every adopter to run
+  `bin/check --full`. Its closing advice names the
+  [sync-only](docs/releases.md#sync-only-releases) path: when no manual
+  follow-up applies to the project, commit only the synced files with
+  `[skip ci]` and run no checks; otherwise apply the follow-up and run
+  `bin/check --full`, or only `bin/check --documents-only` when it changes
+  only text. After `--init`, it points to the guide's
+  [adoption steps](GUIDE.md#adopt-a-repository), including `bin/setup`,
+  `bin/check --full`, and `bin/doctor`. The guide's
+  [update an adopter](GUIDE.md#update-an-adopter) and
+  [sync the fleet](docs/releases.md#sync-the-fleet) now agree with it on the
+  text-only case. None of these is in the bundle, so adopters receive only
+  the version change.
+
+### Manual follow-up
+
+- None for `bin/sync`'s closing advice.
+
 ## 3.13.1 — 2026-11-13
 
 ### Synced
