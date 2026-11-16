@@ -3,70 +3,10 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
-## Unreleased
+## 3.14.0 — 2026-11-16
 
 ### Synced
 
-- The engineering policy's
-  [Markdown pages](starter/docs/foundation/engineering-policy.md#markdown-pages)
-  section holds its one-authoritative-place rule across repositories too: for
-  a system another repository owns, an adopter links to that repository's page
-  rather than restating its facts. The rule never said whether one place meant
-  one per repository, so agents copied home-infra's runner facts into
-  vps-infra's development workflow page.
-- In GitHub Actions, `bin/check --full` runs `bin/check-application` even
-  when a pass record matches the clean tree and environment, and records no
-  pass. On a self-hosted runner, `actions/checkout` keeps the checkout's
-  `.git` between jobs, so a push run on `main` after a squash merge, or a
-  rerun of a passing job, could reuse an earlier run's pass and report
-  success without running the application checks. The engineering policy's
-  [checks](starter/docs/foundation/engineering-policy.md#checks) section
-  says so.
-- A failed knowledge search no longer pauses knowledge-dependent work until
-  the user approves a fallback. The managed `AGENTS.md` block,
-  [search failures](starter/docs/foundation/knowledge-search.md#search-failures),
-  and the message a failed `bin/knowledge` lookup prints now point to
-  `~/AGENTS.md` for a failed knowledge search instead, and keep only the
-  starter's own repair steps. The block is part of each adopter's own
-  instructions, which override `~/AGENTS.md`, so its pause outlived the home
-  rule's and stalled unattended agents on their first QMD failure.
-- After an update, `bin/sync` no longer tells every adopter to run
-  `bin/check --full`. Its closing advice names the
-  [sync-only](docs/releases.md#sync-only-releases) path: when no manual
-  follow-up applies to the project, commit only the synced files with
-  `[skip ci]` and run no checks; otherwise apply the follow-up and run
-  `bin/check --full`, or only `bin/check --documents-only` when it changes
-  only text. After `--init`, it points to the guide's
-  [adoption steps](GUIDE.md#adopt-a-repository), including `bin/setup`,
-  `bin/check --full`, and `bin/doctor`. The guide's
-  [update an adopter](GUIDE.md#update-an-adopter) and
-  [sync the fleet](docs/releases.md#sync-the-fleet) now agree with it on the
-  text-only case. None of these is in the bundle.
-- The managed `AGENTS.md` block and the foundation pages stop restating home
-  rules and skills, which every adopter's agents already load, and keep only
-  the starter's own part. The block drops its kind-of-change bullet, its
-  flaky-test clause, and "preserve unrelated changes", and its checks bullet
-  names `bin/check --documents-only` for text. The engineering policy drops
-  its flaky-test section, cuts
-  [kinds of change](starter/docs/foundation/engineering-policy.md#kinds-of-change)
-  to a pointer to `~/AGENTS.md` plus the documents-only check, the sync's
-  route, and a project's own rule, and replaces
-  [hosted CI](starter/docs/foundation/engineering-policy.md#hosted-ci)'s
-  fallback for refused jobs and down self-hosted runners with a pointer to
-  the `fix-ci` skill, keeping `bin/check --full` on the exact revision as the
-  local equivalent.
-  [Worktrees and models](starter/docs/foundation/knowledge-search.md#worktrees-and-models)
-  drops its `git worktree add` example and removal steps. The block is part of
-  each adopter's own instructions, which override `~/AGENTS.md`, so each copy
-  froze an older version of a home rule, and the copies had begun to drift.
-- `bin/_knowledge.py`'s search engine is a `Knowledge` class that takes the
-  root, cache and configuration folders, and index-worker command it runs
-  with, defaulting to the checkout that holds it. Code outside a checkout,
-  such as home's `home-knowledge`, can import it instead of keeping a fork,
-  which missed fixes such as 2.12.0's orphaned-vector cleanup. A subclass
-  can name its own commands, settings, and pages in the engine's messages,
-  such as those for missing QMD and a folder in the models link's place. Adopters'
-  commands and messages are unchanged.
 - QMD is required, and direnv in a checkout with an `.envrc`, as
   [required tools](starter/docs/foundation/knowledge-search.md#required-tools)
   says. Without QMD, `bin/setup`, every refresh, and `bin/doctor` fail and
@@ -87,10 +27,57 @@ follow-up it cannot apply. See [releases](docs/releases.md).
   a folder in its place; and the refusal of Python before 3.9. The template
   `README.md` and `docs/development-workflow.md` name the required tools.
   Sync leaves each adopter's own copies unchanged, so the manual follow-up
-  rewrites them. Not in the
-  bundle: `bin/sync` no longer plans from 1.x manifests without `managed`
-  hashes, `--status` drops its "legacy manifest" line, and `bin/smoke-qmd`
-  drops its home-memory step.
+  rewrites them. Not in the bundle: `bin/sync` no longer plans from 1.x
+  manifests without `managed` hashes, `--status` drops its "legacy manifest"
+  line, and `bin/smoke-qmd` drops its home-memory step.
+- `bin/_knowledge.py`'s search engine is a `Knowledge` class that takes the
+  root, cache and configuration folders, and index-worker command it runs
+  with, defaulting to the checkout that holds it. Code outside a checkout,
+  such as home's `home-knowledge`, can import it instead of keeping a fork,
+  which missed fixes such as 2.12.0's orphaned-vector cleanup. A subclass
+  can name its own commands, settings, and pages in the engine's messages,
+  such as those for missing QMD and a folder in the models link's place.
+  Adopters' commands and messages are unchanged.
+- A failed knowledge search no longer pauses knowledge-dependent work until
+  the user approves a fallback. The managed `AGENTS.md` block,
+  [search failures](starter/docs/foundation/knowledge-search.md#search-failures),
+  and the message a failed `bin/knowledge` lookup prints now point to
+  `~/AGENTS.md` for a failed knowledge search instead, and keep only the
+  starter's own repair steps. The block is part of each adopter's own
+  instructions, which override `~/AGENTS.md`, so its pause outlived the home
+  rule's and stalled unattended agents on their first QMD failure.
+- The managed `AGENTS.md` block and the foundation pages stop restating home
+  rules and skills, which every adopter's agents already load, and keep only
+  the starter's own part. The block drops its kind-of-change bullet, its
+  flaky-test clause, and "preserve unrelated changes", and its checks bullet
+  names `bin/check --documents-only` for text. The engineering policy drops
+  its flaky-test section, cuts
+  [kinds of change](starter/docs/foundation/engineering-policy.md#kinds-of-change)
+  to a pointer to `~/AGENTS.md` plus the documents-only check, the sync's
+  route, and a project's own rule, and replaces
+  [hosted CI](starter/docs/foundation/engineering-policy.md#hosted-ci)'s
+  fallback for refused jobs and down self-hosted runners with a pointer to
+  the `fix-ci` skill, keeping `bin/check --full` on the exact revision as the
+  local equivalent.
+  [Worktrees and models](starter/docs/foundation/knowledge-search.md#worktrees-and-models)
+  drops its `git worktree add` example and removal steps. The block is part of
+  each adopter's own instructions, which override `~/AGENTS.md`, so each copy
+  froze an older version of a home rule, and the copies had begun to drift.
+- The engineering policy's
+  [Markdown pages](starter/docs/foundation/engineering-policy.md#markdown-pages)
+  section holds its one-authoritative-place rule across repositories too: for
+  a system another repository owns, an adopter links to that repository's page
+  rather than restating its facts. The rule never said whether one place meant
+  one per repository, so agents copied home-infra's runner facts into
+  vps-infra's development workflow page.
+- In GitHub Actions, `bin/check --full` runs `bin/check-application` even
+  when a pass record matches the clean tree and environment, and records no
+  pass. On a self-hosted runner, `actions/checkout` keeps the checkout's
+  `.git` between jobs, so a push run on `main` after a squash merge, or a
+  rerun of a passing job, could reuse an earlier run's pass and report
+  success without running the application checks. The engineering policy's
+  [checks](starter/docs/foundation/engineering-policy.md#checks) section
+  says so.
 - `bin/check --full` no longer reuses an application pass recorded under
   other values of the environment variables a project lists in
   `checks.applicationEnvironment` in `.config/knowledge.json`. The pass's
@@ -102,6 +89,18 @@ follow-up it cannot apply. See [releases](docs/releases.md).
   them, and neither set of tests ran. The engineering policy's
   [checks](starter/docs/foundation/engineering-policy.md#checks) section says
   what to list. A project that lists none keeps its fingerprint.
+- After an update, `bin/sync` no longer tells every adopter to run
+  `bin/check --full`. Its closing advice names the
+  [sync-only](docs/releases.md#sync-only-releases) path: when no manual
+  follow-up applies to the project, commit only the synced files with
+  `[skip ci]` and run no checks; otherwise apply the follow-up and run
+  `bin/check --full`, or only `bin/check --documents-only` when it changes
+  only text. After `--init`, it points to the guide's
+  [adoption steps](GUIDE.md#adopt-a-repository), including `bin/setup`,
+  `bin/check --full`, and `bin/doctor`. The guide's
+  [update an adopter](GUIDE.md#update-an-adopter) and
+  [sync the fleet](docs/releases.md#sync-the-fleet) now agree with it on the
+  text-only case. None of these is in the bundle.
 
 ### Manual follow-up
 
@@ -167,25 +166,36 @@ adopter the [fleet sync](docs/releases.md#sync-the-fleet) steps.
 
 No other adopter sets `knowledge.homeMemoryPath`, links the removed section,
 keeps a folder in place of a model link, or tests the knowledge tools itself,
-and the Mac has QMD, direnv, and ShellCheck. Vps-infra's copy of
-home-infra's runner facts is already a link, and intentional, tracked
-stopgap copies, such as repository-local CI fallbacks, stay with their own
-issues. The starter workflow keeps running
-`bin/check --full`, and no adopter workflow changes. Records that earlier CI
-runs left in a self-hosted runner's checkout are never read again. No adopter
-overrides the files the search-failure change touches, and none restates the
-pause in its own instructions. `bin/sync`'s closing advice needs none either.
-No adopter overrides the files the home-guidance sweep trims or links the
-removed flaky-test section. The template `memory/README.md` drops a sentence
-restating home's memory rule. Adopters' copies keep it, which needs no
-follow-up, since it agrees with that rule.
-The module-level helpers project code imports from `bin/_knowledge.py`, as
-podhaven's `bin/_worktrees.py` does, are unchanged; on 2026-11-16 no adopter
-imported a function that became a `Knowledge` method.
-On 2026-11-16 no other adopter's `bin/check-application` read a variable
-that changes which checks run or what runs them; screenr's sets
-`SCREENR_TEST_SHARD` only from its own `--shard` argument, which `bin/check`
-never passes.
+and the Mac has QMD, direnv, and ShellCheck. The module-level helpers project
+code imports from `bin/_knowledge.py`, as podhaven's `bin/_worktrees.py`
+does, are unchanged; on 2026-11-16 no adopter imported a function that became
+a `Knowledge` method.
+
+No adopter overrides a managed file, restates the search-failure pause in its
+own instructions, or links the removed flaky-test section. The template
+`memory/README.md` drops a sentence restating home's memory rule; adopters'
+copies keep it, which needs no follow-up, since it agrees with that rule.
+Vps-infra's copy of home-infra's runner facts is already a link, and
+intentional, tracked stopgap copies, such as repository-local CI fallbacks,
+stay with their own issues.
+
+The starter workflow keeps running `bin/check --full`, and no adopter
+workflow changes. Records that earlier CI runs left in a self-hosted runner's
+checkout are never read again. On 2026-11-16 no other adopter's
+`bin/check-application` read a variable that changes which checks run or what
+runs them; screenr's sets `SCREENR_TEST_SHARD` only from its own `--shard`
+argument, which `bin/check` never passes. `bin/sync`'s closing advice needs
+no follow-up either.
+
+### Verified
+
+`bin/check` passed 143 tests on macOS 27.0.1 with Python 3.15.2 and Git
+2.56.1, and the strict real-QMD smoke check,
+`bin/smoke-qmd --strict-diagnostics`, passed on an Apple M5 Pro with QMD
+2.8.3 and node-llama-cpp 3.22.3. On 2026-11-16 all 22 adopters were on
+3.13.1 with no drift or overrides, and the first follow-up item's `git grep`
+found the lines it describes in each of them. No adopter was synced before
+the release.
 
 ## 3.13.1 — 2026-11-13
 
