@@ -68,8 +68,8 @@ only here, and the other `bin/` commands run in the target.
    the managed [pre-push hook](starter/docs/foundation/engineering-policy.md#pre-push-hook)
    runs after the document checks pass.
 7. **Configure knowledge.** Adjust collections and deliberate exclusions in
-   `.config/knowledge.json`, keeping personal paths in local Git
-   configuration. Keep or add the `readme` collection, which indexes only the
+   `.config/knowledge.json`; every collection stays inside the checkout.
+   Keep or add the `readme` collection, which indexes only the
    root `README.md`; a collection rooted at `.` with `**/*.md` should ignore
    `README.md` so it is not indexed twice. Bring existing pages into the
    documented formats, and do not invent memories.
