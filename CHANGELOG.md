@@ -129,8 +129,8 @@ adopter the [fleet sync](docs/releases.md#sync-the-fleet) steps.
   `docs/foundation/knowledge-search.md#optional-home-memory`, which this
   release removes, so `bin/check --documents-only` fails until that paragraph
   goes. Drop it and `docs/development-workflow.md`'s paragraph about copying
-  `screenr.homeMemoryPath` to `knowledge.homeMemoryPath`. Rewrite the
-  `README.md` setup paragraph above the dropped one, which says "QMD
+  `screenr.homeMemoryPath` to `knowledge.homeMemoryPath`. Rewrite the two
+  `README.md` setup paragraphs above the dropped one, which say "QMD
   supplies optional local Markdown search", "Direnv is optional", "Missing
   optional tools produce notices", and that setup "builds the QMD index when
   QMD is available", as the first item says, then run
