@@ -120,8 +120,16 @@ an optional step for every adopter, uses the full process below.
 
 ## Cut a release
 
-1. Choose the version. A major release changes extension points or requires
-   adopter action, a minor release adds features, and a patch fixes defects.
+1. Choose the version. A major release retires or replaces a part of the
+   starter that adopters build on, such as an extension point, a managed
+   tool, or a managed page, as 2.0.0 replaced `bin/check` wrappers with
+   `bin/check-application` for application checks and 3.0.0 retired td task
+   tracking. A minor release adds features, extension points, or policy, or
+   changes how existing ones work or are configured. A patch fixes defects,
+   in code or policy. Manual follow-up, required or optional, doesn't raise
+   the version by itself, even when an adopter's sync or checks fail without
+   it: the changelog records it, and
+   [sync-only releases](#sync-only-releases) says which path it takes.
 2. Set `version` in `starter/.project-starter.json`, and add a changelog entry
    with the synced changes, the manual follow-up, and the verified QMD and
    platform versions.

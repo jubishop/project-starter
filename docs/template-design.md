@@ -421,12 +421,34 @@ changes merged into adopters by hand.
 
 Cut semver tags after CI passes on `main`; sync targets the latest tag.
 `CHANGELOG.md` separates synced changes from manual follow-up. Major versions
-change extension points or required actions. 2.0.0 may span several pull
-requests but ships as one tag, so adopters migrate once.
+change extension points or required actions;
+[release versions](#release-versions--2026-11-13) supersedes this rule.
+2.0.0 may span several pull requests but ships as one tag, so adopters
+migrate once.
 
 Pilot the migration in health, screenr, and podhaven, then migrate the other
 adopters. Every adopter uses the same managed set; printing adopts the full
 set rather than a knowledge-only subset.
+
+### Release versions — 2026-11-13
+
+A release's version follows what it does to the parts of the starter that
+adopters build on, not whether it needs manual follow-up: a major release
+retires or replaces such a part, as [cut a release](releases.md#cut-a-release)
+states ([issue #55](https://github.com/jubishop/project-starter/issues/55)).
+This writes down the rule the changelog shows, decided from that evidence on
+2026-11-13. Taken literally, the 2.0 rule would have made nearly every release
+with follow-up a major, yet only 2.0.0, which replaced `bin/check` wrappers
+and edits to `bin/_checks.py` with `bin/check-application` for application
+checks, and 3.0.0, which retired td task tracking, shipped as majors. Minors
+added extension points, as 2.1.0 and 3.8.0 did, and carried required
+follow-up: in 3.9.0, an adopter's CI failed unless its checkout fetched full
+history, and in 3.8.0, sync refused to write until health and screenr moved
+their own `pre-push` hooks. Patches carried it too, as 3.7.1 and 3.9.1 did.
+Making releases with required follow-up major was rejected, since it would
+contradict that history, and the changelog's manual follow-up and the [release
+paths](releases.md#sync-only-releases) already handle follow-up at any
+version. The user may tighten the rule.
 
 ### Tool versions — 2026-10-09
 
