@@ -105,6 +105,7 @@ itself, so adopter documents never become test fixtures. It covers:
   clean checkout whose tree and environment passed it within 12 hours,
   including in a linked worktree; uncommitted changes, a new tree, changed
   `.venv` packages, an older pass, a failed run, and `--no-reuse` run it.
+  In GitHub Actions it runs despite a matching pass and records none.
 
 Adopters run the same check modes, verify managed-file hashes against the
 release that passed this suite, and add their own `bin/check-application`.

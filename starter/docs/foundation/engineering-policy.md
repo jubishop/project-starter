@@ -219,7 +219,9 @@ and `node` versions, and the packages in `.venv` and `node_modules`), it says
 which commit passed and skips the application checks. A reused result counts
 as a successful `bin/check --full` for that tree. Worktrees of a repository
 share the record, and `bin/check --full --no-reuse` runs the application checks
-regardless.
+regardless. In GitHub Actions, `bin/check --full` neither reuses nor records a
+pass, so a CI result always comes from running the checks on its revision,
+even on a self-hosted runner whose checkout keeps `.git` between jobs.
 
 ### Pre-push hook
 

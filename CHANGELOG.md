@@ -3,6 +3,25 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## Unreleased
+
+### Synced
+
+- In GitHub Actions, `bin/check --full` runs `bin/check-application` even
+  when a pass record matches the clean tree and environment, and records no
+  pass. On a self-hosted runner, `actions/checkout` keeps the checkout's
+  `.git` between jobs, so a push run on `main` after a squash merge, or a
+  rerun of a passing job, could reuse an earlier run's pass and report
+  success without running the application checks. The engineering policy's
+  [checks](starter/docs/foundation/engineering-policy.md#checks) section
+  says so.
+
+### Manual follow-up
+
+None. The starter workflow keeps running `bin/check --full`, and no adopter
+workflow changes. Records that earlier CI runs left in a self-hosted runner's
+checkout are never read again.
+
 ## 3.13.1 — 2026-11-13
 
 ### Synced
