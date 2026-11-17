@@ -12,7 +12,13 @@ import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
-FEATURE = ROOT / "features/memory-audit"
+# No feature ships now, so the feature tests release this one from a disposable source.
+FEATURE_NAME = "example"
+FEATURE_FILES = {
+    "feature.json": ('{"index": "- [Example](example.md): the example feature\'s page."}\n', False),
+    "bin/example": ("#!/bin/sh\necho example\n", True),
+    "docs/foundation/example.md": ("---\nstatus: current\n---\n\n# Example\n\nThe example feature's page.\n", False),
+}
 
 
 def digest(path):
@@ -20,9 +26,17 @@ def digest(path):
 
 
 def feature_files():
-    """The adopter paths the memory audit feature installs."""
-    return sorted(p.relative_to(FEATURE).as_posix() for p in FEATURE.rglob("*")
-                  if p.is_file() and p.name != "feature.json" and "__pycache__" not in p.parts)
+    """The adopter paths the example feature installs."""
+    return sorted(relative for relative in FEATURE_FILES if relative != "feature.json")
+
+
+def write_feature(source):
+    """Add the example feature to a source checkout."""
+    for relative, (text, executable) in FEATURE_FILES.items():
+        path = source / "features" / FEATURE_NAME / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text)
+        path.chmod(0o755 if executable else 0o644)
 
 
 def snapshot(repo):
@@ -80,10 +94,12 @@ class SyncTests(unittest.TestCase):
     def sync(self, *args, source=ROOT, check=True):
         return self.run_command(str(source / "bin/sync"), *args, cwd=self.base, check=check)
 
-    def source(self):
-        """Copy this checkout into a disposable source repository that can be tagged."""
+    def source(self, feature=False):
+        """Copy this checkout into a disposable source repository that can be tagged, optionally with the example feature."""
         source = self.base / "starter source"
         shutil.copytree(ROOT, source, ignore=shutil.ignore_patterns(".git", ".cache", "__pycache__"))
+        if feature:
+            write_feature(source)
         self.run_command("git", "init", "-b", "main", cwd=source)
         self.commit(source, "Release")
         self.run_command("git", "tag", "v2.0.0", cwd=source)
@@ -104,15 +120,16 @@ class SyncTests(unittest.TestCase):
 
     def assert_feature_installed(self, repo):
         manifest = self.manifest(repo)
-        self.assertEqual(manifest["features"], ["memory-audit"])
+        self.assertEqual(manifest["features"], [FEATURE_NAME])
         for relative in feature_files():
-            self.assertEqual((repo / relative).read_bytes(), (FEATURE / relative).read_bytes(), relative)
-            self.assertEqual(os.access(repo / relative, os.X_OK), os.access(FEATURE / relative, os.X_OK), relative)
+            text, executable = FEATURE_FILES[relative]
+            self.assertEqual((repo / relative).read_text(), text, relative)
+            self.assertEqual(os.access(repo / relative, os.X_OK), executable, relative)
             self.assertEqual(manifest["managed"][relative], digest(repo / relative), relative)
         self.assertFalse((repo / "feature.json").exists())
         # The foundation index lists the feature's page, so index coverage passes.
         index = repo / "docs/foundation/README.md"
-        self.assertIn("](memory-audit.md)", index.read_text())
+        self.assertIn("](example.md)", index.read_text())
         self.assertEqual(manifest["managed"]["docs/foundation/README.md"], digest(index))
         self.check_documents(repo)
 
@@ -232,83 +249,106 @@ class SyncTests(unittest.TestCase):
         self.assertEqual(self.commits(repo), 6)
 
     def test_init_can_enable_a_feature(self):
+        source = self.source(feature=True)
         repo = self.target()
-        self.sync("--init", "--ref", "WORKTREE", "--enable", "memory-audit", str(repo))
+        self.sync("--init", "--ref", "WORKTREE", "--enable", FEATURE_NAME, str(repo), source=source)
         self.assertEqual(self.commits(repo), 1)
         self.assert_feature_installed(repo)
 
     def test_an_adopter_enables_keeps_and_disables_a_feature(self):
+        source = self.source(feature=True)
         repo = self.target()
-        self.sync("--init", "--ref", "WORKTREE", str(repo))
+        self.sync("--init", "--ref", "WORKTREE", str(repo), source=source)
         self.assert_feature_absent(repo)
         self.commit(repo, "Adopt")
-        self.sync("--ref", "WORKTREE", "--enable", "memory-audit", str(repo))
+        self.sync("--ref", "WORKTREE", "--enable", FEATURE_NAME, str(repo), source=source)
         self.assert_feature_installed(repo)
         self.commit(repo, "Enable")
         before = snapshot(repo)
-        self.sync("--ref", "WORKTREE", str(repo))
+        self.sync("--ref", "WORKTREE", str(repo), source=source)
         self.assertEqual(snapshot(repo), before)
 
-        audit = repo / "bin/_memory_audit.py"
-        original = audit.read_bytes()
-        audit.write_text(audit.read_text() + "# local change\n")
-        self.assertIn("bin/_memory_audit.py", self.check_documents(repo, check=False).stderr)
+        tool = repo / "bin/example"
+        original = tool.read_bytes()
+        tool.write_text(tool.read_text() + "# local change\n")
+        self.assertIn("bin/example", self.check_documents(repo, check=False).stderr)
         self.commit(repo, "Local change")
-        refused = self.sync("--ref", "WORKTREE", "--disable", "memory-audit", str(repo), check=False)
+        refused = self.sync("--ref", "WORKTREE", "--disable", FEATURE_NAME, str(repo), source=source, check=False)
         self.assertNotEqual(refused.returncode, 0)
-        self.assertIn("bin/_memory_audit.py", refused.stderr)
-        self.assertTrue(audit.read_text().endswith("# local change\n"))
-        audit.write_bytes(original)
+        self.assertIn("bin/example", refused.stderr)
+        self.assertTrue(tool.read_text().endswith("# local change\n"))
+        tool.write_bytes(original)
         self.commit(repo, "Restore")
-        self.sync("--ref", "WORKTREE", "--disable", "memory-audit", str(repo))
+        self.sync("--ref", "WORKTREE", "--disable", FEATURE_NAME, str(repo), source=source)
+        self.assert_feature_absent(repo)
+        self.check_documents(repo)
+
+    def test_disabling_a_feature_that_a_release_retired_removes_its_files(self):
+        source = self.source(feature=True)
+        repo = self.target()
+        self.sync("--init", "--enable", FEATURE_NAME, str(repo), source=source)
+        self.assert_feature_installed(repo)
+        self.commit(repo, "Adopt with the feature")
+        shutil.rmtree(source / "features")
+        self.commit(source, "Retire the feature")
+        self.run_command("git", "tag", "v3.0.0", cwd=source)
+
+        before = snapshot(repo)
+        refused = self.sync(str(repo), source=source, check=False)
+        self.assertNotEqual(refused.returncode, 0)
+        self.assertIn("v3.0.0 has no feature " + FEATURE_NAME, refused.stderr)
+        self.assertIn("disable it with --disable", refused.stderr)
+        self.assertEqual(snapshot(repo), before)
+        result = self.sync("--disable", FEATURE_NAME, str(repo), source=source)
+        self.assertIn("removed: " + ", ".join(feature_files()), result.stdout)
+        self.assertEqual(self.manifest(repo)["ref"], "v3.0.0")
         self.assert_feature_absent(repo)
         self.check_documents(repo)
 
     def test_a_project_copy_of_a_feature_file_conflicts_until_removed(self):
+        source = self.source(feature=True)
         repo = self.target()
-        self.sync("--init", "--ref", "WORKTREE", str(repo))
-        own = repo / "bin/_memory_audit.py"
-        own.write_text("# The project's own audit\n")
-        self.commit(repo, "Own audit")
+        self.sync("--init", "--ref", "WORKTREE", str(repo), source=source)
+        own = repo / "bin/example"
+        own.write_text("# The project's own example\n")
+        self.commit(repo, "Own example")
         before = snapshot(repo)
-        conflict = self.sync("--ref", "WORKTREE", "--enable", "memory-audit", str(repo), check=False)
+        conflict = self.sync("--ref", "WORKTREE", "--enable", FEATURE_NAME, str(repo), source=source, check=False)
         self.assertNotEqual(conflict.returncode, 0)
-        self.assertIn("bin/_memory_audit.py", conflict.stderr)
+        self.assertIn("bin/example", conflict.stderr)
         self.assertIn("not managed", conflict.stderr)
         self.assertEqual(snapshot(repo), before)
         own.unlink()
-        self.commit(repo, "Remove own audit")
-        self.sync("--ref", "WORKTREE", "--enable", "memory-audit", str(repo))
+        self.commit(repo, "Remove own example")
+        self.sync("--ref", "WORKTREE", "--enable", FEATURE_NAME, str(repo), source=source)
         self.assert_feature_installed(repo)
 
     def test_unknown_or_contradictory_features_are_refused(self):
+        source = self.source(feature=True)
         repo = self.target()
-        for args, message in ((("--enable", "memory-audti"), "memory-audit"),
-                              (("--disable", "memory-audti"), "memory-audit"),
-                              (("--enable", "memory-audit", "--disable", "memory-audit"), "both")):
+        for args, message in ((("--enable", "exampel"), "available: " + FEATURE_NAME),
+                              (("--disable", "exampel"), "available: " + FEATURE_NAME),
+                              (("--enable", FEATURE_NAME, "--disable", FEATURE_NAME), "both")):
             with self.subTest(args=args):
-                result = self.sync("--init", "--ref", "WORKTREE", *args, str(repo), check=False)
+                result = self.sync("--init", "--ref", "WORKTREE", *args, str(repo), source=source, check=False)
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn(message, result.stderr)
                 self.assertFalse((repo / ".project-starter.json").exists())
-        self.assertNotEqual(self.sync("--status", "--enable", "memory-audit", check=False).returncode, 0)
+        self.assertNotEqual(self.sync("--status", "--enable", FEATURE_NAME, check=False).returncode, 0)
 
     def test_feature_changes_reach_only_the_adopters_that_enable_it(self):
-        source = self.base / "starter source"
-        shutil.copytree(ROOT, source, ignore=shutil.ignore_patterns(".git", ".cache", "__pycache__", "features"))
-        self.run_command("git", "init", "-b", "main", cwd=source)
-        self.commit(source, "Release without features")
-        self.run_command("git", "tag", "v2.0.0", cwd=source)
+        source = self.source()
         plain, featured = self.target("plain"), self.target("featured")
         for repo in (plain, featured):
             self.sync("--init", str(repo), source=source)
             self.commit(repo, "Adopt")
-        early = self.sync("--enable", "memory-audit", str(featured), source=source, check=False)
+        early = self.sync("--enable", FEATURE_NAME, str(featured), source=source, check=False)
         self.assertNotEqual(early.returncode, 0)
-        self.assertIn("memory-audit", early.stderr)
+        self.assertIn(FEATURE_NAME, early.stderr)
 
-        shutil.copytree(FEATURE, source / "features/memory-audit", ignore=shutil.ignore_patterns("__pycache__"))
-        with (source / "features/memory-audit/bin/_memory_audit.py").open("a") as stream:
+        write_feature(source)
+        tool = source / "features" / FEATURE_NAME / "bin/example"
+        with tool.open("a") as stream:
             stream.write("# release note\n")
         template = source / "starter/.project-starter.json"
         template.write_text(template.read_text().replace(json.loads(template.read_text())["version"], "2.1.0"))
@@ -323,26 +363,26 @@ class SyncTests(unittest.TestCase):
         self.assertEqual(set(after), {"version", "source", "ref", "managed", "blocks", "overrides"})
         self.assertEqual((after["version"], after["ref"]), ("2.1.0", "v2.1.0"))
         self.assertEqual(after["managed"], before["managed"])
-        self.sync("--enable", "memory-audit", str(featured), source=source)
-        self.assertTrue((featured / "bin/_memory_audit.py").read_text().endswith("# release note\n"))
-        self.assertEqual(self.manifest(featured)["features"], ["memory-audit"])
+        self.sync("--enable", FEATURE_NAME, str(featured), source=source)
+        self.assertTrue((featured / "bin/example").read_text().endswith("# release note\n"))
+        self.assertEqual(self.manifest(featured)["features"], [FEATURE_NAME])
         self.check_documents(featured)
 
         # An overridden feature file keeps its local change and reports the upstream one.
-        with (featured / "bin/_memory_audit.py").open("a") as stream:
+        with (featured / "bin/example").open("a") as stream:
             stream.write("# local change\n")
         manifest = self.manifest(featured)
-        manifest["overrides"]["bin/_memory_audit.py"] = "Local audit experiment"
+        manifest["overrides"]["bin/example"] = "Local experiment"
         (featured / ".project-starter.json").write_text(json.dumps(manifest))
-        self.commit(featured, "Override the audit")
-        with (source / "features/memory-audit/bin/_memory_audit.py").open("a") as stream:
+        self.commit(featured, "Override the example")
+        with tool.open("a") as stream:
             stream.write("# second release note\n")
         self.commit(source, "Change the feature again")
         self.run_command("git", "tag", "v2.2.0", cwd=source)
         result = self.sync(str(featured), source=source)
         self.assertIn("upstream changed since v2.1.0", result.stdout)
-        self.assertIn("-- features/memory-audit/bin/_memory_audit.py", result.stdout)
-        self.assertTrue((featured / "bin/_memory_audit.py").read_text().endswith("# local change\n"))
+        self.assertIn("-- features/" + FEATURE_NAME + "/bin/example", result.stdout)
+        self.assertTrue((featured / "bin/example").read_text().endswith("# local change\n"))
 
     def test_sync_keeps_validates_and_prints_sync_commit_trailers(self):
         repo = self.target()
@@ -455,6 +495,7 @@ class SyncTests(unittest.TestCase):
         self.assertTrue((self.base / "exposed/.project-starter.json").is_file())
 
     def test_status_reports_versions_overrides_drift_and_features(self):
+        source = self.source(feature=True)
         fleet = self.base / "projects"
         fleet.mkdir()
         for name in ("current", "drifted", "overridden", "featured"):
@@ -462,25 +503,25 @@ class SyncTests(unittest.TestCase):
             repo.mkdir()
             self.run_command("git", "init", "-b", "main", cwd=repo)
             self.run_command("git", "commit", "--allow-empty", "-m", "Start", cwd=repo)
-            features = ("--enable", "memory-audit") if name == "featured" else ()
-            self.sync("--init", "--ref", "WORKTREE", *features, str(repo))
+            features = ("--enable", FEATURE_NAME) if name == "featured" else ()
+            self.sync("--init", "--ref", "WORKTREE", *features, str(repo), source=source)
         doctor = fleet / "drifted/bin/doctor"
         doctor.write_text(doctor.read_text() + "# drift\n")
-        audit = fleet / "featured/bin/memory-audit"
-        audit.write_text(audit.read_text() + "# drift\n")
+        tool = fleet / "featured/bin/example"
+        tool.write_text(tool.read_text() + "# drift\n")
         manifest_path = fleet / "overridden/.project-starter.json"
         manifest = json.loads(manifest_path.read_text())
         manifest["overrides"] = {"bin/doctor": "Local diagnostics"}
         manifest_path.write_text(json.dumps(manifest))
         (fleet / "unrelated").mkdir()
-        lines = {line.split()[0]: line for line in self.sync("--status", "--root", str(fleet), "--ref", "WORKTREE").stdout.splitlines()
-                 if line.strip()}
+        status = self.sync("--status", "--root", str(fleet), "--ref", "WORKTREE", source=source)
+        lines = {line.split()[0]: line for line in status.stdout.splitlines() if line.strip()}
         self.assertNotIn("unrelated", lines)
         self.assertIn("drift 1", lines["drifted"])
         self.assertIn("drift 0", lines["current"])
         self.assertIn("overrides 1", lines["overridden"])
         self.assertIn("drift 1", lines["featured"])
-        self.assertIn("features memory-audit", lines["featured"])
+        self.assertIn("features " + FEATURE_NAME, lines["featured"])
         self.assertNotIn("features", lines["current"])
 
 

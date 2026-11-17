@@ -406,7 +406,7 @@ def main():
     parser.add_argument("--dry-run", action="store_true", help="Report planned changes without writing")
     parser.add_argument("--force", action="store_true", help="Replace conflicting local changes")
     parser.add_argument("--enable", action="append", default=[], metavar="FEATURE",
-                        help="Install an optional feature, such as memory-audit; repeatable")
+                        help="Install an optional feature; repeatable")
     parser.add_argument("--disable", action="append", default=[], metavar="FEATURE",
                         help="Remove an enabled feature's unchanged files; repeatable")
     args = parser.parse_args()

@@ -41,9 +41,10 @@ only here, and the other `bin/` commands run in the target.
    project's actual checks, runtime minimums, and deployment. When the
    project deploys on push and decides from every commit since its last
    deployment, record its deploy-skip trailers in `.project-starter.json` as
-   its [sync commit trailers](docs/releases.md#sync-commit-trailers) and,
-   when the [memory audit](features/memory-audit/docs/foundation/memory-audit.md#settings)
-   is enabled, in `.config/knowledge.json` as `memoryAudit.commitTrailers`.
+   its [sync commit trailers](docs/releases.md#sync-commit-trailers) and for
+   the home guidance review, as the
+   [engineering policy](starter/docs/foundation/engineering-policy.md#deployment-decisions)
+   says.
 4. **Tailor `AGENTS.md`** below the managed block with the `edit-agents-md`
    skill, also removing project rules the block already covers. A runtime
    that needs another filename should reference `AGENTS.md`.
@@ -118,32 +119,28 @@ verifies them, and releases update them. It also lists the feature's page in
 `docs/foundation/README.md`. Adopters that do not enable a feature never
 receive its files.
 
-| Feature | What it adds |
-| --- | --- |
-| `memory-audit` | A weekly local Claude audit of memory notes that proposes validated changes in a pull request with a matching issue and reports failures in a GitHub issue; macOS and GitHub only. See [its page](features/memory-audit/docs/foundation/memory-audit.md). |
+No feature ships now. 4.0.0 retired `memory-audit`, the only one, since the
+home guidance review audits every adopter's memory notes; see the
+[changelog](CHANGELOG.md).
 
 On a clean checkout:
 
 ```sh
-bin/sync --enable memory-audit /path/to/project
-bin/sync --disable memory-audit /path/to/project
+bin/sync --enable <feature> /path/to/project
+bin/sync --disable <feature> /path/to/project
 ```
 
 Both repeat for several features and combine with `--init` and `--dry-run`.
 `.project-starter.json` lists the enabled features, and later syncs keep
 them. Disabling removes the feature's unchanged files and refuses, as a
-conflict, to remove changed ones. Review the feature's page for its setup,
-such as `bin/memory-audit install`, and its settings, and stop anything it
-scheduled before disabling it.
+conflict, to remove changed ones. Review the feature's page for its setup and
+settings, and stop anything it scheduled before disabling it. Once a release
+drops a feature, sync refuses each adopter that still enables it until it
+runs with `--disable`.
 
 A feature file whose path already holds a file that sync does not manage, such
-as a project's own copy of the audit, is a conflict, and sync writes nothing.
-Delete or move that copy and commit, then sync with `--enable`. To migrate a
-project-owned memory audit, delete its `bin/memory-audit`,
-`bin/_memory_audit.py`, `bin/memory-audit-prompt.md`, and tests, enable the
-feature, move its schedule, labels, and other differences into the
-`memoryAudit` settings, point the project's docs at
-`docs/foundation/memory-audit.md`, and rerun `bin/memory-audit install`.
+as a project's own copy of the feature, is a conflict, and sync writes
+nothing. Delete or move that copy and commit, then sync with `--enable`.
 
 ## Improve the starter
 

@@ -683,6 +683,10 @@ schedule, failure-issue labels, and commit trailers, live in an optional
 `memoryAudit` object in the project-owned `.config/knowledge.json`, so the
 managed files stay identical everywhere.
 
+[Memory audit retired](#memory-audit-retired--2026-11-15) supersedes the
+audit's choices above; the optional-feature layout and feature-only
+follow-up stand.
+
 ### Setup extension point — 2026-10-09
 
 `bin/setup` runs an executable, project-owned `bin/setup-application` after
@@ -765,11 +769,10 @@ Its choices:
 
 ### Memory audit pull requests — 2026-11-13
 
-The [memory audit](../features/memory-audit/docs/foundation/memory-audit.md)
-pushed its validated note changes straight to `main`. On 2026-11-13 the user
-decided that every scheduled reviewer files an unassigned issue with a pull
-request instead, which the user merges or an agent that works unassigned
-issues reviews
+The memory audit pushed its validated note changes straight to `main`. On
+2026-11-13 the user decided that every scheduled reviewer files an unassigned
+issue with a pull request instead, which the user merges or an agent that
+works unassigned issues reviews
 ([issue #53](https://github.com/jubishop/project-starter/issues/53)). The
 audit was the only reviewer that already landed changes, and it was about to
 roll out to 20 more repositories.
@@ -795,6 +798,9 @@ roll out to 20 more repositories.
   closes it as not planned instead of applying its changes.
 - **Unchanged:** the read-only model, the session and document checks before
   publishing, the tool boundary, key isolation, failure issue, and schedule.
+
+[Memory audit retired](#memory-audit-retired--2026-11-15) supersedes this
+decision.
 
 ### Memory audit in every adopter — 2026-11-13
 
@@ -824,6 +830,49 @@ projects without notes skip the model.
   [shared start time](#shared-memory-audit--2026-10-25) for the fleet; the
   default stays Saturday 06:00, and the lock still makes overlapping runs
   take turns.
+
+[Memory audit retired](#memory-audit-retired--2026-11-15) supersedes this
+decision.
+
+### Memory audit retired — 2026-11-15
+
+On 2026-11-15 the user retired the `memory-audit` feature in favor of home's
+guidance review, `~/bin/guidance-review`, which audits each adopter's memory
+notes, `AGENTS.md`, and first-party skills in that adopter's own repository,
+by its rules
+([issue #72](https://github.com/jubishop/project-starter/issues/72),
+[jubishop/zshrc#343](https://github.com/jubishop/zshrc/issues/343)).
+Issues [#65](https://github.com/jubishop/project-starter/issues/65) and
+[#51](https://github.com/jubishop/project-starter/issues/51) had planned to
+port into the feature what the home runner already did, from full-access
+audits in a worktree to the spend-refusal fallback. That would have kept the
+same machinery in two places and made every home fix a release synced to 22
+adopters: the hand porting
+[issue #6](https://github.com/jubishop/project-starter/issues/6) created the
+feature to end. Every adopter lives on the Mac where the home runner runs, so
+one runner replaces 22 LaunchAgents, schedules set by hand, the machine-wide
+turn lock, and per-adopter copies of the runner, and it sees every adopter's
+skills by construction.
+
+- **Retired in 4.0.0:** `features/memory-audit/`, with its runner, prompt,
+  and page; the module-level `config()` in `bin/_knowledge.py`, which only
+  the audit called; and each adopter's `memoryAudit` settings. Each adopter's
+  LaunchAgent goes before its sync disables the feature, which removes the
+  runner the job starts.
+- **The key passes to the guidance review:** it bills memory-note audits to
+  `ANTHROPIC_MEMORY_AUDIT_API_KEY`, read from the adopter's `.env` before
+  `~/.env`, so a project's own line still overrides the shared key, and an
+  empty one still keeps it on the subscription. Screenr's deploy-skip
+  trailers moved into the review's own adopter settings, and the engineering
+  policy's [deployment decisions](../starter/docs/foundation/engineering-policy.md#deployment-decisions)
+  now point there.
+- **Open audit pull requests stay ordinary work,** as issue #65 decided for
+  audit pull requests that don't land; the retirement closes none of the
+  seven open on 2026-11-15. The user may override this routine detail.
+- **Rejected:** porting the home design as #65 and #51 described, and keeping
+  per-adopter runners started from one home job.
+
+`bin/sync`'s optional features remain, with none shipping now.
 
 ### Sync commit trailers — 2026-11-13
 
@@ -863,6 +912,13 @@ each adopter's deployment rules. This was decided from that evidence on
   while an adopter's development workflow page sends its agent to that policy
   when the project first deploys. The policy names the audit's setting
   without linking its page, which exists only where the feature is enabled.
+
+Since [memory audit retired](#memory-audit-retired--2026-11-15), only
+`bin/sync` validates commit trailers, and the policy's trigger names the
+home guidance review's settings in place of `memoryAudit.commitTrailers`.
+[Issue #63](https://github.com/jubishop/project-starter/issues/63), which would have shared one validator between `bin/sync`
+and the audit, closed as not planned on 2026-11-16 in favor of that
+retirement.
 
 ### Search failures follow home guidance — 2026-11-15
 
