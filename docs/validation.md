@@ -73,37 +73,22 @@ itself, so adopter documents never become test fixtures. It covers:
   updates between tagged releases with conflict refusal and `--force`, and
   fleet `--status`. The
   adoption test also confirms that the copied CI workflow runs
-  `bin/check --full`. Feature tests enable a feature at adoption and later,
-  keep it across syncs, refuse to disable a changed copy, refuse a project
-  file in a feature's path until it is removed, and leave adopters without
-  the feature unchanged by a release that changes only feature files; each
-  enabled adopter passes `bin/check --documents-only`. An adopter's
-  `syncCommitTrailers` survive a sync, and each sync and dry run ends by
-  printing them as lines `git interpret-trailers --parse` reads; an invalid
-  setting stops either before it writes. Once sync writes, its closing
+  `bin/check --full`. Feature tests, with an example feature the suite adds
+  to a copy of the starter, enable a feature at adoption and later, keep it
+  across syncs, refuse to disable a changed copy, refuse a project file in a
+  feature's path until it is removed, leave adopters without the feature
+  unchanged by a release that changes only feature files, and refuse to sync
+  an adopter whose feature a release dropped until `--disable` removes its
+  files; each enabled adopter passes `bin/check --documents-only`. An
+  adopter's `syncCommitTrailers` survive a sync, and each sync and dry run
+  ends by printing them as lines `git interpret-trailers --parse` reads; an
+  invalid setting stops either before it writes. Once sync writes, its closing
   advice points an adoption to the guide's adoption checks and an update to
   the sync-only path, with `bin/check --full` or `--documents-only` only
   when follow-up applies, and each page anchor it names resolves. A fake
   `gh` keeps the suite off the network and checks that sync warns about a
   public GitHub adopter without secret scanning or push protection, skips
   private repositories and other hosts, and notes settings it cannot read.
-- Memory audit feature: `bin/memory-audit` in an adopter that enabled it, with
-  fake `claude`, `gh`, `qmd`, `osascript`, and `launchctl` and real Git
-  remotes: proposal and session validation, the change gate, failure issues
-  and their labels, and the settings. Publishing pushes a rebased branch to
-  every push URL and opens an unassigned issue listing each change and a pull
-  request that closes it, never touching the default branch; an origin whose
-  default branch is `master` is audited and gets the pull request; the
-  issue's model-written text mentions no one outside code and links; a failed
-  pull request closes the issue and deletes the branch, and runs skip while
-  an audit pull request is open. The audit's key comes from the checkout's
-  `.env` before `~/.env`, never from the shell or its old name, and an empty
-  value in the checkout's `.env` keeps the subscription. For the tool
-  boundary check, a fake Claude Code drives the runner's stand-in API and
-  runs the scripted tools, and variants of it that break the boundary stop
-  the audit. Repeated audits leave one Claude Code project record, and a run
-  replaces working folders that an interrupted run left. The LaunchAgent
-  installer tests run only on macOS.
 - Setup: `bin/setup-application` runs only after a successful foundation
   setup, must be executable, and its failure fails setup. A new worktree and
   `bin/prep-worktree` run it too; its failure fails `bin/prep-worktree` but

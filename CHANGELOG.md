@@ -3,6 +3,104 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 4.0.0 — 2026-11-16
+
+### Synced
+
+- The `memory-audit` feature is retired: home's guidance review,
+  `~/bin/guidance-review`, now audits every adopter's memory notes,
+  `AGENTS.md`, and first-party skills in the adopter's own repository, from
+  one LaunchAgent instead of 22 per-adopter runners
+  ([decision](docs/template-design.md#memory-audit-retired--2026-11-15)).
+  This release has no such feature, so `bin/sync` refuses an adopter that
+  still enables it until it runs with `--disable memory-audit`. That removes
+  `bin/memory-audit`, `bin/_memory_audit.py`, `bin/memory-audit-prompt.md`,
+  and `docs/foundation/memory-audit.md`, drops the feature from
+  `.project-starter.json`, and drops the "Enabled features" section from
+  `docs/foundation/README.md`. `bin/_knowledge.py` drops the module-level
+  `config()`, which only the audit called, and `shared_models()` drops its
+  unused `root` parameter, which no caller passed. The guidance review
+  leaves an adopter's memory notes alone while it still enables the feature
+  and starts auditing them the night after its sync.
+- The engineering policy's
+  [deployment decisions](starter/docs/foundation/engineering-policy.md#deployment-decisions)
+  tell a project that starts deciding deployment from every commit since its
+  last deployment to record its deploy-skip trailers for the guidance
+  review's audit commits, in `~/bin/guidance-review`'s `ADOPTER_SETTINGS`,
+  instead of as `memoryAudit.commitTrailers`.
+
+### Manual follow-up
+
+Every adopter needs the follow-up below, so this release, the starter
+included, takes the [full process](docs/releases.md#cut-a-release), and each
+adopter the [fleet sync](docs/releases.md#sync-the-fleet) steps. Do the
+first item before the adopter's sync, which removes the runner its
+LaunchAgent starts.
+
+- Every adopter, before its sync: stop its audit. Run
+  `launchctl bootout gui/$(id -u)/<label>` and delete
+  `~/Library/LaunchAgents/<label>.plist`, where `<label>` is the
+  `launchAgentLabel` that `bin/memory-audit settings` prints; on 2026-11-16
+  it was `com.jubishop.<folder>.memory-audit` in all 22 adopters, named after
+  the checkout's folder. Then delete the primary checkout's ignored
+  `.cache/memory-audit/`.
+- Every adopter: sync with `bin/sync --disable memory-audit /path/to/project`,
+  delete the `memoryAudit` object from `.config/knowledge.json`, which
+  nothing reads any longer, and run `bin/check --documents-only`, which
+  parses that file. Keep any `ANTHROPIC_MEMORY_AUDIT_API_KEY` line in the
+  adopter's `.env`: the guidance review bills memory-note audits to that key
+  and reads the adopter's `.env` before `~/.env`, so the line still overrides
+  the shared key, and an empty one still keeps the adopter on the Claude
+  subscription.
+- podhaven: `docs/development-workflow.md`'s "Scheduled memory audit" section
+  links `foundation/memory-audit.md`, which the sync removes, so
+  `bin/check --documents-only` fails until it changes. Replace the section's
+  body with a pointer to the guidance review, `~/docs/guidance-review.md`,
+  keeping the heading, which `memory/README.md` and
+  `memory/memory-audit-model-selection.md` link, and PodHaven's own fact
+  that its `.env` sets no `ANTHROPIC_MEMORY_AUDIT_API_KEY` line. Drop the
+  setup section's two sentences on the local memory audit's required tools
+  and its tests, "and the shared memory audit" from the tests paragraph, and
+  "and the enabled `memory-audit` feature" from the `.project-starter.json`
+  paragraph. In
+  `memory/README.md`, drop the claim that the model cannot edit the README.
+  Bring `memory/memory-audit-model-selection.md` up to date: the guidance
+  review audits on the same Sonnet model, shared key, and subscription
+  fallback, and the note's runner, `bin/_memory_audit.py`, and
+  `.cache/memory-audit/latest.json` are gone.
+- screenr: `docs/development-workflow.md`'s "Scheduled memory audit" section
+  links `foundation/memory-audit.md` too. Replace its body with a pointer to
+  the guidance review, keeping the heading, which `memory/README.md` links,
+  and Screenr's own facts: the review adds Screenr's deploy-skip trailers to
+  each audit commit, and `.env.example` leaves out
+  `ANTHROPIC_MEMORY_AUDIT_API_KEY`. Keep its dated "Audit decisions" and
+  "Audit billing and model" records, noting that 4.0.0 moved the audit to
+  the guidance review. Drop "and the enabled `memory-audit` feature" from
+  the "Project Starter" section, rewrite `memory/README.md`'s weekly memory
+  audit paragraph to name the guidance review, and point `.env.example`'s
+  comment at the guidance review instead of
+  `docs/foundation/memory-audit.md#api-key`. The `memoryAudit.commitTrailers`
+  that the second item deletes already live in the review's
+  `ADOPTER_SETTINGS`.
+
+On 2026-11-16 every adopter enabled the feature and had a `memoryAudit`
+object, and no other adopter's own files named the audit, apart from
+podhaven's pull request review records, which stay as history. The seven
+open audit pull requests, in stories, health, pantrydates, sourdough,
+kidsbank, trading, and news, change only memory notes and stay ordinary
+work; the retirement closes none of them. No adopter overrides a managed
+file.
+
+### Verified
+
+`bin/check` passed 80 tests, without the memory audit's, on macOS 27.0.1 with
+Python 3.15.2 and Git 2.56.1, and the strict real-QMD smoke check,
+`bin/smoke-qmd --strict-diagnostics`, which it runs when `bin/_knowledge.py`
+changes, passed on an Apple M5 Pro with QMD 2.8.3 and node-llama-cpp 3.22.3.
+On 2026-11-16 all 22 adopters were on 3.14.0 with no drift or overrides, each
+enabled the feature, and launchd had loaded all 22 audit LaunchAgents. No
+adopter was synced before the release.
+
 ## 3.14.0 — 2026-11-16
 
 ### Synced

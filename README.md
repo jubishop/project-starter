@@ -7,8 +7,8 @@ template; its defaults reflect those projects.
 
 - [Guide](GUIDE.md): adopt or update a repository.
 - [Starter bundle](starter/): the files `bin/sync` installs.
-- [Features](GUIDE.md#enable-or-disable-a-feature): optional additions, such as
-  the weekly memory audit, that adopters enable.
+- [Features](GUIDE.md#enable-or-disable-a-feature): optional additions that
+  adopters enable; none ships now.
 - [Changelog](CHANGELOG.md): releases and their manual follow-up.
 - [Design and validation](docs/README.md): decisions, releases, and evidence.
 
@@ -17,7 +17,7 @@ template; its defaults reflect those projects.
 ```sh
 bin/sync --init /path/to/project   # adopt the latest release
 bin/sync /path/to/project          # update an adopter
-bin/sync --enable memory-audit /path/to/project   # add a feature; --disable removes it
+bin/sync --enable <feature> /path/to/project   # add a feature; --disable removes it
 bin/sync --status                  # versions, drift, overrides, and features under ~/projects
 ```
 
