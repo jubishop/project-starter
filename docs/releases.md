@@ -16,7 +16,6 @@ and what needs manual follow-up. The decisions behind this process are in the
 | Managed | Everything in `starter/` not listed below | Replaced each release; hashes recorded in `.project-starter.json` and verified by every `bin/check` mode. |
 | Managed blocks | The marked sections of `AGENTS.md` and `.gitignore` | Only the text between the `project-starter:begin` and `project-starter:end` markers is replaced and hashed. |
 | Project-owned | `README.md`, `docs/README.md`, `memory/README.md`, `docs/development-workflow.md`, `docs/git-remotes.md`, `.config/knowledge.json`, `.github/workflows/check.yml` | Copied by `--init` when missing, then never changed. |
-| Features | Everything in `features/<name>/` except its `feature.json` | Managed like the bundle, but only in adopters whose `.project-starter.json` lists the feature; `--enable` and `--disable` change that list. The foundation index lists each enabled feature's page. |
 
 A managed file that differs from its recorded hash is a conflict, and sync
 writes nothing until it is resolved. Move the change into an extension point
@@ -25,8 +24,8 @@ writes nothing until it is resolved. Move the change into an extension point
 record an override with its reason in `.project-starter.json`, or discard it
 with `--force`. Sync skips overridden files and reports upstream changes to
 them. Add a new extension point once a second repository needs the same
-override. A new managed or feature file whose path holds a file sync does not
-manage is a conflict too; move or delete that file first.
+override. A new managed file whose path holds a file sync does not manage is
+a conflict too; move or delete that file first.
 
 ## Secret scanning
 
@@ -80,7 +79,7 @@ commits from deploying.
 Each adopter takes the path its own manual follow-up gives it. An adopter that
 no follow-up applies to, because the release has none or its follow-up applies
 only to other adopters, receives only what `bin/sync` writes. An adopter that
-a follow-up applies to, through an override, a feature, or its own files,
+a follow-up applies to, through an override or its own files,
 takes the [fleet sync](#sync-the-fleet) steps. A follow-up step for every
 adopter, even an optional one, applies to every adopter, so that release, the
 starter included, uses the [full process](#cut-a-release). Ship any other
@@ -100,7 +99,7 @@ in the adopters a follow-up applies to:
    [fleet sync](#sync-the-fleet) steps: apply the follow-up, run the checks it
    needs, push without `[skip ci]`, and confirm CI. The changelog's manual
    follow-up says which adopters it applies to, and `bin/sync --status` lists
-   each adopter's overrides and features.
+   each adopter's overrides.
 
 Sync only an adopter whose checkout is clean, on its default branch, and even
 with its remote. A clean checkout that is only behind its remote, such as one

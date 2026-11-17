@@ -3,6 +3,31 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 4.1.0 — 2026-11-16
+
+### Synced
+
+- `bin/sync`'s optional features are retired, now that 4.0.0 retired the
+  only one and no adopter enables any
+  ([decision](docs/template-design.md#optional-features-retired--2026-11-16)):
+  `--enable` and `--disable`, the `features/<name>/` layout, the foundation
+  index's "Enabled features" section, and the `features` list in
+  `.project-starter.json` and `bin/sync --status`. `bin/sync` isn't in the
+  bundle, so adopters receive only the version change.
+
+### Manual follow-up
+
+None. Adopters take the [sync-only](docs/releases.md#sync-only-releases)
+path.
+
+### Verified
+
+`bin/check` passed 75 tests on macOS 27.0.1 with Python 3.15.2 and Git
+2.56.1: the six feature tests gave way to one for a release that adds or drops
+a starter file, and the release test now checks an overridden file's
+upstream-change note. On 2026-11-16 all 22 adopters were on 4.0.0 with no
+drift, overrides, or features. No adopter was synced before the release.
+
 ## 4.0.0 — 2026-11-16
 
 ### Synced

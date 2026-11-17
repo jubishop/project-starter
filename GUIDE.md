@@ -7,10 +7,10 @@ request; do not install it as a skill or load it automatically.
 
 Links in this guide resolve from this repository. Sync copies each page under
 `starter/` to the same path in the target without that prefix, so
-`starter/docs/git-remotes.md` becomes `docs/git-remotes.md`, and likewise
-for an enabled feature's pages under `features/<name>/`; read the target's
-copy when working there. The changelog, `bin/sync`, and `bin/smoke-qmd` exist
-only here, and the other `bin/` commands run in the target.
+`starter/docs/git-remotes.md` becomes `docs/git-remotes.md`; read the
+target's copy when working there. The changelog, `bin/sync`, and
+`bin/smoke-qmd` exist only here, and the other `bin/` commands run in the
+target.
 
 ## Adopt a repository
 
@@ -29,10 +29,9 @@ only here, and the other `bin/` commands run in the target.
    Sync copies the latest release: managed files, the managed blocks in
    `AGENTS.md` and `.gitignore`, and any project-owned pages that do not exist
    yet. It keeps and reports existing project-owned files, and it never
-   commits. Add `--enable <feature>` to install an
-   [optional feature](#enable-or-disable-a-feature) too. When it warns that a
-   public GitHub repository lacks secret scanning or push protection, enable
-   both as [secret scanning](docs/releases.md#secret-scanning) describes.
+   commits. When it warns that a public GitHub repository lacks secret
+   scanning or push protection, enable both as
+   [secret scanning](docs/releases.md#secret-scanning) describes.
 3. **Merge project-owned pages.** Fold starter guidance into an existing
    README and knowledge indexes, keep useful existing content, and link
    `foundation/README.md` from `docs/README.md`. The copied
@@ -108,39 +107,7 @@ paragraph, any deploy-skip trailers the adopter records as its
 [sync commit trailers](docs/releases.md#sync-commit-trailers) in
 `.project-starter.json`, which `bin/sync` prints after the sync.
 `bin/sync --status` reports each adopter's
-version, drift, overrides, and features.
-
-## Enable or disable a feature
-
-Optional features live in `features/<name>/` here, laid out at adopter paths.
-Sync installs a feature's files only in adopters that enable it, then manages
-them like the rest of the bundle: it records their hashes, `bin/check`
-verifies them, and releases update them. It also lists the feature's page in
-`docs/foundation/README.md`. Adopters that do not enable a feature never
-receive its files.
-
-No feature ships now. 4.0.0 retired `memory-audit`, the only one, since the
-home guidance review audits every adopter's memory notes; see the
-[changelog](CHANGELOG.md).
-
-On a clean checkout:
-
-```sh
-bin/sync --enable <feature> /path/to/project
-bin/sync --disable <feature> /path/to/project
-```
-
-Both repeat for several features and combine with `--init` and `--dry-run`.
-`.project-starter.json` lists the enabled features, and later syncs keep
-them. Disabling removes the feature's unchanged files and refuses, as a
-conflict, to remove changed ones. Review the feature's page for its setup and
-settings, and stop anything it scheduled before disabling it. Once a release
-drops a feature, sync refuses each adopter that still enables it until it
-runs with `--disable`.
-
-A feature file whose path already holds a file that sync does not manage, such
-as a project's own copy of the feature, is a conflict, and sync writes
-nothing. Delete or move that copy and commit, then sync with `--enable`.
+version, drift, and overrides.
 
 ## Improve the starter
 

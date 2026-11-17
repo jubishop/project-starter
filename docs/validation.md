@@ -71,17 +71,14 @@ itself, so adopter documents never become test fixtures. It covers:
   executable.
 - `bin/sync`: initial adoption, hash and block enforcement with overrides,
   updates between tagged releases with conflict refusal and `--force`, and
-  fleet `--status`. The
-  adoption test also confirms that the copied CI workflow runs
-  `bin/check --full`. Feature tests, with an example feature the suite adds
-  to a copy of the starter, enable a feature at adoption and later, keep it
-  across syncs, refuse to disable a changed copy, refuse a project file in a
-  feature's path until it is removed, leave adopters without the feature
-  unchanged by a release that changes only feature files, and refuse to sync
-  an adopter whose feature a release dropped until `--disable` removes its
-  files; each enabled adopter passes `bin/check --documents-only`. An
-  adopter's `syncCommitTrailers` survive a sync, and each sync and dry run
-  ends by printing them as lines `git interpret-trailers --parse` reads; an
+  fleet `--status`. The adoption test also confirms that the copied CI
+  workflow runs `bin/check --full`. An overridden file keeps its local change
+  and names the upstream diff when a release changes it. A release that adds
+  a starter file refuses to replace a project file at its path until the
+  project removes it, and a release that drops one refuses to remove a
+  changed copy and removes an unchanged one. An adopter's
+  `syncCommitTrailers` survive a sync, and each sync and dry run ends by
+  printing them as lines `git interpret-trailers --parse` reads; an
   invalid setting stops either before it writes. Once sync writes, its closing
   advice points an adoption to the guide's adoption checks and an update to
   the sync-only path, with `bin/check --full` or `--documents-only` only
