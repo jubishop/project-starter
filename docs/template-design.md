@@ -629,7 +629,9 @@ other adopter down the sync-only path. This was decided from that evidence on
 ([issue #83](https://github.com/jubishop/project-starter/issues/83)).
 Narrowing `bin/sync`'s advice and the changelog to the narrower rule was
 rejected: it would run checks and CI in adopters that receive only what
-`bin/sync` writes, the cost issue #5 removed.
+`bin/sync` writes, the cost issue #5 removed. Since
+[optional features retired](#optional-features-retired--2026-11-16),
+follow-up applies to an adopter through an override or its own files.
 
 ### Fleet sync skill — 2026-10-24
 
@@ -684,8 +686,9 @@ schedule, failure-issue labels, and commit trailers, live in an optional
 managed files stay identical everywhere.
 
 [Memory audit retired](#memory-audit-retired--2026-11-15) supersedes the
-audit's choices above; the optional-feature layout and feature-only
-follow-up stand.
+audit's choices above, and
+[optional features retired](#optional-features-retired--2026-11-16) the
+optional-feature layout and feature-only follow-up.
 
 ### Setup extension point — 2026-10-09
 
@@ -872,7 +875,32 @@ skills by construction.
 - **Rejected:** porting the home design as #65 and #51 described, and keeping
   per-adopter runners started from one home job.
 
-`bin/sync`'s optional features remain, with none shipping now.
+`bin/sync`'s optional features remained, with none shipping, until
+[optional features retired](#optional-features-retired--2026-11-16).
+
+### Optional features retired — 2026-11-16
+
+On 2026-11-16 the user retired `bin/sync`'s optional-feature mechanism
+([issue #90](https://github.com/jubishop/project-starter/issues/90)):
+`--enable` and `--disable`, the `features/<name>/` layout and its
+`feature.json`, the foundation index's "Enabled features" section, the
+manifest's `features` list and its `--status` column, and the tests and docs
+that described them. [Memory audit retired](#memory-audit-retired--2026-11-15)
+had removed the only feature, and after 4.0.0's sync `bin/sync --status`
+showed all 22 adopters with none, so the mechanism was kept only for a
+possible later feature. Since
+[adopters on one Mac](#adopters-on-one-mac--2026-11-15), machine-level work
+moves into home instead of per-adopter copies, which makes another feature
+less likely.
+
+- **Git history keeps the mechanism:** restore it from 4.0.0 if a feature is
+  ever needed, and add an extension point once a second repository needs one.
+- **A leftover feature needs no migration:** a manifest that still lists one
+  loses the list at its next sync, which removes the feature's unchanged
+  files as no longer part of the starter and refuses changed ones, as for
+  any dropped managed file.
+- **Rejected:** keeping the mechanism, with its fixture tests, for a possible
+  later feature.
 
 ### Sync commit trailers — 2026-11-13
 
