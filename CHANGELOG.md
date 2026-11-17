@@ -58,9 +58,11 @@ LaunchAgent starts.
   body with a pointer to the guidance review, `~/docs/guidance-review.md`,
   keeping the heading, which `memory/README.md` and
   `memory/memory-audit-model-selection.md` link, and PodHaven's own fact
-  that its `.env` sets no `ANTHROPIC_MEMORY_AUDIT_API_KEY` line. Drop "and
-  the shared memory audit" from the tests paragraph, and "and the enabled
-  `memory-audit` feature" from the `.project-starter.json` paragraph. In
+  that its `.env` sets no `ANTHROPIC_MEMORY_AUDIT_API_KEY` line. Drop the
+  setup section's two sentences on the local memory audit's required tools
+  and its tests, "and the shared memory audit" from the tests paragraph, and
+  "and the enabled `memory-audit` feature" from the `.project-starter.json`
+  paragraph. In
   `memory/README.md`, drop the claim that the model cannot edit the README.
   Bring `memory/memory-audit-model-selection.md` up to date: the guidance
   review audits on the same Sonnet model, shared key, and subscription
