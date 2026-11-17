@@ -1069,8 +1069,16 @@ imports the engine from this repository's checkout instead, as home's
   `diagnose_index()` checks the index alone, without a checkout's hooks and
   tools.
 - **An interface home depends on:** home imports whatever the checkout holds,
-  not a release, so a change to the class's constructor or to the methods
-  home calls or overrides needs a matching change in home.
+  not a release, and no check here runs home's tests, so a change to any of
+  these needs a matching change in home: the class's constructor and the
+  methods and attributes home calls, reads, or overrides; the `status`,
+  `message`, and `finished_at` fields home's watcher reads from the cache's
+  `state.json`; `_knowledge.py`'s `git`, `git_environment`, `lock_file`, and
+  `read_json`; and `_checks.py`'s `validate(root, options=...)`,
+  `link_targets`, and `local_target`. Home's document checks replace
+  `_checks.tracked_files` with their own list of documents before calling
+  `validate`, so `validate` must keep listing files through the module's
+  `tracked_files`.
 - **Rejected,** in that issue: vendoring the engine into home through
   `bin/sync`, and keeping the fork and porting fixes by hand.
 
