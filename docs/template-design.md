@@ -358,10 +358,11 @@ The starter no longer ships a task guide, a td rule in the managed
 
 ### Nonfunctional delivery — 2026-09-28
 
-Documentation, task tracking, comments, and other nonfunctional changes do not
-require deployment or a package release. Keep required checks and assess all
-changes since the last successful release. Projects with automatic deployment
-must document a supported way to skip it. Follow explicit deployment requests.
+Documentation, agent instructions, comments, and other nonfunctional changes
+do not require deployment or a package release. Keep required checks and
+assess all changes since the last successful release. Projects with automatic
+deployment must document a supported way to skip it. Follow explicit
+deployment requests.
 
 
 ## Project Starter 2.0 — 2026-10-09
