@@ -3,6 +3,32 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 4.1.1 — 2026-11-18
+
+### Synced
+
+- The engineering policy's
+  [deployment decisions](starter/docs/foundation/engineering-policy.md#deployment-decisions)
+  no longer list "task setup" among the nonfunctional changes that may be
+  pushed without a deployment or release. It meant td task tracking, which
+  3.0.0 retired, so it named nothing an adopter has and could be read as some
+  other kind of setup. Nothing replaces it: GitHub issues, td's successor,
+  live outside the repository. The design record's
+  [nonfunctional delivery](docs/template-design.md#nonfunctional-delivery--2026-09-28)
+  note, which isn't in the bundle, now lists the same changes as the policy.
+
+### Manual follow-up
+
+None. Adopters take the [sync-only](docs/releases.md#sync-only-releases)
+path.
+
+### Verified
+
+`bin/check` passed 75 tests on macOS 27.0.1 with Python 3.15.2 and Git
+2.56.1. The release changes only text, so no test changed. On 2026-11-18 all
+19 adopters that `bin/sync --status` lists were on 4.1.0 with no drift or
+overrides.
+
 ## 4.1.0 — 2026-11-16
 
 ### Synced
