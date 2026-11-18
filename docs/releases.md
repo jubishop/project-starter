@@ -27,6 +27,30 @@ them. Add a new extension point once a second repository needs the same
 override. A new managed file whose path holds a file sync does not manage is
 a conflict too; move or delete that file first.
 
+## Imports of managed modules
+
+Some adopters' own code imports functions from the managed `bin/_checks.py`
+and `bin/_knowledge.py`, such as a `bin/pre-push-application` or its tests.
+A sync replaces those modules without checking that code, so
+`bin/sync --status` lists, under each adopter, each of its own files that
+imports from them and the names it imports. An adopter's own files are its
+tracked Python files, by a `.py` name or a Python shebang, that its
+`.project-starter.json` doesn't list as managed. The scan finds imports at
+any depth, and in a string that imports a managed module, such as a script a
+test runs. It reports a file, or such a string, that doesn't parse instead of
+skipping it. A name such as `_checks.*` means the file may use any name in
+the module.
+
+Before writing a release's manual follow-up, read its diff of those modules
+from the previous release,
+`git diff <previous tag> -- starter/bin/_checks.py starter/bin/_knowledge.py`,
+against the listed names. The list doesn't judge which names changed, since
+a function's behavior can change through a helper it calls. A release that
+renames or removes a listed name, or changes its parameters or behavior,
+gives each adopter that imports it a manual follow-up to update and check
+that code. Those adopters then take the [fleet sync](#sync-the-fleet) steps
+with checks, not a sync-only commit.
+
 ## Secret scanning
 
 Every public GitHub adopter keeps GitHub secret scanning and push protection
@@ -86,8 +110,9 @@ starter included, uses the [full process](#cut-a-release). Ship any other
 release without checks, CI waits, deployments, or validation records, except
 in the adopters a follow-up applies to:
 
-1. Set the version, add the changelog entry, commit, tag `vX.Y.Z`, and run
-   `git push origin main vX.Y.Z`.
+1. Set the version, add the changelog entry with any follow-up that
+   [imports of managed modules](#imports-of-managed-modules) call for,
+   commit, tag `vX.Y.Z`, and run `git push origin main vX.Y.Z`.
 2. Fetch every adopter listed by `bin/sync --status`, then sync each one,
    enabling [secret scanning](#secret-scanning) where sync warns about it.
    Where no follow-up applies, commit only the synced files and push. Put
@@ -124,8 +149,9 @@ the adopter current closes the issue.
    it: the changelog records it, and
    [sync-only releases](#sync-only-releases) says which path it takes.
 2. Set `version` in `starter/.project-starter.json`, and add a changelog entry
-   with the synced changes, the manual follow-up, and the verified QMD and
-   platform versions.
+   with the synced changes, the manual follow-up, including any that
+   [imports of managed modules](#imports-of-managed-modules) call for, and
+   the verified QMD and platform versions.
 3. Run `bin/check`, push `main`, and wait for the
    [starter checks](../.github/workflows/check.yml) to pass on Ubuntu and
    macOS.

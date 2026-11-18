@@ -634,6 +634,30 @@ rejected: it would run checks and CI in adopters that receive only what
 [optional features retired](#optional-features-retired--2026-11-16),
 follow-up applies to an adopter through an override or its own files.
 
+### Adopters' imports — 2026-11-18
+
+`bin/sync --status` lists the managed names that each adopter's own files
+import from `bin/_checks.py` and `bin/_knowledge.py`, and the
+[release steps](releases.md#imports-of-managed-modules) compare them with the
+release's diff of those modules, so a release that changes a listed
+function's name, parameters, or behavior gives the adopters that import it a
+manual follow-up and the fleet sync steps with checks
+([issue #95](https://github.com/jubishop/project-starter/issues/95)). A
+[sync-only](releases.md#sync-only-releases) adopter runs no checks, so such a
+change would otherwise break it unnoticed until its next push or CI run, as
+health's `bin/pre-push-application`, which imports two `_checks` functions
+when it loads, would refuse every push after a rename. Releases had checked
+these imports by hand, as 3.14.0 did for podhaven's `bin/_worktrees.py`.
+
+- **A scan, not a list:** a hand-kept table, first drafted in that issue,
+  missed three of the six files the scan found on 2026-11-18. Decided from
+  that evidence on 2026-11-18.
+- **Names, not judgments:** the scan lists names and the release reads the
+  diff, since a function's behavior can change through a helper it calls.
+- **Not an extension point:** only health limits check reuse to its
+  application checks, and an extension point waits for a second repository
+  that needs the same override.
+
 ### Fleet sync skill — 2026-10-24
 
 The `sync-fleet` skill in `.agents/skills/` runs
