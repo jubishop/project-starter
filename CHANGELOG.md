@@ -3,6 +3,38 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 4.2.0 — 2026-11-18
+
+### Synced
+
+- `bin/sync --status` lists, under each adopter, each of its own tracked
+  Python files that imports from the managed `bin/_checks.py` or
+  `bin/_knowledge.py`, with the names it imports, and reports one it can't
+  parse. The [release steps](docs/releases.md#imports-of-managed-modules)
+  compare those names with each release's diff of the two modules: a release
+  that renames a listed name, or changes its parameters or behavior, gives
+  the adopters that import it a manual follow-up, so they take the fleet sync
+  steps with checks instead of a sync-only commit. `bin/sync` isn't in the
+  bundle, so adopters receive only the version change.
+
+### Manual follow-up
+
+None. Adopters take the [sync-only](docs/releases.md#sync-only-releases)
+path. The release changes neither managed module.
+
+### Verified
+
+`bin/check` passed 76 tests on macOS 27.0.1 with Python 3.15.2 and Git
+2.56.1; the new one builds a fixture fleet with every import below, one
+inside a function and one in a string a test runs. On 2026-11-18
+`bin/sync --status` listed all 19 adopters on 4.1.1 with no drift or
+overrides, and these imports: health's `bin/pre-push-application` and
+`tests/test_pre_push.py` import `_checks.application_checks` and
+`application_variables`; podhaven's `bin/pre-push-application` imports
+`_checks.pass_record`, its `bin/smoke-knowledge` `_checks.link_targets` and
+`local_target`, its `bin/_worktrees.py` six `_knowledge` names, and its
+`bin/prune-worktree-caches` `_knowledge.atomic_json` and `stamp`.
+
 ## 4.1.1 — 2026-11-18
 
 ### Synced

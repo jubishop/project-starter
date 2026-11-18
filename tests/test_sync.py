@@ -375,11 +375,95 @@ class SyncTests(unittest.TestCase):
         manifest_path.write_text(json.dumps(manifest))
         (fleet / "unrelated").mkdir()
         status = self.sync("--status", "--root", str(fleet), "--ref", "WORKTREE")
-        lines = {line.split()[0]: line for line in status.stdout.splitlines() if line.strip()}
+        lines = {line.split()[0]: line for line in status.stdout.splitlines() if line.strip() and line[0] != " "}
         self.assertNotIn("unrelated", lines)
         self.assertIn("drift 1", lines["drifted"])
         self.assertIn("drift 0", lines["current"])
         self.assertIn("overrides 1", lines["overridden"])
+
+    def test_status_lists_the_managed_names_each_adopters_own_files_import(self):
+        python = "#!/usr/bin/env python3\n"
+        # The imports adopters' own files made on 2026-11-18, the cases issue #95 lists.
+        fleet = {
+            "health": {
+                "bin/pre-push-application": python + "from _checks import application_checks, application_variables\n",
+                # The test runs this script, so the import inside the string counts.
+                "tests/test_pre_push.py": 'FULL_CHECK = """import sys\nsys.path.insert(0, "bin")\n'
+                                          'from _checks import application_checks, application_variables\n"""\n',
+            },
+            "podhaven": {
+                "bin/pre-push-application": python + "from _checks import pass_record\n",
+                "bin/smoke-knowledge": python + "def main():\n    if True:\n"
+                                       "        from _checks import link_targets, local_target\n",
+                "bin/_worktrees.py": "from _knowledge import atomic_json, git, git_environment, primary_checkout,"
+                                     " read_json, stamp\n",
+                "bin/prune-worktree-caches": "#!/usr/bin/python3 -B\nfrom _knowledge import atomic_json, stamp\n",
+            },
+            "other": {
+                # A module import names what the file reads from it, or every name when it hands the module on.
+                "tools/report.py": "import _checks\nimport _knowledge as knowledge\n"
+                                   "_checks.validate(root)\nprint(knowledge.stamp())\n",
+                "tools/inspect.py": "import _knowledge\nhelp(_knowledge)\n",
+                "tools/everything.py": "from _checks import *\n",
+                "tools/template.py": "PREFIX = 'from _knowledge import ('\n",
+                # A Python file that imports none, and files that aren't Python, list nothing.
+                "tools/unrelated.py": "import balance_checks\nfrom json import loads\n",
+                "bin/setup-application": "#!/bin/sh\n# from _checks import digest\n",
+                "notes.md": "from _knowledge import git\n",
+            },
+        }
+        root = self.base / "projects"
+        root.mkdir()
+        for name, files in fleet.items():
+            repo = root / name
+            repo.mkdir()
+            self.run_command("git", "init", "-b", "main", cwd=repo)
+            self.sync("--init", "--ref", "WORKTREE", str(repo))
+            for relative, text in files.items():
+                (repo / relative).parent.mkdir(parents=True, exist_ok=True)
+                (repo / relative).write_text(text)
+            self.commit(repo, "Adopt")
+        broken = root / "other/bin/broken"
+        broken.write_text(python + "from _checks import (\n")
+        self.commit(root / "other", "Break a script")
+        (root / "other/untracked.py").write_text("from _checks import digest\n")
+
+        status = self.sync("--status", "--root", str(root), "--ref", "WORKTREE").stdout
+        imports, unparsed, adopter = {}, {}, None
+        for line in status.splitlines():
+            if not line.startswith(" "):
+                adopter = line.split()[0]
+                self.assertIn("drift 0", line)
+                continue
+            if " has unknown imports: " in line:
+                unparsed.setdefault(adopter, []).append(line.strip())
+            else:
+                path, names = line.strip().split(" imports ")
+                imports.setdefault(adopter, {})[path] = names.split(", ")
+        self.assertEqual(imports, {
+            "health": {
+                "bin/pre-push-application": ["_checks.application_checks", "_checks.application_variables"],
+                "tests/test_pre_push.py": ["_checks.application_checks", "_checks.application_variables"],
+            },
+            "podhaven": {
+                "bin/_worktrees.py": ["_knowledge.atomic_json", "_knowledge.git", "_knowledge.git_environment",
+                                      "_knowledge.primary_checkout", "_knowledge.read_json", "_knowledge.stamp"],
+                "bin/pre-push-application": ["_checks.pass_record"],
+                "bin/prune-worktree-caches": ["_knowledge.atomic_json", "_knowledge.stamp"],
+                "bin/smoke-knowledge": ["_checks.link_targets", "_checks.local_target"],
+            },
+            "other": {
+                "tools/everything.py": ["_checks.*"],
+                "tools/inspect.py": ["_knowledge.*"],
+                "tools/report.py": ["_checks.validate", "_knowledge.stamp"],
+            },
+        })
+        # A file that doesn't parse is reported, not skipped.
+        self.assertEqual(set(unparsed), {"other"})
+        self.assertEqual(len(unparsed["other"]), 2, unparsed)
+        self.assertRegex(unparsed["other"][0], r"^bin/broken has unknown imports: it doesn't parse: .+ on line 2$")
+        self.assertRegex(unparsed["other"][1], r"^tools/template.py has unknown imports: the string on line 1 imports a"
+                                               r" managed module, but it doesn't parse: .+ on line 1$")
 
 
 if __name__ == "__main__":

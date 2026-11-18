@@ -107,7 +107,8 @@ paragraph, any deploy-skip trailers the adopter records as its
 [sync commit trailers](docs/releases.md#sync-commit-trailers) in
 `.project-starter.json`, which `bin/sync` prints after the sync.
 `bin/sync --status` reports each adopter's
-version, drift, and overrides.
+version, drift, overrides, and
+[imports of managed modules](docs/releases.md#imports-of-managed-modules).
 
 ## Improve the starter
 

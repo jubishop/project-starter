@@ -71,9 +71,15 @@ itself, so adopter documents never become test fixtures. It covers:
   executable.
 - `bin/sync`: initial adoption, hash and block enforcement with overrides,
   updates between tagged releases with conflict refusal and `--force`, and
-  fleet `--status`. The adoption test also confirms that the copied CI
-  workflow runs `bin/check --full`. An overridden file keeps its local change
-  and names the upstream diff when a release changes it. A release that adds
+  fleet `--status`. A fixture fleet with the imports adopters made on
+  2026-11-18, including one inside a function and one in a string a test
+  runs, shows `--status` listing each adopter's own Python files, by `.py`
+  name or shebang, with the managed names they import. Module imports count
+  the attributes read; managed, untracked, and non-Python files list nothing;
+  and a file or string that doesn't parse is reported. The adoption test also
+  confirms that the copied CI workflow runs `bin/check --full`. An overridden
+  file keeps its local change and names the upstream diff when a release
+  changes it. A release that adds
   a starter file refuses to replace a project file at its path until the
   project removes it, and a release that drops one refuses to remove a
   changed copy and removes an unchanged one. An adopter's
