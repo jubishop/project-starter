@@ -28,16 +28,19 @@ follow-up it cannot apply. See [releases](docs/releases.md).
 ### Manual follow-up
 
 Only these two adopters need it, and each takes the
-[fleet sync](docs/releases.md#sync-the-fleet) steps, running
-`bin/check --documents-only`, since each fix is skill text:
+[fleet sync](docs/releases.md#sync-the-fleet) steps:
 
 - podhaven: add `.agents/skills/analyze-sentry-feedback/agents/openai.yaml`
   with `policy:` and `allow_implicit_invocation: false`, as its sibling
   `analyze-sentry-logs` has, keeping the skill explicit-only as podhaven set
-  it in 845ee9b4.
+  it in 845ee9b4. Give the example skill that
+  `bin/tests/test_pre_push_application.py` writes `name`, `description`, and
+  `disable-model-invocation` frontmatter, since the skill check now refuses
+  its push. Then run `bin/check --full`, as podhaven's pre-push hook does
+  for a test change.
 - steam-starter: add `disable-model-invocation: false` to
   `.agents/skills/make-steam-game/SKILL.md`, the behavior every runtime gives
-  it now.
+  it now, and run `bin/check --documents-only`, since the fix is skill text.
 
 Every other adopter takes the
 [sync-only](docs/releases.md#sync-only-releases) path. The release only adds
