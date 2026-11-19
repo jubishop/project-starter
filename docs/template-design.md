@@ -658,6 +658,39 @@ these imports by hand, as 3.14.0 did for podhaven's `bin/_worktrees.py`.
   application checks, and an extension point waits for a second repository
   that needs the same override.
 
+### Adopters' script tests — 2026-11-19
+
+`bin/sync --status` lists each adopter's own files that name `_checks.py` or
+`_knowledge.py`, and a release that changes anything under `starter/bin/`
+runs their tests in a disposable clone of each listed adopter, synced to the
+release, before writing its manual follow-up; an adopter whose test fails
+gets a follow-up and the fleet sync steps with checks
+([issue #100](https://github.com/jubishop/project-starter/issues/100); see
+[tests that run managed scripts](releases.md#tests-that-run-managed-scripts)).
+In the 4.3.0 sync, podhaven's `bin/tests/test_pre_push_application.py`
+pushed a fixture skill without frontmatter through the managed hook, which
+the new skill check refused. The pre-merge sweep had run that check only on
+adopters' tracked skills, and podhaven's follow-up caught the failure only
+because it ran `bin/check --full`; a sync-only adopter would have met it at
+an unrelated later push. These choices were decided from evidence by
+decide-issues on 2026-11-19:
+
+- **A scan, not fleet checks:** running `bin/check --full` in every adopter
+  before such a release was rejected, since it would bring back the cost that
+  [unchecked sync-only releases](#unchecked-sync-only-releases--2026-10-15)
+  removed. The scan settles this as the imports scan settled imports.
+- **Module file names as the signal:** both managed modules find the
+  repository from their own path, so a test can run a managed script against
+  a fixture only by copying one into it. On 2026-11-19 the scan found the
+  five such tests in health, podhaven, and trading, and two harmless extras.
+  Naming `bin/check` was rejected: 65 own files across the 19 adopters name
+  it, mostly CI workflows and `bin/check-application` scripts that run it on
+  the real checkout.
+- **Any change under `starter/bin/`:** a test that runs a managed script can
+  depend on any of its behavior, so the release doesn't judge which changes
+  matter, and `git diff --quiet` decides. The cost is a handful of test
+  files in three adopters.
+
 ### Fleet sync skill — 2026-10-24
 
 The `sync-fleet` skill in `.agents/skills/` runs

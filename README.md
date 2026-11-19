@@ -15,7 +15,7 @@ template; its defaults reflect those projects.
 ```sh
 bin/sync --init /path/to/project   # adopt the latest release
 bin/sync /path/to/project          # update an adopter
-bin/sync --status                  # versions, drift, overrides, and managed imports under ~/projects
+bin/sync --status                  # versions, drift, overrides, managed imports, and script tests under ~/projects
 ```
 
 Sync copies managed files, records their hashes in `.project-starter.json`,
