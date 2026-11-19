@@ -313,8 +313,9 @@ UNREAD_SKILL_FIELDS = {"user_invocable": "user-invocable", "disable_model_invoca
                        "argument_hint": "argument-hint", "allowed_tools": "allowed-tools", "argument": "argument-hint"}
 # The Agent Skills limit on a description, in characters.
 DESCRIPTION_LIMIT = 1024
-# An agents/openai.yaml policy that keeps Codex from starting a skill on its own.
-IMPLICIT_OFF = re.compile(r"^policy:[ \t]*(?:#.*)?\n(?:[ \t]*(?:#.*)?\n|[ \t]+.*\n)*?"
+# An agents/openai.yaml policy that keeps Codex from starting a skill on its own. Each line inside the block matches
+# only one way, so a block that lacks the setting fails in linear time.
+IMPLICIT_OFF = re.compile(r"^policy:[ \t]*(?:#.*)?\n(?:(?:[ \t#].*)?\n)*?"
                           r"[ \t]+allow_implicit_invocation:[ \t]*false[ \t]*(?:#.*)?$", re.M)
 
 

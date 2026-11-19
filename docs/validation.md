@@ -64,7 +64,8 @@ itself, so adopter documents never become test fixtures. It covers:
   1,024 characters once its `>-` lines fold, a missing or non-boolean
   `disable-model-invocation`, each of the five spellings no runtime reads, an
   explicit-only skill without the Codex policy or with it set to allow, the
-  policy without the flag, no frontmatter, a duplicate field, and an
+  latter within a 31-line policy block that fails as quickly as a short one,
+  the policy without the flag, no frontmatter, a duplicate field, and an
   unquoted `: ` in a plain value. Plain values with comments and URLs,
   quoted, literal, and folded ones, including a description of exactly 1,024
   characters across indented lines, other fields' lists and maps, a guide

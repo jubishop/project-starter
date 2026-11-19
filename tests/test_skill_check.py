@@ -94,8 +94,10 @@ class SkillCheckTests(unittest.TestCase):
         self.skill("underscored", "name: underscored\n" + valid + "user_invocable: true\ndisable_model_invocation: "
                    "false\nargument_hint: \"[name]\"\nallowed_tools: Bash\nargument: Optional names\n")
         self.skill("explicit-only", "name: explicit-only\n" + explicit)
+        # A long policy block that leaves implicit invocation on fails as quickly as a short one.
         self.skill("explicit-implicit", "name: explicit-implicit\n" + explicit,
-                   codex="policy:\n  allow_implicit_invocation: true\n")
+                   codex="policy:\n" + "    # Codex reads only allow_implicit_invocation here.\n" * 30
+                   + "    allow_implicit_invocation: true\n")
         self.skill("policy-only", "name: policy-only\n" + valid, codex="policy:\n  allow_implicit_invocation: false\n")
         self.skill("no-frontmatter", None)
         self.skill("colon", "name: colon\ndescription: Use this: when asked.\ndisable-model-invocation: false\n")
