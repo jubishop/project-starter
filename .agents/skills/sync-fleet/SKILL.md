@@ -5,9 +5,8 @@ description: >-
   the release's manual follow-up, commit, push, and confirm CI where the
   release process requires it. Use when the user asks to sync or roll out
   Project Starter to its adopters.
-user_invocable: true
 disable-model-invocation: true
-argument: Optional adopter names to sync instead of every adopter
+argument-hint: "[adopter ...]"
 ---
 
 # Sync the Fleet

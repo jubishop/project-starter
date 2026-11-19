@@ -3,6 +3,54 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 4.3.0 — 2026-11-19
+
+### Synced
+
+- Every `bin/check` mode, `--documents-only` included, holds each
+  `.agents/skills/<name>/SKILL.md` to the frontmatter rules Agent Skills
+  runtimes read, naming the skill and the rule it breaks: `name` matches the
+  folder, `description` is non-empty and at most 1,024 characters as YAML
+  folds it, and `disable-model-invocation` is `true` or `false`, `true`
+  exactly where the skill's `agents/openai.yaml` sets
+  `policy.allow_implicit_invocation: false`, since Codex ignores the
+  frontmatter field. It rejects `argument` and the underscored spellings
+  `user_invocable`, `disable_model_invocation`, `argument_hint`, and
+  `allowed_tools`, which no runtime reads, and leaves other fields alone. It
+  skips a skill folder Git tracks as a symlink, which the repository it
+  points into checks. The
+  [engineering policy](starter/docs/foundation/engineering-policy.md#checks)
+  names it in the `--documents-only` row.
+- Project Starter's own `bin/check` runs the same check on its
+  `.agents/skills`, and the `sync-fleet` skill drops `user_invocable` and
+  spells its argument hint `argument-hint`. Neither is in the bundle.
+
+### Manual follow-up
+
+Only these two adopters need it, and each takes the
+[fleet sync](docs/releases.md#sync-the-fleet) steps, running
+`bin/check --documents-only`, since each fix is skill text:
+
+- podhaven: add `.agents/skills/analyze-sentry-feedback/agents/openai.yaml`
+  with `policy:` and `allow_implicit_invocation: false`, as its sibling
+  `analyze-sentry-logs` has, keeping the skill explicit-only as podhaven set
+  it in 845ee9b4.
+- steam-starter: add `disable-model-invocation: false` to
+  `.agents/skills/make-steam-game/SKILL.md`, the behavior every runtime gives
+  it now.
+
+Every other adopter takes the
+[sync-only](docs/releases.md#sync-only-releases) path. The release only adds
+names to `bin/_checks.py` and changes its `main`, which no adopter's own
+files import.
+
+### Verified
+
+`bin/check` passed 80 tests on macOS 27.0.1 with Python 3.15.2 and Git
+2.56.1. On 2026-11-19 the new check passed every adopter's current checkout,
+each even with its remote, except the two above, and skipped kidsbank's and
+trading's symlinked skill folders; it took 11 to 59 ms.
+
 ## 4.2.0 — 2026-11-18
 
 ### Synced

@@ -795,6 +795,41 @@ Its choices:
   their commands. The document checks go first because they take under a
   second and the Xcode checks take minutes.
 
+### Skill frontmatter checks — 2026-11-19
+
+Every `bin/check` mode holds each `.agents/skills/<name>/SKILL.md` to the
+frontmatter rules Agent Skills runtimes read, which the home
+`test-skill-portability` applies only to home's own skills
+([issue #98](https://github.com/jubishop/project-starter/issues/98)).
+Adopters' skills drifted whenever an agent edited one without the home
+`create-skill` guidance: on 2026-11-19 news, podhaven, steam-starter, and
+this repository's `sync-fleet` each had a field no runtime reads, an
+explicit-only skill that Codex still starts on its own, or no invocation
+flag. An audit fixes each only after the fact; a check fails the commit that
+introduces one. The choices, decided by an unattended decide-issues pass on
+2026-11-19 from that evidence:
+
+- **Modes.** The check runs with the document checks, so the pre-push hook's
+  `--documents-only` meets an edit to `SKILL.md` alone, which hosted CI
+  skips.
+- **Skills.** Only tracked `SKILL.md` files directly under a skill folder. A
+  folder Git tracks as a symlink, as kidsbank's and trading's links into
+  vps-infra are, is skipped: its target is missing in CI, and the repository
+  it points into checks it. `.claude/skills` links to `.agents/skills` in
+  every adopter, so it needs no check of its own.
+- **Spellings.** Only `argument` and the underscored spellings of the
+  hyphenated fields runtimes read fail. An allowlist of every field runtimes
+  read was rejected: it would fail a field a runtime adds until a release
+  listed it.
+- **Reading.** A reader for the checked fields' plain, quoted, folded, and
+  literal values, since descriptions are usually folded `>-` blocks that the
+  document checks' one-line reader rejects; it measures a description as
+  YAML folds it, and ignores other fields' values. It uses only the
+  standard library, so the document checks gain no dependency.
+- **Codex.** `disable-model-invocation` is required, and `true` exactly where
+  `agents/openai.yaml` sets `policy.allow_implicit_invocation: false`, since
+  Codex ignores the frontmatter field.
+
 ### Memory audit pull requests — 2026-11-13
 
 The memory audit pushed its validated note changes straight to `main`. On
