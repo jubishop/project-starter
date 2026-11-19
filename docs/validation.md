@@ -58,6 +58,22 @@ itself, so adopter documents never become test fixtures. It covers:
   the index, and that delete it, and in a push that created its branch,
   which reports its uncommitted errors without a Git error. Outside such a
   checkout, `bin/check --fetch-base` fetches nothing.
+- Skill frontmatter: every `bin/check` mode fails on a skill in
+  `.agents/skills` that breaks a rule, naming its `SKILL.md` and the rule: a
+  `name` other than its folder's, an empty or missing description, one over
+  1,024 characters once its `>-` lines fold, a missing or non-boolean
+  `disable-model-invocation`, each of the five spellings no runtime reads, an
+  explicit-only skill without the Codex policy or with it set to allow, the
+  latter within a 31-line policy block that fails as quickly as a short one,
+  the policy without the flag, no frontmatter, a duplicate field, and an
+  unquoted `: ` in a plain value. Plain values with comments and URLs,
+  quoted, literal, and folded ones, including a description of exactly 1,024
+  characters across indented lines, other fields' lists and maps, a guide
+  beside `SKILL.md`, and a skill folder tracked as a symlink to a missing
+  path all pass. The maintainer `bin/check` fails the same way for a skill in
+  this repository's `.agents/skills`. On 2026-11-19 the reader matched
+  js-yaml 4.3.1 on 20 folded, literal, chomped, quoted, and plain values, and
+  on the invalid plain values it rejects.
 - Pre-push hook: real pushes to a bare remote are refused with the document
   check's error when the pushed revision fails, even if the working tree
   passes, and go through despite an uncommitted broken draft. Renaming a page

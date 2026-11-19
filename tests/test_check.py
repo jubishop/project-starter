@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -38,6 +39,36 @@ class CheckCommandLineTests(unittest.TestCase):
                 self.assertNotEqual(result.returncode, 0)
                 self.assertTrue(result.stderr.startswith("Usage: bin/check"), result.stderr)
                 self.assertEqual(result.stdout, "")
+
+    def test_project_starters_own_skills_follow_the_frontmatter_rules(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            repo = Path(temporary).resolve() / "starter checkout"
+            (repo / "bin").mkdir(parents=True)
+            shutil.copy2(ROOT / "bin/check", repo / "bin/check")
+            shutil.copytree(ROOT / "starter", repo / "starter", ignore=shutil.ignore_patterns("__pycache__", ".cache"))
+            (repo / "docs").mkdir()
+            (repo / "docs/README.md").write_text("# Design\n")
+            skill = repo / ".agents/skills/sync-fleet/SKILL.md"
+            skill.parent.mkdir(parents=True)
+            # Without ShellCheck on PATH, a run whose document checks pass stops before the tests, which it would
+            # otherwise run from inside itself.
+            tools = repo.parent / "tools"
+            tools.mkdir()
+            for name, target in (("python3", sys.executable), ("git", shutil.which("git"))):
+                (tools / name).symlink_to(target)
+            env = {key: value for key, value in os.environ.items() if not key.startswith(("GIT_", "GITHUB_"))}
+            env.update(PATH=str(tools), GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=os.devnull)
+            subprocess.run(["git", "init", "-q"], cwd=repo, env=env, check=True)
+            for flag, expected in (("user_invocable: true\n", ".agents/skills/sync-fleet/SKILL.md: user_invocable is a"
+                                    " spelling no runtime reads; use user-invocable\n"),
+                                   ("", "Install shellcheck before running bin/check.\n")):
+                with self.subTest(flag=flag):
+                    skill.write_text("---\nname: sync-fleet\ndescription: Sync the fleet.\n" + flag
+                                     + "disable-model-invocation: false\n---\n\n# Sync the Fleet\n")
+                    result = subprocess.run([str(repo / "bin/check")], cwd=repo, env=env, text=True,
+                                            capture_output=True, timeout=60)
+                    self.assertEqual(result.returncode, 1)
+                    self.assertEqual(result.stderr, expected)
 
 
 if __name__ == "__main__":
