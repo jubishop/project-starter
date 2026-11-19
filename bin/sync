@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Copy a Project Starter release into adopters, or report the fleet's versions, drift, and managed imports."""
+"""Copy a Project Starter release into adopters, or report the fleet's versions, drift, and uses of managed modules."""
 
 import argparse
 import ast
@@ -354,12 +354,16 @@ def imported_names(source, modules):
     return sorted(names)
 
 
+def managed_modules(managed):
+    return {match[1] for match in map(MANAGED_MODULE.fullmatch, managed) if match}
+
+
 def own_imports(repo, managed):
     """Describe the names each of the adopter's own tracked Python files imports from its managed modules.
 
     Own files are tracked files the manifest doesn't list as managed. A file is Python by its .py name or its shebang.
     """
-    modules = {match[1] for match in map(MANAGED_MODULE.fullmatch, managed) if match}
+    modules = managed_modules(managed)
     if not modules:
         return []
     tracked = git("ls-files", "-z", cwd=repo, check=False)
@@ -384,6 +388,39 @@ def own_imports(repo, managed):
     return reports
 
 
+def own_module_files(repo, managed):
+    """Describe each of the adopter's own tracked text files that names a managed module's file, and the names it uses.
+
+    Every managed script imports a managed module, which finds the repository from its own path, so a test can run a
+    managed script against a fixture only by copying a module into it. Own files are tracked files the manifest doesn't
+    list as managed, other than the manifest and Markdown pages, in any language. Only a whole file name counts, with or
+    without bin/, so test_checks.py doesn't name _checks.py. Git decides which files are text.
+    """
+    names = [module + ".py" for module in sorted(managed_modules(managed))]
+    if not names:
+        return []
+    patterns = [part for name in names for part in ("-e", name)]
+    found = git("grep", "--no-color", "-I", "-l", "-z", "-F", *patterns, cwd=repo, check=False)
+    if found.returncode > 1:
+        return ["files naming managed modules are unknown: git grep failed: " + found.stderr.decode().strip()]
+    alternatives = b"|".join(re.escape(name.encode()) for name in names)
+    mention = re.compile(rb"(?<![\w.-])(?:bin/)?(?:" + alternatives + rb")(?!\w)")
+    reports = []
+    for relative in sorted(os.fsdecode(name) for name in found.stdout.split(b"\0") if name):
+        path = repo / relative
+        if (relative in managed or relative == MANIFEST or relative.lower().endswith(".md")
+                or path.is_symlink() or not path.is_file()):
+            continue
+        try:
+            used = sorted({match.decode() for match in mention.findall(path.read_bytes())})
+        except OSError as error:
+            reports.append(relative + " has unknown module names: " + str(error))
+            continue
+        if used:
+            reports.append(relative + " names " + ", ".join(used))
+    return reports
+
+
 def status(root, ref):
     label, files = release(ref or latest_tag())
     latest = json.loads(files[MANIFEST][0])["version"]
@@ -403,7 +440,7 @@ def status(root, ref):
                 drift += current != expected
         line = repo.name + "  " + manifest["version"] + " (" + manifest["ref"] + ")  drift " + str(drift) + "  overrides " + str(len(overrides))
         print(line + ("" if manifest["version"] == latest else "  behind " + latest + " (" + label + ")"))
-        for report in own_imports(repo, manifest["managed"]):
+        for report in own_imports(repo, manifest["managed"]) + own_module_files(repo, manifest["managed"]):
             print("  " + report)
     return 0
 
@@ -413,7 +450,8 @@ def main():
     parser.add_argument("targets", nargs="*", type=Path, help="Adopter checkout roots")
     parser.add_argument("--init", action="store_true", help="Adopt the starter, including project-owned pages")
     parser.add_argument("--status", action="store_true",
-                        help="Report every adopter under --root, with the managed names its own files import")
+                        help="Report every adopter under --root, with the managed names its own files import"
+                             " and its own files that name a managed module, such as tests that run managed scripts")
     parser.add_argument("--root", type=Path, default=Path("~/projects"), help="Directory containing adopters")
     parser.add_argument("--ref", help="Release tag or commit (default: latest v* tag); WORKTREE uses this checkout")
     parser.add_argument("--dry-run", action="store_true", help="Report planned changes without writing")

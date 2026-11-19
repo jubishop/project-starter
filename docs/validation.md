@@ -92,7 +92,13 @@ itself, so adopter documents never become test fixtures. It covers:
   runs, shows `--status` listing each adopter's own Python files, by `.py`
   name or shebang, with the managed names they import. Module imports count
   the attributes read; managed, untracked, and non-Python files list nothing;
-  and a file or string that doesn't parse is reported. The adoption test also
+  and a file or string that doesn't parse is reported. A second fixture
+  fleet with the script tests adopters had on 2026-11-19 shows `--status`
+  listing each own text file, in any language, that names `_checks.py` or
+  `_knowledge.py` as a whole file name, with or without `bin/`, and the names
+  it uses, beside that file's imports. Markdown pages, `.project-starter.json`,
+  managed, untracked, and binary files, files that name only `bin/check`, and
+  names such as `test_checks.py` list nothing. The adoption test also
   confirms that the copied CI workflow runs `bin/check --full`. An overridden
   file keeps its local change and names the upstream diff when a release
   changes it. A release that adds

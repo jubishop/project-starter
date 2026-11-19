@@ -465,6 +465,75 @@ class SyncTests(unittest.TestCase):
         self.assertRegex(unparsed["other"][1], r"^tools/template.py has unknown imports: the string on line 1 imports a"
                                                r" managed module, but it doesn't parse: .+ on line 1$")
 
+    def test_status_lists_own_files_that_name_managed_modules(self):
+        # Tests that copy a managed module into a fixture to run managed scripts there, as adopters' did on 2026-11-19,
+        # the cases issue #100 lists.
+        fleet = {
+            "health": {
+                # The test also runs a script that imports from a module, so both reports list it.
+                "tests/test_pre_push.py": '"""The fixture carries the real bin/_checks.py and bin/_knowledge.py."""\n'
+                                          'FULL_CHECK = "from _checks import application_checks\\n"\n'
+                                          'for name in ("bin/pre-push-application", "bin/_checks.py",'
+                                          ' "bin/_knowledge.py"):\n    print(name)\n',
+                # A file name that only ends in a module's name, and a run of bin/check, name no managed module.
+                "bin/check-application": "#!/bin/sh\nfind tests -name 'test_*.py' ! -name test_knowledge.py\n"
+                                         "bin/check --full\n",
+                ".github/workflows/ci.yml": "steps:\n  - run: bin/check --full\n",
+            },
+            "podhaven": {
+                "bin/tests/test_pre_push_application.py": 'for name in ("hooks/pre-push", "knowledge-hook",'
+                                                          ' "_knowledge.py", "check", "_checks.py"):\n'
+                                                          '    shutil.copy2(BIN / name, fixture / "bin" / name)\n',
+                "bin/tests/test_setup_application.py": 'for name in ("setup-application", "_worktrees.py",'
+                                                       ' "_knowledge.py"):\n    print(name)\n',
+            },
+            "other": {
+                # Any language counts, and only a whole file name does.
+                "test/deployment.test.js": "const kept = ['bin/_knowledge.py', 'bin/test_checks.py',"
+                                           " 'my_checks.py'];\n",
+                # Markdown pages and files that aren't text list nothing.
+                "docs/testing.md": "Tests copy `bin/_checks.py` into a fixture.\n",
+                "assets/archive.bin": b"\0bin/_checks.py\n",
+            },
+        }
+        root = self.base / "projects"
+        root.mkdir()
+        for name, files in fleet.items():
+            repo = root / name
+            repo.mkdir()
+            self.run_command("git", "init", "-b", "main", cwd=repo)
+            self.sync("--init", "--ref", "WORKTREE", str(repo))
+            for relative, content in files.items():
+                (repo / relative).parent.mkdir(parents=True, exist_ok=True)
+                (repo / relative).write_bytes(content if isinstance(content, bytes) else content.encode())
+            self.commit(repo, "Adopt")
+        # Every manifest names the managed modules, and neither it nor a managed or untracked file is listed.
+        self.assertIn('"bin/_checks.py"', (root / "other/.project-starter.json").read_text())
+        doctor = root / "other/bin/doctor"
+        doctor.write_text(doctor.read_text() + "# Loads bin/_checks.py\n")
+        self.commit(root / "other", "Drift a managed file")
+        (root / "other/untracked.py").write_text("COPIED = 'bin/_checks.py'\n")
+
+        status = self.sync("--status", "--root", str(root), "--ref", "WORKTREE").stdout
+        named, imports, adopter = {}, {}, None
+        for line in status.splitlines():
+            if not line.startswith(" "):
+                adopter = line.split()[0]
+            elif " names " in line:
+                path, names = line.strip().split(" names ")
+                named.setdefault(adopter, {})[path] = names.split(", ")
+            else:
+                imports.setdefault(adopter, []).append(line.strip())
+        self.assertEqual(named, {
+            "health": {"tests/test_pre_push.py": ["bin/_checks.py", "bin/_knowledge.py"]},
+            "podhaven": {
+                "bin/tests/test_pre_push_application.py": ["_checks.py", "_knowledge.py"],
+                "bin/tests/test_setup_application.py": ["_knowledge.py"],
+            },
+            "other": {"test/deployment.test.js": ["bin/_knowledge.py"]},
+        })
+        self.assertEqual(imports, {"health": ["tests/test_pre_push.py imports _checks.application_checks"]})
+
 
 if __name__ == "__main__":
     unittest.main()

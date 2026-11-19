@@ -51,6 +51,33 @@ gives each adopter that imports it a manual follow-up to update and check
 that code. Those adopters then take the [fleet sync](#sync-the-fleet) steps
 with checks, not a sync-only commit.
 
+## Tests that run managed scripts
+
+Some adopters' own tests run managed scripts, such as `bin/check` or the
+pre-push hook, against a fixture repository, so a release that changes those
+scripts can fail them. A sync-only adopter runs no checks, so such a failure
+would otherwise surface only when an unrelated later push runs the tests.
+Every managed script imports `bin/_checks.py` or `bin/_knowledge.py`, which
+find the repository from their own path, so such a test copies one of them
+into its fixture. `bin/sync --status` therefore lists, under each adopter,
+each of its own tracked text files that names `_checks.py` or
+`_knowledge.py`, with or without `bin/`, and the names it uses. Only a whole
+file name counts, so `test_checks.py` doesn't. Here an adopter's own files
+are its tracked files in any language, other than `.project-starter.json`,
+Markdown pages, and the files its manifest lists as managed. A listed file
+that runs no managed script, such as one that names a module in a list of
+paths, costs only a test run.
+
+When a release's diff from the previous tag changes anything under
+`starter/bin/`, as `git diff --quiet <previous tag> -- starter/bin` reports
+by exiting 1, run the listed files' tests before writing its manual
+follow-up. For each adopter with a listed file, clone its current checkout
+into a disposable directory, sync the commit that holds the release's changes
+into the clone with `bin/sync --ref <commit>`, run the listed files' tests
+the way the adopter runs them, and delete the clone. An adopter whose test
+fails gets a manual follow-up that names the test and its fix, and takes the
+[fleet sync](#sync-the-fleet) steps with checks.
+
 ## Secret scanning
 
 Every public GitHub adopter keeps GitHub secret scanning and push protection
@@ -111,8 +138,9 @@ release without checks, CI waits, deployments, or validation records, except
 in the adopters a follow-up applies to:
 
 1. Set the version, add the changelog entry with any follow-up that
-   [imports of managed modules](#imports-of-managed-modules) call for,
-   commit, tag `vX.Y.Z`, and run `git push origin main vX.Y.Z`.
+   [imports of managed modules](#imports-of-managed-modules) and
+   [tests that run managed scripts](#tests-that-run-managed-scripts) call
+   for, commit, tag `vX.Y.Z`, and run `git push origin main vX.Y.Z`.
 2. Fetch every adopter listed by `bin/sync --status`, then sync each one,
    enabling [secret scanning](#secret-scanning) where sync warns about it.
    Where no follow-up applies, commit only the synced files and push. Put
@@ -150,8 +178,9 @@ the adopter current closes the issue.
    [sync-only releases](#sync-only-releases) says which path it takes.
 2. Set `version` in `starter/.project-starter.json`, and add a changelog entry
    with the synced changes, the manual follow-up, including any that
-   [imports of managed modules](#imports-of-managed-modules) call for, and
-   the verified QMD and platform versions.
+   [imports of managed modules](#imports-of-managed-modules) and
+   [tests that run managed scripts](#tests-that-run-managed-scripts) call
+   for, and the verified QMD and platform versions.
 3. Run `bin/check`, push `main`, and wait for the
    [starter checks](../.github/workflows/check.yml) to pass on Ubuntu and
    macOS.

@@ -3,6 +3,46 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 4.4.0 — 2026-11-19
+
+### Synced
+
+- `bin/sync --status` lists, under each adopter and beside its imports, each
+  of its own tracked text files, in any language, that names `_checks.py` or
+  `_knowledge.py` as a whole file name, with or without `bin/`, and the names
+  it uses. Such a file is usually a test that copies a managed module into a
+  fixture to run a managed script, such as `bin/check` or the pre-push hook,
+  there. A release that changes anything under `starter/bin/` now runs the
+  listed files' tests in a disposable clone of each listed adopter, synced
+  to the release, before writing its manual follow-up, and an adopter whose
+  test fails gets a follow-up and the fleet sync steps with checks; see
+  [tests that run managed scripts](docs/releases.md#tests-that-run-managed-scripts).
+  `bin/sync` isn't in the bundle, so adopters receive only the version
+  change.
+
+### Manual follow-up
+
+None. Adopters take the [sync-only](docs/releases.md#sync-only-releases)
+path. The release changes nothing under `starter/bin/`, so it runs no
+adopter's tests, and neither managed module changes.
+
+### Verified
+
+`bin/check` passed 81 tests on macOS 27.0.1 with Python 3.15.2 and Git
+2.56.1; the new one builds a fixture fleet with the script tests below and
+files the scan must skip. On 2026-11-19 `bin/sync --status` listed all 19
+adopters on 4.3.0 with no drift or overrides, and these files: health's
+`tests/test_pre_push.py` names `bin/_checks.py` and `bin/_knowledge.py`;
+podhaven's `bin/tests/test_pre_push_application.py` names `_checks.py` and
+`_knowledge.py`, and its `bin/tests/test_setup_application.py` and
+`bin/tests/test_worktrees.py` name `_knowledge.py`; trading's
+`tests/test_ci_workflow.py` names `bin/_checks.py` and `bin/_knowledge.py`.
+It also listed two files that run no managed script:
+artisanalsoftware.com's `test/deployment.test.js` and screenr's
+`bin/check-application`. Disposable clones of health, trading, and podhaven,
+synced to this change, passed `tests/test_pre_push.py`,
+`tests/test_ci_workflow.py`, and `bin/tests/test_pre_push_application.py`.
+
 ## 4.3.0 — 2026-11-19
 
 ### Synced
