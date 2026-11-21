@@ -3,6 +3,37 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 4.4.1 — 2026-11-21
+
+### Synced
+
+- The knowledge-search page's
+  [refresh and recovery](starter/docs/foundation/knowledge-search.md#refresh-and-recovery)
+  no longer says QMD frees a vector block only once none of its vectors are
+  current, nor tells users to delete `.cache/qmd/index.sqlite` and run
+  `bin/qmd-index` to reclaim space. Since QMD 2.9.0, the cleanup every refresh
+  runs also repacks partly empty vector storage, as the page now says
+  ([issue #4](https://github.com/jubishop/project-starter/issues/4)). The
+  design record's
+  [orphaned vector cleanup](docs/template-design.md#orphaned-vector-cleanup--2026-10-24)
+  note, which isn't in the bundle, now says why the worker doesn't compact.
+
+### Manual follow-up
+
+None. Adopters take the [sync-only](docs/releases.md#sync-only-releases)
+path. The release changes nothing under `starter/bin/`, so it runs no
+adopter's tests, and neither managed module changes. Every adopter's index
+was already rebuilt on QMD 2.9.0 on 2026-11-21, as
+[validation](docs/validation.md#qmd-290-vector-storage--2026-11-21) records.
+
+### Verified
+
+`bin/check` passed 81 tests on macOS 27.0.1 with Python 3.15.2 and Git
+2.56.1. The release changes only text, so no test changed. On 2026-11-21 all
+19 adopters that `bin/sync --status` lists were on 4.4.0 with no drift or
+overrides, and each one's rebuilt index was current under QMD 2.9.0
+(`aa247d0`).
+
 ## 4.4.0 — 2026-11-19
 
 ### Synced

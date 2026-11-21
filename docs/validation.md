@@ -528,6 +528,71 @@ drift 0. trading still has the `bin/` half of the bash lint test from
 [trading#378](https://github.com/jubishop/trading/pull/378), which the
 changelog lets it drop.
 
+## QMD 2.9.0 vector storage — 2026-11-21
+
+[Issue #4](https://github.com/jubishop/project-starter/issues/4) measured
+whether partly used vector blocks regrow after per-refresh cleanup enough to
+need automatic compaction. Every adopter runs QMD 2.9.0 (`aa247d0`), still
+the latest release, which carries upstream's cleanup repack
+(tobi/qmd#1025) and per-collection vector storage (tobi/qmd#1024). Sizes here
+are decimal megabytes from each file's bytes; `bin/knowledge status` reports
+binary megabytes labeled MB.
+
+Eight adopters had already refreshed on 2.9.0: health 13.1 MB, home-infra
+13.9 MB, podhaven 17.5 MB, printing 13.1 MB, sourdough 13.8 MB, steam-starter
+13.0 MB, stories 14.1 MB, and trading 14.8 MB. The other eleven still held
+indexes QMD 2.8.3 last wrote on 2026-11-19 or 2026-11-20, four weeks after the
+[2026-10-24 rebuilds](#release-212-and-orphaned-vector-cleanup--2026-10-24):
+news 4.4 MB, screenr 5.8 MB, and the rest 3.4 to 3.9 MB, against 4.4, 5.0,
+and 3.4 to 3.8 MB rebuilt. None had grown by a block, so on 2.8.3
+per-refresh cleanup already sufficed for them. The first
+`bin/knowledge status` on 2.9.0 converted each in place to per-collection
+storage, at 13.0 to 15.4 MB.
+
+In each primary checkout, `bin/qmd-index` then brought the index current on
+2.9.0, and the measurement below was taken before deleting
+`.cache/qmd/index.sqlite` and rebuilding it with `bin/qmd-index`, which took
+1.2 to 7.5 seconds on an Apple M5 Pro. Every rebuild's cleanup reported
+`Vector table is packed (4 chunks for 4 needed, 100% useful)`, and
+`bin/doctor --json` then reported current freshness with no issues in each.
+The rebuilt figures are the baselines for later comparisons, which should
+never use the 2026-10-24 sizes:
+
+| Adopter | Before rebuild | Rebuilt | Vectors |
+| --- | --- | --- | --- |
+| artisanalsoftware.com | 13.1 MB | 13.1 MB | 46 |
+| health | 13.1 MB | 13.1 MB | 50 |
+| home-infra | 13.9 MB | 14.0 MB | 198 |
+| jeeves | 13.0 MB | 13.0 MB | 32 |
+| jubishop.github.io | 13.0 MB | 13.0 MB | 20 |
+| kidsbank | 13.1 MB | 13.1 MB | 41 |
+| news | 14.0 MB | 14.0 MB | 194 |
+| pantrydates | 13.0 MB | 13.0 MB | 23 |
+| podhaven | 17.5 MB | 14.3 MB | 255 before, 241 rebuilt |
+| printing | 13.1 MB | 13.1 MB | 33 |
+| radio | 13.2 MB | 13.3 MB | 65 |
+| screenr | 15.4 MB | 15.4 MB | 452 |
+| sourdough | 13.8 MB | 13.8 MB | 163 |
+| steam-starter | 13.0 MB | 13.0 MB | 22 |
+| stories | 14.1 MB | 14.1 MB | 229 |
+| taxes | 13.4 MB | 13.4 MB | 102 |
+| trading | 14.8 MB | 14.8 MB | 381 |
+| vidservey | 13.0 MB | 13.0 MB | 21 |
+| vps-infra | 13.2 MB | 13.2 MB | 54 |
+
+Eighteen indexes changed by at most 12 KB. podhaven's shrank by 3.25 MB,
+about one chunk, though its cleanup had reported
+`5 chunks for 5 needed, 100% useful`. That chunk wasn't fragmentation: the
+`sentry-history` collection that podhaven's `576752c5` removed from
+`.config/knowledge.json` still held its documents and 14 vectors, which the
+conversion gave a chunk of their own. A disposable QMD 2.9.0 index confirmed
+that a collection dropped from the configuration leaves search results but
+keeps its documents through `qmd update` and `qmd cleanup`;
+[issue #102](https://github.com/jubishop/project-starter/issues/102) tracks
+removing them. The worker therefore stays unchanged, as the
+[template design](template-design.md#orphaned-vector-cleanup--2026-10-24)
+records.
+
 ## Environment
 
 | Component | Executed version |

@@ -582,12 +582,17 @@ it runs under the worker lock, so lookups wait or refuse as during `update`.
 QMD already clears its response cache on every `update`, and a failed cleanup
 fails the refresh like any other QMD command.
 
-Cleanup does not compact sqlite-vec 0.1.9's vector table: it allocates blocks
-of 1024 vectors, appends only to the newest block, and frees a block only once
-all its vectors are deleted. Trading's 32.5 MB index shrank to 23.7 MB with
-cleanup, while a fresh embedding of the same 301 chunks took 5.6 seconds and
-4.8 MB. Rebuilding the index on demand reclaims that space without making
-every refresh re-embed.
+The worker doesn't compact vectors itself, because QMD's own cleanup has
+repacked partly empty vector storage since 2.9.0
+([issue #4](https://github.com/jubishop/project-starter/issues/4)). On QMD
+2.8.3, sqlite-vec freed a block of 1024 vectors only once all of them were
+deleted, so trading's 32.5 MB index shrank only to 23.7 MB with cleanup, while
+a fresh build of its 301 chunks took 4.8 MB. On 2026-11-21, after a refresh
+on 2.9.0, 18 adopters' indexes sat within 12 KB of a fresh build. 2.9.0 also
+gives each collection its own vector storage of at least one chunk, about
+3.15 MB at 768 dimensions, so a four-collection index now takes about 13 MB,
+well above the 2026-10-24 rebuilds; compare later sizes with the 2.9.0
+baselines in [validation](validation.md#qmd-290-vector-storage--2026-11-21).
 
 ### Override-only follow-up — 2026-10-24
 
