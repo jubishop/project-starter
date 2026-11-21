@@ -588,8 +588,10 @@ about one chunk, though its cleanup had reported
 conversion gave a chunk of their own. A disposable QMD 2.9.0 index confirmed
 that a collection dropped from the configuration leaves search results but
 keeps its documents through `qmd update` and `qmd cleanup`;
-[issue #102](https://github.com/jubishop/project-starter/issues/102) tracks
-removing them. The worker therefore stays unchanged, as the
+[issue #102](https://github.com/jubishop/project-starter/issues/102) asked
+to remove them, which 4.4.2 does by rebuilding the index, as
+[removed collections](template-design.md#removed-collections--2026-11-21)
+records. The worker's cleanup therefore stays unchanged, as the
 [template design](template-design.md#orphaned-vector-cleanup--2026-10-24)
 records.
 

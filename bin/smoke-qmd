@@ -208,6 +208,32 @@ def main():
         assert str(worktree) not in run("git", "worktree", "list").stdout
         passed("disposable worktree cleanup")
 
+        def contents():
+            status = run("bin/knowledge", "status").stdout
+            counts = re.search(r"Total:\s+(\d+) files indexed.*?Vectors:\s+(\d+) embedded", status, re.S)
+            assert counts, status
+            return int(counts[1]), int(counts[2])
+
+        knowledge = repo / ".config/knowledge.json"
+        configured = knowledge.read_text()
+        (repo / "dropped-collection").mkdir()
+        (repo / "dropped-collection/page.md").write_text("# Dropped collection\n\ndroppedmarkerzeta belongs to a collection the configuration later drops.\n")
+        config = json.loads(configured)
+        config["collections"]["dropped"] = {"path": "dropped-collection", "pattern": "**/*.md"}
+        knowledge.write_text(json.dumps(config, indent=2) + "\n")
+        run("bin/qmd-index")
+        assert json.loads(run("bin/knowledge", "search", "droppedmarkerzeta", "--json").stdout)
+        with_dropped = contents()
+        knowledge.write_text(configured)
+        run("bin/qmd-index")
+        refreshed = contents()
+        for path in (repo / ".cache/qmd").glob("index.sqlite*"):
+            path.unlink()
+        run("bin/qmd-index")
+        fresh = contents()
+        assert refreshed == fresh and all(map(int.__lt__, fresh, with_dropped)), (with_dropped, refreshed, fresh)
+        passed("a dropped collection's pages and vectors leave the index, as a fresh build shows")
+
     print("Real-QMD smoke checks passed; report: " + str(output), flush=True)
     return 0
 
