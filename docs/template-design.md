@@ -594,6 +594,30 @@ gives each collection its own vector storage of at least one chunk, about
 well above the 2026-10-24 rebuilds; compare later sizes with the 2.9.0
 baselines in [validation](validation.md#qmd-290-vector-storage--2026-11-21).
 
+### Removed collections — 2026-11-21
+
+QMD keeps a collection's pages and vectors after its configuration drops it,
+until `qmd collection remove` deletes them. The engine renders QMD's
+configuration from `.config/knowledge.json`, so a removed collection never
+reaches that command: podhaven's index kept `sentry-history`'s pages, its 14
+vectors, and a 3.15 MB chunk of their own after the collection left
+([issue #102](https://github.com/jubishop/project-starter/issues/102)).
+
+When a refresh finds that the index may hold a collection the configuration
+no longer lists, renamed ones included, it deletes `index.sqlite` with any
+`-wal` and `-shm` files beside it, since SQLite could replay a write-ahead
+log a crashed QMD left into the new index, and rebuilds. `state.json`
+records in `indexed` the collections the index may hold, including any a
+failed refresh added, and state from earlier releases falls back to the last
+success's counts. A rebuild took 1.2 to 7.5 seconds per adopter, and removals
+are rare. The check reads neither QMD's schema nor its output.
+
+Running `qmd collection remove <name>` instead was rejected: QMD 2.9.0
+accepts a name its configuration no longer lists only through a recovery
+path, and fails with `Collection not found` whenever the index holds nothing
+under the name, such as after its file was deleted. QMD needs no fix, since
+it keeps a dropped collection's index state by design.
+
 ### Override-only follow-up — 2026-10-24
 
 A release whose manual follow-up applies only to adopters that override a

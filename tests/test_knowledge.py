@@ -66,18 +66,21 @@ if sys.argv[1] in ("update", "embed", "cleanup"):
     if sys.argv[1] == "cleanup" and os.environ.get("FAIL_CLEANUP"):
         sys.exit(26)
     if not os.environ.get("NO_INDEX"):
-        # Model QMD's content-addressed vectors: replaced pages leave orphans until cleanup.
+        # Model QMD's content-addressed vectors by collection: replaced pages leave orphans until cleanup, and
+        # a collection the configuration drops keeps its pages and vectors through update, embed, and cleanup.
         index = Path(record["index"])
-        state = json.loads(index.read_text()) if index.exists() else {"documents": [], "vectors": []}
+        state = json.loads(index.read_text()) if index.exists() else {"documents": {}, "vectors": {}}
+        documents, vectors = state["documents"], state["vectors"]
         if sys.argv[1] == "update":
-            state["documents"] = sorted(hashlib.sha256(path.read_bytes()).hexdigest()
-                                        for collection in record["collections"].values()
-                                        for path in Path(collection["path"]).glob(collection["pattern"])
-                                        if path.is_file() and ".cache" not in path.parts)
-        elif sys.argv[1] == "embed":
-            state["vectors"] = sorted(set(state["vectors"]) | set(state["documents"]))
-        else:
-            state["vectors"] = sorted(set(state["vectors"]) & set(state["documents"]))
+            for name, collection in record["collections"].items():
+                documents[name] = sorted(hashlib.sha256(path.read_bytes()).hexdigest()
+                                         for path in Path(collection["path"]).glob(collection["pattern"])
+                                         if path.is_file() and ".cache" not in path.parts)
+        for name in documents:
+            if sys.argv[1] == "embed":
+                vectors[name] = sorted(set(vectors.get(name, [])) | set(documents[name]))
+            elif sys.argv[1] == "cleanup":
+                vectors[name] = sorted(set(vectors.get(name, [])) & set(documents[name]))
         index.write_text(json.dumps(state))
 else:
     if os.environ.get("FAIL_QUERY"):
@@ -88,7 +91,9 @@ else:
             stream.write("Changed during lookup.\\n")
     if sys.argv[1] == "status":
         state = json.loads(Path(record["index"]).read_text())
-        record["orphaned"] = len(set(state["vectors"]) - set(state["documents"]))
+        record.update(documents=state["documents"], vectors=state["vectors"],
+                      orphaned=sum(len(set(hashes) - set(state["documents"][name]))
+                                   for name, hashes in state["vectors"].items()))
     print(json.dumps(record))
 ''')
         self.tool("direnv", '''
@@ -366,6 +371,48 @@ else:
         for record in cleanups:
             self.assertEqual(record["index"], str(self.repo / ".cache/qmd/index.sqlite"))
             self.assertEqual(Path(record["config"]).parent, self.repo / ".cache/qmd")
+
+    def test_refresh_drops_the_pages_and_vectors_of_collections_the_configuration_no_longer_lists(self):
+        self.run_command("bin/setup")
+        source = self.repo / ".config/knowledge.json"
+        original = json.loads(source.read_text())
+        index = self.repo / ".cache/qmd/index.sqlite"
+        (self.repo / "notes").mkdir()
+        (self.repo / "notes/page.md").write_text("# Notes\n")
+
+        def refresh(collections, failure=None):
+            source.write_text(json.dumps(dict(original, collections=collections)))
+            self.run_command("bin/qmd-index", extra={failure: "1"} if failure else None, check=not failure)
+
+        def contents():
+            status = json.loads(self.run_command("bin/knowledge", "status").stdout)
+            return status["documents"], status["vectors"]
+
+        collections = original["collections"]
+        remaining = {name: value for name, value in collections.items() if name != "foundation"}
+        state = self.repo / ".cache/qmd/state.json"
+        for case, steps, earlier_release in (
+                ("removed", [(remaining, None)], False),
+                ("renamed", [(dict(remaining, shared=collections["foundation"]), None)], False),
+                ("indexed only by a failed refresh",
+                 [(dict(collections, notes={"path": "notes", "pattern": "**/*.md"}), "FAIL_EMBED"), (collections, None)],
+                 False),
+                ("removed after an earlier release's refresh", [(remaining, None)], True)):
+            with self.subTest(case=case):
+                refresh(collections)
+                if earlier_release:
+                    state.write_text(json.dumps({k: v for k, v in json.loads(state.read_text()).items() if k != "indexed"}))
+                # A write-ahead log a crashed QMD left beside the index could be replayed into a new one.
+                leftovers = [Path(str(index) + suffix) for suffix in ("-wal", "-shm")]
+                for path in leftovers:
+                    path.write_text("left by a crashed QMD")
+                for step in steps:
+                    refresh(*step)
+                refreshed, left = contents(), [path.name for path in leftovers if path.exists()]
+                index.unlink()
+                self.drain()
+                self.assertEqual(refreshed, contents())
+                self.assertEqual(left, [])
 
     def test_lookup_during_cleanup_waits_for_verified_results(self):
         self.run_command("bin/setup")

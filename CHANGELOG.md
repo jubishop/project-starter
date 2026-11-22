@@ -3,6 +3,53 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 4.4.2 — 2026-11-21
+
+### Synced
+
+- When a collection leaves `.config/knowledge.json`, renamed ones included,
+  the next refresh deletes `.cache/qmd/index.sqlite`, with any write-ahead
+  log and shared-memory file beside it, and rebuilds the index. QMD kept a
+  removed collection's pages and vectors, with a vector chunk of about
+  3.15 MB of their own, because the engine renders QMD's configuration
+  instead of running `qmd collection remove`
+  ([issue #102](https://github.com/jubishop/project-starter/issues/102)).
+  `.cache/qmd/state.json` now records in `indexed` the collections the index
+  may hold, including any a failed refresh added. The knowledge-search page's
+  [refresh and recovery](starter/docs/foundation/knowledge-search.md#refresh-and-recovery)
+  says so. `bin/smoke-qmd`, which isn't in the bundle, now drops a
+  collection and compares the index's document and vector counts with a
+  fresh build's; see
+  [removed collections](docs/template-design.md#removed-collections--2026-11-21).
+
+### Manual follow-up
+
+None. Adopters take the [sync-only](docs/releases.md#sync-only-releases)
+path. Only `Knowledge.refresh` changed in the managed modules, and no
+adopter imports it: podhaven, the one adopter that imports from
+`_knowledge.py`, uses `atomic_json`, `git`, `git_environment`,
+`primary_checkout`, `read_json`, and `stamp`. Disposable clones of health,
+podhaven, and trading, synced to this change, passed health's
+`tests/test_pre_push.py`, podhaven's `bin/tests/test_pre_push_application.py`,
+`bin/tests/test_setup_application.py`, and `bin/tests/test_worktrees.py`,
+and trading's `tests/test_ci_workflow.py`. artisanalsoftware.com's
+`test/deployment.test.js` names `bin/_knowledge.py` only in a list of paths,
+and screenr's `bin/check-application` names `bin/_checks.py` only in a
+comment, so neither runs a managed script.
+
+### Verified
+
+`bin/check` passed 82 tests on macOS 27.0.1 with Python 3.15.2 and Git
+2.56.1. The new one removes a collection, renames one, drops one that only a
+failed refresh indexed, and removes one after a refresh by an earlier
+release, and it failed in each case on the 4.4.1 engine. Its strict
+`bin/smoke-qmd` run with QMD 2.9.0 (`aa247d0`) passed. On the 4.4.1 engine,
+the smoke check's new step failed with 10 files and 21 vectors after the
+drop, against 9 and 20 for a fresh build, and on podhaven's own 4.4.1
+checkout with 51 and 243 against 50 and 242. A podhaven clone synced to this
+change passed it. Home's knowledge tests, which import this engine, passed
+against it.
+
 ## 4.4.1 — 2026-11-21
 
 ### Synced
