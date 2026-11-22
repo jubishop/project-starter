@@ -606,11 +606,11 @@ vectors, and a 3.15 MB chunk of their own after the collection left
 When a refresh finds that the index may hold a collection the configuration
 no longer lists, renamed ones included, it deletes `index.sqlite` with any
 `-wal` and `-shm` files beside it, since SQLite could replay a write-ahead
-log a crashed QMD left into the new index, and rebuilds. `state.json` records in `indexed` the
-collections the index may hold, including any a failed refresh added, and
-state from earlier releases falls back to the last success's counts. A
-rebuild took 1.2 to 7.5 seconds per adopter, and removals are rare. The
-check reads neither QMD's schema nor its output.
+log a crashed QMD left into the new index, and rebuilds. `state.json`
+records in `indexed` the collections the index may hold, including any a
+failed refresh added, and state from earlier releases falls back to the last
+success's counts. A rebuild took 1.2 to 7.5 seconds per adopter, and removals
+are rare. The check reads neither QMD's schema nor its output.
 
 Running `qmd collection remove <name>` instead was rejected: QMD 2.9.0
 accepts a name its configuration no longer lists only through a recovery
