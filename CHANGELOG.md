@@ -3,6 +3,45 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 4.4.3 — 2026-11-23
+
+### Synced
+
+- In a GitHub Actions partial clone, `bin/check --fetch-base` and the
+  whitespace checks find the base files the clone lacks by listing the
+  objects it has, instead of asking Git for each file's object. Git 2.43,
+  Ubuntu 24.04's and so a self-hosted runner's there, ends such a batch check
+  at the first object the clone lacks, with `fatal: could not fetch <object>
+  from promisor remote`, even with lazy fetching off. So both failed with
+  `git cat-file` exiting 128 for any run that edited a file, as trading's
+  first runs on self-hosted runners did
+  ([issue #105](https://github.com/jubishop/project-starter/issues/105)).
+  Newer Git, as on GitHub's hosted runners, reports the object missing.
+
+### Manual follow-up
+
+None. Adopters take the [sync-only](docs/releases.md#sync-only-releases)
+path. Only `base_blobs`, which `check_whitespace` and `fetch_base` call,
+changed in the managed modules, and no adopter imports any of them: health
+imports `application_checks` and `application_variables`, and podhaven
+`pass_record`, `link_targets`, and `local_target`. Disposable clones of
+health, podhaven, and trading, synced to this change, passed health's
+`tests/test_pre_push.py`, podhaven's `bin/tests/test_pre_push_application.py`,
+`bin/tests/test_setup_application.py`, and `bin/tests/test_worktrees.py`, and
+trading's `tests/test_ci_workflow.py`. artisanalsoftware.com's
+`test/deployment.test.js` names `bin/_knowledge.py` only in a list of paths,
+and screenr's `bin/check-application` names `bin/_checks.py` only in a
+comment, so neither runs a managed script.
+
+### Verified
+
+`bin/check` passed 82 tests on macOS 27.0.1 with Python 3.15.2 and Git
+2.56.1. `tests/test_partial_clone.py` now runs its checks through a `git`
+that ends a batch check at a missing object as Git 2.43 does, and two of its
+three tests failed that way on 4.4.2's probe. In `ubuntu:24.04`, with apt's
+Git `1:2.43.0-1ubuntu7.4` and Python 3.12, all three passed with this change
+and two failed on 4.4.2's probe.
+
 ## 4.4.2 — 2026-11-21
 
 ### Synced

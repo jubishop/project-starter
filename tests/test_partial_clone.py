@@ -9,6 +9,7 @@ import http.server
 import json
 import os
 from pathlib import Path
+import shlex
 import shutil
 import socketserver
 import subprocess
@@ -22,6 +23,21 @@ GIT = shutil.which("git")
 TOKEN = "job-token"
 # actions/checkout authenticates as x-access-token with the job's token.
 AUTHORIZATION = "Basic " + base64.b64encode(("x-access-token:" + TOKEN).encode()).decode()
+# Git as the checks run it, but stopping a batch check of named objects at the first one a partial clone lacks, as
+# Git 2.43, Ubuntu 24.04's, does even with lazy fetching off, where newer Git prints "<object> missing" and goes on.
+OLD_GIT = """#!/bin/sh
+git=%s
+case " $* " in
+*" cat-file "*"--batch-check"*) "$git" config --get-regexp '^remote\\..*\\.promisor$' >/dev/null || exec "$git" "$@" ;;
+*) exec "$git" "$@" ;;
+esac
+"$git" "$@" | while IFS= read -r line; do
+    case $line in
+    *" missing") echo "fatal: could not fetch ${line%%%% *} from promisor remote" >&2; exit 128 ;;
+    esac
+    printf '%%s\\n' "$line"
+done
+"""
 
 
 class PrivateGitServer(http.server.BaseHTTPRequestHandler):
@@ -81,8 +97,9 @@ class PartialCloneTests(unittest.TestCase):
         shutil.copytree(SOURCE, self.repo, ignore=shutil.ignore_patterns("__pycache__", ".cache"))
         tools = self.base / "fake tools"
         tools.mkdir()
-        for name, target in (("python3", sys.executable), ("git", GIT)):
-            (tools / name).symlink_to(target)
+        (tools / "python3").symlink_to(sys.executable)
+        (tools / "git").write_text(OLD_GIT % shlex.quote(GIT))
+        (tools / "git").chmod(0o755)
         (tools / "shellcheck").write_text("#!/bin/sh\nexit 0\n")
         (tools / "shellcheck").chmod(0o755)
         # CI's own GitHub Actions variables would describe this repository's run, not the fixture's.
