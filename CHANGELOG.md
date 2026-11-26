@@ -45,7 +45,8 @@ only in a list of paths, and screenr's `bin/check-application` names
 ### Verified
 
 `bin/check` passed 83 tests on macOS 27.0.1 with Python 3.15.2 and
-Git 2.56.1. The new hook test failed on 4.4.3's hook, which let a push of
+Git 2.56.1, and its strict `bin/smoke-qmd` run with QMD 2.9.0 (`aa247d0`)
+passed. The new hook test failed on 4.4.3's hook, which let a push of
 a manifest whose override has no reason through. In a clone of jeeves synced
 to this change, with the bundled hooks active, the sync commit pushed to a
 local bare remote, and a following commit that recorded an override with no
