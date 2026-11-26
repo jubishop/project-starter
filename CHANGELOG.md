@@ -3,6 +3,55 @@
 Each release lists what `bin/sync` changes in adopters and the manual
 follow-up it cannot apply. See [releases](docs/releases.md).
 
+## 4.5.0 — 2026-11-26
+
+### Synced
+
+- The managed `pre-push` hook now runs `bin/check --documents-only` when a
+  push changes, adds, or deletes the root `.project-starter.json`, alone or
+  with other non-Markdown files, not only when it changes Markdown
+  ([issue #106](https://github.com/jubishop/project-starter/issues/106)).
+  The document checks compare the manifest with the managed files and
+  require each override's reason. A sync with no manual follow-up commits
+  with `[skip ci]`, so a sync push that changed no Markdown ran no check, and
+  neither did a hand-recorded override in an adopter without hosted CI.
+  Every sync changes the manifest's `version`, so every sync push now runs
+  the document checks, which take under a second. A refused push now ends
+  "Fix what it names, commit, and push again." The engineering policy's
+  [pre-push hook](starter/docs/foundation/engineering-policy.md#pre-push-hook)
+  section names the manifest, and its
+  [hosted CI](starter/docs/foundation/engineering-policy.md#hosted-ci)
+  section says the hook checks the manifest a sync changes as well as its
+  pages.
+
+### Manual follow-up
+
+None. Adopters take the [sync-only](docs/releases.md#sync-only-releases)
+path. In the managed modules, only `_knowledge.py` changed: it renames
+`changes_markdown` to `needs_document_checks`, which `check_push` calls, and
+no adopter imports either. Podhaven, the one adopter that imports from
+`_knowledge.py`, uses `atomic_json`, `git`, `git_environment`,
+`primary_checkout`, `read_json`, and `stamp`. Disposable clones of all 19
+adopters, synced to this change, passed `bin/check --documents-only`, so
+their sync pushes pass the hook. The clones of health, podhaven, and trading
+passed health's `tests/test_pre_push.py`, podhaven's
+`bin/tests/test_pre_push_application.py`,
+`bin/tests/test_setup_application.py`, `bin/tests/test_test_all.py`, and
+`bin/tests/test_worktrees.py`, and trading's `tests/test_ci_workflow.py`.
+artisanalsoftware.com's `test/deployment.test.js` names `bin/_knowledge.py`
+only in a list of paths, and screenr's `bin/check-application` names
+`bin/_checks.py` only in a comment, so neither runs a managed script.
+
+### Verified
+
+`bin/check` passed 83 tests on macOS 27.0.1 with Python 3.15.2 and
+Git 2.56.1. The new hook test failed on 4.4.3's hook, which let a push of
+a manifest whose override has no reason through. In a clone of jeeves synced
+to this change, with the bundled hooks active, the sync commit pushed to a
+local bare remote, and a following commit that recorded an override with no
+reason was refused with
+`.project-starter.json: override for bin/doctor needs a reason`.
+
 ## 4.4.3 — 2026-11-23
 
 ### Synced

@@ -836,9 +836,15 @@ Its choices:
   On 2026-11-06 the clone and checkout took 0.04 to 0.27 seconds across the
   22 adopters, and the checks themselves 0.06 to 0.65 seconds.
 - **Scope.** Only pushes that change a Markdown file, with renames counted as
-  removals. A new branch counts when one of its commits that no
-  remote-tracking branch holds changes one. Other kinds of change already
-  run `bin/check`, which includes the document checks.
+  removals, or the root `.project-starter.json`. A new branch counts when one
+  of its commits that no remote-tracking branch holds changes one. Other
+  kinds of change already run `bin/check`, which includes the document
+  checks. Amended 2026-11-26 to add the manifest, which the document checks
+  compare with the managed files: a sync with no manual follow-up commits
+  with `[skip ci]`, so a sync push that changes no Markdown ran no check, and
+  neither did a hand-recorded override in an adopter without hosted CI. Every
+  sync changes the manifest's `version`, so every sync push now runs the
+  document checks, which take under a second.
 - **Failures.** The hook refuses the push when the checks fail or cannot run,
   so a broken hook cannot silently reopen the gap. `--no-verify` stays Git's
   bypass, for a broken hook only.

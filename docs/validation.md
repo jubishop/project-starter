@@ -77,8 +77,10 @@ itself, so adopter documents never become test fixtures. It covers:
 - Pre-push hook: real pushes to a bare remote are refused with the document
   check's error when the pushed revision fails, even if the working tree
   passes, and go through despite an uncommitted broken draft. Renaming a page
-  away counts as a Markdown change, pushes that change no Markdown skip the
-  check, and new branches are checked by their unpushed commits. A local
+  away counts as a Markdown change, and a push that changes or deletes
+  the root `.project-starter.json` is checked too, refused when an override
+  lacks a reason or a managed hash differs. Pushes that change neither skip
+  the check, and new branches are checked by their unpushed commits. A local
   refspec with spaces, such as `:/<commit message>`, is checked like a
   branch name, and input the hook cannot read refuses the push. External
   forwarding passes `pre-push` its stdin and its refusal. A project's

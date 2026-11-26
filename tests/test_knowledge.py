@@ -1,5 +1,6 @@
 """Test the starter bundle in disposable repositories; no network or models."""
 
+import hashlib
 import json
 import os
 import re
@@ -795,6 +796,61 @@ sys.exit(int(os.environ.get("OLD_HOOK_EXIT", "0")))
                                           input=line + "\n", check=False)
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn("Unexpected pre-push input: " + line, result.stderr)
+
+    def test_pre_push_hook_checks_the_pushed_revision_when_the_push_changes_the_manifest(self):
+        remote = self.base / "remote.git"
+        self.run_command("git", "init", "--bare", "-b", "main", str(remote))
+        self.run_command("git", "remote", "add", "origin", str(remote))
+        self.addCleanup(self.drain)
+        self.run_command("bin/setup")
+        self.commit()
+        self.run_command("git", "push", "--set-upstream", "origin", "main")
+        manifest = self.repo / ".project-starter.json"
+
+        def remote_main():
+            return self.run_command("git", "rev-parse", "main", root=remote).stdout.strip()
+
+        def push_manifest(value, *others, message):
+            manifest.write_text(json.dumps(value))
+            self.run_command("git", "add", ".project-starter.json", *others)
+            self.run_command("git", "commit", "--message", message)
+            return self.run_command("git", "push", check=False)
+
+        def refused(result, error):
+            self.assertNotEqual(result.returncode, 0, result.stderr)
+            self.assertNotEqual(remote_main(), self.run_command("git", "rev-parse", "HEAD").stdout.strip())
+            self.assertIn(error, result.stderr)
+            self.assertIn("Fix what it names, commit, and push again.", result.stderr)
+
+        # A manifest-only push whose override has no reason, or that records the wrong hash, is refused.
+        local = self.repo / "bin/doctor"
+        local.write_text(local.read_text() + "# local change\n")
+        recorded = {"version": "1.2.3", "managed": {"bin/doctor": hashlib.sha256(b"upstream").hexdigest()}}
+        refused(push_manifest(recorded | {"overrides": {"bin/doctor": ""}}, "bin/doctor", message="Override doctor"),
+                ".project-starter.json: override for bin/doctor needs a reason")
+        refused(push_manifest(recorded, message="Drop the override"),
+                "bin/doctor: managed file differs from Project Starter 1.2.3")
+
+        # A valid manifest lets the push through.
+        recorded["managed"]["bin/doctor"] = hashlib.sha256(local.read_bytes()).hexdigest()
+        self.assertEqual(push_manifest(recorded, message="Record the local doctor").returncode, 0)
+        self.assertEqual(remote_main(), self.run_command("git", "rev-parse", "HEAD").stdout.strip())
+
+        # Deleting the manifest is checked too, so failing pages already on the remote refuse it.
+        (self.repo / "docs/broken.md").write_text("# Missing status\n")
+        self.commit()
+        self.run_command("git", "push", "--no-verify")
+        self.run_command("git", "rm", "--quiet", ".project-starter.json")
+        self.run_command("git", "commit", "--message", "Remove the manifest")
+        refused(self.run_command("git", "push", check=False), "docs/broken.md: missing frontmatter")
+
+        # Only the root manifest counts: a push that changes neither it nor Markdown skips the check.
+        self.run_command("git", "reset", "--quiet", "--hard", "HEAD~1")
+        (self.repo / "notes").mkdir()
+        (self.repo / "notes/.project-starter.json").write_text("{}\n")
+        self.run_command("git", "add", "notes")
+        self.run_command("git", "commit", "--message", "Add notes")
+        self.run_command("git", "push")
 
     def test_pre_push_hook_runs_the_project_pre_push_application_after_the_document_checks(self):
         remote = self.base / "remote.git"
